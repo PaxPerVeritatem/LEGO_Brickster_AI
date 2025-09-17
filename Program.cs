@@ -19,7 +19,8 @@ static class Program
         //ApplicationConfiguration.Initialize();
         //Application.Run(new Form1());
 
-        // create new bot
+        // create new bot, and attempt to navigate to webpage, find LEGO set element and click it, 
+        // leading to set page. 
         Bot bot = new();
         try
         {
@@ -34,6 +35,10 @@ static class Program
             // if setElement is not null call Click()  
             setElement?.Click();
 
+
+            // Attempt to find 'Main Model' element on LEGO set page
+            IWebElement? mainModelElement = bot.FindPageElement("//div[contains(text(),'Main Model')]", "XP");
+            
 
 
         }
@@ -56,13 +61,9 @@ static class Program
         {
             Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
             Console.WriteLine("Closeing driver");
-             bot.CloseBrowser();
-        }            
-        
-//
-//
+            bot.CloseBrowser();
+        }
 
-        //IWebElement? mainModelElement = bot.CheckForMainModel();
         //
         //
         //
@@ -76,5 +77,5 @@ static class Program
 
 
 
-    }
+        }
 }
