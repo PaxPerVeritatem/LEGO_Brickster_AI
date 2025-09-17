@@ -19,45 +19,48 @@ static class Program
         //ApplicationConfiguration.Initialize();
         //Application.Run(new Form1());
 
-        // create new bot, and attempt to navigate to webpage, find LEGO set element and click it, 
-        // leading to set page. 
+
+        // create new bot, and attempt to navigate to main webpage. 
         Bot bot = new();
         string url = "https://library.ldraw.org/omr/sets";
-        bot.GoToWebpage(url);
-        bot.FindWebElements();
-        bot.StopBot(); 
-
-
-
-
         try
         {
             // Attempt to access webpage
-
             bot.GoToWebpage(url);
 
             // Attempt to find some html element via some by mechanism
-            IWebElement? setElement = bot.FindPageElement("Metroliner", "LT");
+            IList<string> nameList = bot.FindPageElements("fi-ta-cell-name", "CLASSNAME");
 
-            // if setElement is not null call Click()  
-            setElement?.Click();
-
-
-            // Attempt to find 'Main Model' element on LEGO set page
-            IWebElement? mainModelElement = bot.FindPageElement("//div[contains(text(),'Main Model')]", "XP");
-
-
-            // if the mainModelElement is not null, attempt to find the download button element
-            //  else go back to main set page. 
-            if (mainModelElement?.Text == "Main Model")
+            // for each LEGO set element 
+            foreach (string name in nameList)
             {
-                IWebElement? downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "XP", mainModelElement);
-                downloadButtonElement?.Click();
+                // if id is not null call Click()
+
+                IWebElement? nameElement = bot.FindPageElement(name, "LT");
+
+                nameElement?.Click();
+                // Attempt to find 'Main Model' element on LEGO set page
+                IWebElement? mainModelElement = bot.FindPageElement("//div[contains(text(),'Main Model')]", "XP");
+
+                // if the mainModelElement is not null, attempt to find the download button element
+                if (mainModelElement?.Text == "Main Model")
+                {
+                    IWebElement? downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "XP", mainModelElement);
+
+
+                    bot.ExplicitWait(downloadButtonElement);
+                    downloadButtonElement.Click();
+                    bot.GoBack();
+                }
+                //  else go back to main set page. 
+                else
+                {
+                    bot.GoBack();
+                }
+
             }
-            else
-            {
-                bot.GoBack();
-            }
+            //stop webdriver
+            bot.StopBot();
         }
         // Catches should maybe be handled better, but for now its fine. 
         catch (BotUrlException ex)

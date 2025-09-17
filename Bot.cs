@@ -1,13 +1,144 @@
 namespace LEGO_Brickster_AI;
 
 using System;
+using System.Runtime.CompilerServices;
+using System.Security.Cryptography.X509Certificates;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Support.UI;
 
 public class Bot
 {
     //makes the driver readonly, by c# suggestions, for improved performance. 
-    private readonly ChromeDriver driver = new();
+    private readonly ChromeDriver driver;
+    private readonly WebDriverWait wait;
+
+    public Bot()
+    {
+        driver = new();
+        wait = new(driver, TimeSpan.FromSeconds(2));
+    }
+
+
+    /// <summary>
+    /// Finds a single element on the webpage by a given mechanism (link text or XPath).
+    /// </summary>
+    /// <param name="ElementString">The string to use for finding the element.</param>
+    /// <param name="ByMechanism">The mechanism to use for finding the element (Link Text or XPath).</param>
+    /// <param name="AncestorElement">The ancestor element to search for the desired element in. If null, the entire webpage is searched.</param>
+    /// <returns>The found element, or null if not found.</returns>
+    public IWebElement? FindPageElement(string ElementString, string ByMechanism, IWebElement? AncestorElement = null)
+    {
+        IWebElement element;
+        try
+        {
+            if (AncestorElement != null)
+            {
+
+                element = ByMechanism switch
+                {
+                    "Name" => AncestorElement.FindElement(By.Name(ElementString)),
+                    "ID" => AncestorElement.FindElement(By.Id(ElementString)),
+                    "CSS" => AncestorElement.FindElement(By.CssSelector(ElementString)),
+                    "CLASSNAME" => driver.FindElement(By.ClassName(ElementString)),
+                    "LT" => AncestorElement.FindElement(By.LinkText(ElementString)),
+                    "XP" => AncestorElement.FindElement(By.XPath(ElementString)),
+                    _ => throw new NotImplementedException(""),
+                };
+            }
+            else
+            {
+                element = ByMechanism switch
+                {
+                    "NAME" => driver.FindElement(By.Name(ElementString)),
+                    "ID" => driver.FindElement(By.Id(ElementString)),
+                    "CSS" => driver.FindElement(By.CssSelector(ElementString)),
+                    "CLASSNAME" => driver.FindElement(By.ClassName(ElementString)),
+                    "LT" => driver.FindElement(By.LinkText(ElementString)),
+                    "XP" => driver.FindElement(By.XPath(ElementString)),
+                    _ => throw new NotImplementedException(""),
+                };
+            }
+            Console.WriteLine($"{element.Text} found \n");
+            return element;
+
+        }
+        // if ElementString was null
+        catch (ArgumentNullException)
+        {
+            throw new BotElementException("ElementString argument is null.");
+        }
+        // No element was found by FinElement() with the designated 'ByMechanism'
+        catch (NoSuchElementException)
+        {
+            throw new BotElementException($"No element called '{ElementString}' was found by FindElement() with by mechanism '{ByMechanism}'.");
+        }
+        // The 'ByMechanism' paramater did not match any By class mechanisms
+        catch (NotImplementedException)
+        {
+            throw new BotMechanismException($"mechanism '{ByMechanism}' cannot be passed to By().");
+        }
+    }
+
+    public IList<string> FindPageElements(string ElementString, string ByMechanism)
+    {
+
+        try
+        {
+            //string list for element ID's 
+            IList<string> nameList = [];
+            // find each element. 
+            IList<IWebElement> elementList = ByMechanism switch
+            {
+                "NAME" => driver.FindElements(By.Name(ElementString)),
+                "ID" => driver.FindElements(By.Id(ElementString)),
+                "CSS" => driver.FindElements(By.CssSelector(ElementString)),
+                "CLASSNAME" => driver.FindElements(By.ClassName(ElementString)),
+                "LT" => driver.FindElements(By.LinkText(ElementString)),
+                "XP" => driver.FindElements(By.XPath(ElementString)),
+                _ => throw new NotImplementedException(""),
+            };
+            foreach (IWebElement e in elementList)
+            {
+
+                string name = e.Text;
+                if (string.IsNullOrEmpty(name))
+                {
+                    nameList.Add("null");
+                }
+                else
+                {
+                    nameList.Add(name);
+                }
+
+            }
+            // if the element is not null add it to the list. 
+            return nameList;
+
+        }
+        // if ElementString was null
+        catch (ArgumentNullException)
+        {
+            throw new BotElementException("ElementString argument is null.");
+        }
+        // No element was found by FinElement() with the designated 'ByMechanism'
+        catch (NoSuchElementException)
+        {
+            throw new BotElementException($"No element called '{ElementString}' was found by FindElement() with by mechanism '{ByMechanism}'.");
+        }
+        // The 'ByMechanism' paramater did not match any By class mechanisms
+        catch (NotImplementedException)
+        {
+            throw new BotMechanismException($"mechanism '{ByMechanism}' cannot be passed to By().");
+        }
+    }
+
+    public static void ClickElement(IWebElement element)
+    {
+        element.Click();
+    }
+
+
 
     /// <summary>
     /// Navigates to a webpage via the driver object.
@@ -36,96 +167,15 @@ public class Bot
     }
 
 
-    public void ImplicitWait(int waitTime)
+   
+        /// <summary>
+        /// Waits until the given element is displayed.
+        /// </summary>
+        /// <param name="element">The element to wait for.</param>
+    public void ExplicitWait(IWebElement element)
     {
-        // might need to be changed. 
-        driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(waitTime);
-
+        wait.Until(driver => element.Displayed);
     }
-
-
-
-    /// <summary>
-    /// Finds an element on the webpage by a given mechanism (link text or XPath).
-    /// </summary>
-    /// <param name="ElementString">The string to use for finding the element.</param>
-    /// <param name="ByMechanism">The mechanism to use for finding the element (Link Text or XPath).</param>
-    /// <param name="AncestorElement">The ancestor element to search for the desired element in. If null, the entire webpage is searched.</param>
-    /// <returns>The found element, or null if not found.</returns>
-    public IWebElement? FindPageElement(string ElementString, string ByMechanism, IWebElement? AncestorElement = null)
-    {
-        IWebElement element;
-        try
-        {
-            if (AncestorElement != null)
-            {
-
-                element = ByMechanism switch
-                {
-                    "Name" => AncestorElement.FindElement(By.Name(ElementString)),
-                    "ID" => AncestorElement.FindElement(By.Id(ElementString)),
-                    "LT" => AncestorElement.FindElement(By.LinkText(ElementString)),
-                    "XP" => AncestorElement.FindElement(By.XPath(ElementString)),
-                    _ => throw new NotImplementedException(""),
-                };
-            }
-            else
-            {
-                element = ByMechanism switch
-                {
-                    "NAME" => driver.FindElement(By.Name(ElementString)),
-                    "ID" => driver.FindElement(By.Id(ElementString)),
-                    "LT" => driver.FindElement(By.LinkText(ElementString)),
-                    "XP" => driver.FindElement(By.XPath(ElementString)),
-                    _ => throw new NotImplementedException(""),
-                };
-            }
-            Console.WriteLine($"{element.Text} found \n");
-            return element;
-
-        }
-        // if ElementString was null
-        catch (ArgumentNullException)
-        {
-            throw new BotElementException("ElementString argument is null.");
-        }
-        // No element was found by FinElement() with the designated 'ByMechanism'
-        catch (NoSuchElementException)
-        {
-            throw new BotElementException($"No element called '{ElementString}' was found by FindElement() with by mechanism '{ByMechanism}'.");
-        }
-        // The 'ByMechanism' paramater did not match any By class mechanisms
-        catch (NotImplementedException)
-        {
-            throw new BotMechanismException($"mechanism '{ByMechanism}' cannot be passed to By().");
-        }
-    }
-
-    public void FindWebElements()
-    {
-        try
-        {
-            IList<IWebElement> elementList = driver.FindElements(By.ClassName("fi-ta-cell-name"));
-
-            int i = 1;
-            foreach (IWebElement e in elementList)
-            {
-                Console.WriteLine($"html element.{i}:{e.Text}");
-                i++;
-            }
-        }
-        catch (System.Exception)
-        {
-
-            throw;
-        }
-    }
-
-    public static void ClickElement(IWebElement element)
-    {
-        element.Click();
-    }
-
 
     /// <summary>
     /// Goes back to the previous webpage via the driver object .
@@ -145,7 +195,7 @@ public class Bot
 
     public void StopBot()
     {
-        driver.Quit(); 
+        driver.Quit();
     }
 
 }
