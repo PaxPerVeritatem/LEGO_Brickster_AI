@@ -21,7 +21,7 @@ public class Bot
             driver.Navigate().GoToUrl(url);
             Console.WriteLine($"Title of Webpage: {driver.Title}\n");
         }
-        
+
         //if URL is null
         catch (ArgumentNullException ex)
         {
@@ -35,14 +35,6 @@ public class Bot
         }
     }
 
-
-    /// <summary>
-    /// Closes the browser instance.
-    /// </summary>
-    public void CloseBrowser()
-    {
-        driver.Close();
-    }
 
     public void ImplicitWait(int waitTime)
     {
@@ -81,7 +73,7 @@ public class Bot
             {
                 element = ByMechanism switch
                 {
-                    "Name" => driver.FindElement(By.Name(ElementString)),
+                    "NAME" => driver.FindElement(By.Name(ElementString)),
                     "ID" => driver.FindElement(By.Id(ElementString)),
                     "LT" => driver.FindElement(By.LinkText(ElementString)),
                     "XP" => driver.FindElement(By.XPath(ElementString)),
@@ -109,6 +101,26 @@ public class Bot
         }
     }
 
+    public void FindWebElements()
+    {
+        try
+        {
+            IList<IWebElement> elementList = driver.FindElements(By.ClassName("fi-ta-cell-name"));
+
+            int i = 1;
+            foreach (IWebElement e in elementList)
+            {
+                Console.WriteLine($"html element.{i}:{e.Text}");
+                i++;
+            }
+        }
+        catch (System.Exception)
+        {
+
+            throw;
+        }
+    }
+
     public static void ClickElement(IWebElement element)
     {
         element.Click();
@@ -121,6 +133,19 @@ public class Bot
     public void GoBack()
     {
         driver.Navigate().Back();
+    }
+
+    /// <summary>
+    /// Closes the browser instance.
+    /// </summary>
+    public void CloseBrowser()
+    {
+        driver.Close();
+    }
+
+    public void StopBot()
+    {
+        driver.Quit(); 
     }
 
 }
