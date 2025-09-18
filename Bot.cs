@@ -72,6 +72,7 @@ public class Bot
         catch (NoSuchElementException)
         {
             throw new BotElementException($"No element called '{ElementString}' was found by FindElement() with by mechanism '{ByMechanism}'.");
+
         }
         // The 'ByMechanism' paramater did not match any By class mechanisms
         catch (NotImplementedException)
@@ -133,11 +134,6 @@ public class Bot
         }
     }
 
-    public static void ClickElement(IWebElement element)
-    {
-        element.Click();
-    }
-
 
 
     /// <summary>
@@ -166,16 +162,21 @@ public class Bot
         }
     }
 
-
-   
-        /// <summary>
-        /// Waits until the given element is displayed.
-        /// </summary>
-        /// <param name="element">The element to wait for.</param>
-    public void ExplicitWait(IWebElement element)
+    /// <summary>
+    /// Waits until the given element is displayed.
+    /// </summary>
+    /// <param name="element">The element to wait for.</param>
+    public bool WaitIfExists(IWebElement? element)
     {
-        wait.Until(driver => element.Displayed);
+        if (element != null)
+        {
+            wait.Until(driver => element.Displayed);
+            return true;
+        }
+        return false;
     }
+
+    
 
     /// <summary>
     /// Goes back to the previous webpage via the driver object .
@@ -197,5 +198,4 @@ public class Bot
     {
         driver.Quit();
     }
-
 }

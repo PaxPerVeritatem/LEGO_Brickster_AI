@@ -1,5 +1,7 @@
 using System.Security.Policy;
+using System.Security.Principal;
 using OpenQA.Selenium;
+using OpenQA.Selenium.DevTools.V137.Network;
 
 
 namespace LEGO_Brickster_AI;
@@ -23,56 +25,23 @@ static class Program
         // create new bot, and attempt to navigate to main webpage. 
         Bot bot = new();
         string url = "https://library.ldraw.org/omr/sets";
+        IList<string> nameList = [];
         try
         {
             // Attempt to access webpage
             bot.GoToWebpage(url);
 
             // Attempt to find some html element via some by mechanism
-            IList<string> nameList = bot.FindPageElements("fi-ta-cell-name", "CLASSNAME");
-
-            // for each LEGO set element 
-            foreach (string name in nameList)
-            {
-                // if id is not null call Click()
-
-                IWebElement? nameElement = bot.FindPageElement(name, "LT");
-
-                nameElement?.Click();
-                // Attempt to find 'Main Model' element on LEGO set page
-                IWebElement? mainModelElement = bot.FindPageElement("//div[contains(text(),'Main Model')]", "XP");
-
-                // if the mainModelElement is not null, attempt to find the download button element
-                if (mainModelElement?.Text == "Main Model")
-                {
-                    IWebElement? downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "XP", mainModelElement);
-
-
-                    bot.ExplicitWait(downloadButtonElement);
-                    downloadButtonElement.Click();
-                    bot.GoBack();
-                }
-                //  else go back to main set page. 
-                else
-                {
-                    bot.GoBack();
-                }
-
-            }
-            //stop webdriver
-            bot.StopBot();
+            nameList = bot.FindPageElements("fi-ta-cell-name", "CLASSNAME");
         }
-        // Catches should maybe be handled better, but for now its fine. 
         catch (BotUrlException ex)
         {
-
             Console.WriteLine($"Failed to load webpage: {ex.Message}");
             Console.WriteLine("Closeing driver");
             bot.CloseBrowser();
         }
         catch (BotElementException ex)
         {
-
             Console.WriteLine($"Failed to return an html element\n{ex.Message}");
             Console.WriteLine("Closeing driver");
             bot.CloseBrowser();
@@ -81,7 +50,55 @@ static class Program
         {
             Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
             Console.WriteLine("Closeing driver");
-            bot.CloseBrowser();
+            bot.StopBot();
         }
+        // for each LEGO set element 
+        foreach (string name in nameList)
+        {
+            try
+            {
+                // Attempt to find LEGO set LinkTest element
+                IWebElement? nameElement = bot.FindPageElement(name, "LT");
+
+                // if current LinkText is not null call Click()
+                nameElement?.Click();
+
+                // Attempt to find 'Main Model' element on LEGO set page
+                IWebElement? ModelElement = bot.FindPageElement("//div[contains(text(),'Model')]", "XP");
+
+                // wait if ModelElement is not null
+                if (bot.WaitIfExists(ModelElement))
+                {
+                    // if the ModelElement is not null, attempt to find the first download button element
+                    IWebElement? downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "XP", ModelElement);
+
+                    // while there are download buttons on the page find them and press them., 
+                    while (true)
+                    {
+                        bot.WaitIfExists(downloadButtonElement);
+                        downloadButtonElement?.Click();
+                        downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "XP", downloadButtonElement);
+                    }
+                }
+                bot.GoBack();
+            }
+            catch (BotElementException ex)
+            {
+                // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all
+
+                Console.WriteLine($"Failed to return an html element\n{ex.Message}");
+                bot.GoBack();
+
+            }
+            catch (BotMechanismException ex)
+            {
+                Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
+                Console.WriteLine("Closeing driver");
+                bot.StopBot();
+            }
+        }
+        bot.StopBot();
+
     }
 }
+
