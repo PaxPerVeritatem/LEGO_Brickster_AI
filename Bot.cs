@@ -1,8 +1,5 @@
 namespace LEGO_Brickster_AI;
-
 using System;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography.X509Certificates;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
@@ -10,12 +7,23 @@ using OpenQA.Selenium.Support.UI;
 public class Bot
 {
     //makes the driver readonly, by c# suggestions, for improved performance. 
-    private readonly ChromeDriver driver;
+    private readonly ChromeDriver driver; 
     private readonly WebDriverWait wait;
 
     public Bot()
     {
         driver = new();
+        
+        // driver must be instantiated before wait can utilize it.  
+        wait = new(driver, TimeSpan.FromSeconds(2)); 
+    }
+
+    //constructor with predefined browser options for eg specifying a custom download folder. 
+    public Bot(ChromeOptions options)
+    {
+        driver = new(options);
+
+        // driver must be instantiated before wait can utilize it.  
         wait = new(driver, TimeSpan.FromSeconds(2));
     }
 
