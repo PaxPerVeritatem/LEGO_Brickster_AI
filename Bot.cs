@@ -1,30 +1,65 @@
 namespace LEGO_Brickster_AI;
-using System;
+
+
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
 
 public class Bot
 {
-    //makes the driver readonly, by c# suggestions, for improved performance. 
-    private readonly ChromeDriver driver; 
+    private readonly ChromeDriver driver;
     private readonly WebDriverWait wait;
+    private IList<string> nameList = [];
+    public IList<string> NameList {
+        get {return nameList;} 
+        set {nameList = value;} }
+    public string Url { get; set; }
 
-    public Bot()
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Bot"/> class with the URL of the webpage to navigate to.
+    /// </summary>
+    /// <param name="url">The URL of the webpage to navigate to.</param>
+    public Bot(string url)
     {
+        Url = url;
         driver = new();
-        
+
         // driver must be instantiated before wait can utilize it.  
-        wait = new(driver, TimeSpan.FromSeconds(2)); 
+        wait = new(driver, TimeSpan.FromSeconds(2));
     }
 
-    //constructor with predefined browser options for eg specifying a custom download folder. 
-    public Bot(ChromeOptions options)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Bot"/> class, with a pre-defined download folder preference.
+    /// </summary>
+    /// <param name="url">The URL of the webpage to navigate to.</param>
+    /// <param name="Downloadfolderstring">The path to the download folder.</param>
+
+    public Bot(string url, string Downloadfolderstring)
     {
+        this.Url = url;
+        ChromeOptions options = InitializeBotPrefs(Downloadfolderstring);
         driver = new(options);
 
         // driver must be instantiated before wait can utilize it.  
         wait = new(driver, TimeSpan.FromSeconds(2));
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ChromeOptions"/> class, with a pre-defined download folder preference.
+    /// </summary>
+    /// <param name="Downloadfolderstring">The path to the download folder.</param>
+    /// <returns>A new instance of <see cref="ChromeOptions"/> with the pre-defined download folder preference.</returns>
+    public static ChromeOptions InitializeBotPrefs(string Downloadfolderstring)
+    {
+        ChromeOptions options = new();
+        // add preferenced download folder to options preferences.
+        options.AddUserProfilePreference("download.default_directory", Downloadfolderstring);
+        // to allow for multiple downloads and prevent the browser from blocking them 'allow multiple downloads' prombt
+        options.AddUserProfilePreference("disable-popup-blocking", "true");
+        // initialize bot with predefined preference
+        return options;
+
     }
 
 
@@ -95,7 +130,6 @@ public class Bot
         try
         {
             //string list for element ID's 
-            IList<string> nameList = [];
             // find each element. 
             IList<IWebElement> elementList = ByMechanism switch
             {
@@ -183,8 +217,6 @@ public class Bot
         }
         return false;
     }
-
-    
 
     /// <summary>
     /// Goes back to the previous webpage via the driver object .
