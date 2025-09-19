@@ -37,7 +37,7 @@ public class Bot
 
     public Bot(string url, string Downloadfolderstring)
     {
-        this.Url = url;
+        Url = url;
         ChromeOptions options = InitializeBotPrefs(Downloadfolderstring);
         driver = new(options);
 
