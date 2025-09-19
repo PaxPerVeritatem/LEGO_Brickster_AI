@@ -3,11 +3,10 @@ namespace LEGO_Brickster_AI;
 using System;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.DevTools.V137.Preload;
+
 
 public class DownloadManager
 {
-
     private Bot bot;
     private readonly ChromeOptions options;
     private IList<string> NameList { get; set; }
@@ -16,15 +15,12 @@ public class DownloadManager
 
     public DownloadManager(string Downloadfolderstring, string Url)
     {
-
-
         options = new ChromeOptions();
         NameList = [];
         this.Downloadfolderstring = Downloadfolderstring;
         this.Url = Url;
         bot = InitializeBot();
     }
-
 
     public Bot InitializeBot()
     {
@@ -36,8 +32,6 @@ public class DownloadManager
         bot = new Bot(options);
         return bot;
     }
-
-
 
     public static void Main(string[] args)
     {
