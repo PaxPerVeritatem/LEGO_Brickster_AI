@@ -1,6 +1,6 @@
 namespace LEGO_Brickster_AI;
 
-
+using System.ComponentModel.DataAnnotations;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
@@ -10,10 +10,14 @@ public class Bot
     private readonly ChromeDriver driver;
     private readonly WebDriverWait wait;
     private IList<string> nameList = [];
-    public IList<string> NameList {
-        get {return nameList;} 
-        set {nameList = value;} }
+    public IList<string> NameList
+    {
+        get { return nameList; }
+        set { nameList = value; }
+    }
     public string Url { get; set; }
+
+
 
 
     /// <summary>
@@ -178,6 +182,8 @@ public class Bot
 
 
 
+
+
     /// <summary>
     /// Navigates to a webpage via the driver object.
     /// </summary>
@@ -218,6 +224,24 @@ public class Bot
         return false;
     }
 
+
+
+    /// <summary>
+    /// Attempts to click the given element.
+    /// </summary>
+    /// <param name="element">The element to attempt to click.</param>
+    /// <exception cref="BotElementException">Thrown if the element data is stale.</exception>
+    public static void ClickElement(IWebElement? element)
+    {
+        try
+        {
+            element?.Click();
+        }
+        catch (StaleElementReferenceException)
+        {
+            throw new BotElementException("Referenced element data is stale. Check element state before attempting to click");
+        }
+    }
     /// <summary>
     /// Goes back to the previous webpage via the driver object .
     /// </summary>
