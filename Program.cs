@@ -22,21 +22,15 @@ static class Program
 
 
 
-        // create new DownloadManager and attempt to navigate to main webpage via Bot
+       //process the Ldraw website LEGO set and download them. 
         string downloadFolderString = @"C:\Users\admin\OneDrive\Skrivebord\LEGO_Brickster_AI\LEGO_Data";
         string url = "https://library.ldraw.org/omr/sets";
         Bot bot = new(url, downloadFolderString);
 
-
-        //IWebElement pageLimitElement = bot.FindPageElement();
-        //int elementPrPage;
-        //int pageLimit; 
-        //IWebElement? setsPrPage = bot.FindPageElement("fi-select-input", "CLASSNAME");
         try
         {
             // Attempt to access webpage
             bot.GoToWebpage(url);
-
         }
         catch (BotUrlException ex)
         {
