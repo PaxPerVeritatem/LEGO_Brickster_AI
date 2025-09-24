@@ -1,5 +1,7 @@
 namespace LEGO_Brickster_AI;
+
 using Xunit;
+using Xunit.Abstractions;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 
@@ -9,23 +11,29 @@ public class BotTests
     private static readonly string url = "https://library.ldraw.org/omr/sets";
 
     private static readonly Bot testBot = new(url, downloadFolderString);
-    private static readonly IWebElement? ancestorElement = null;
-    private static readonly string elementString = "fi-select-input";
-    private static readonly string byMechanism = "CLASSNAME";
+    //private static readonly IWebElement? ancestorElement = null;
+    //private static readonly string elementString = "fi-select-input";
+    //private static readonly string byMechanism = "CLASSNAME";
 
 
     // setup a bot and check that it is not null. 
     // Also check that the correct downloadPath is set, if it is defined in bot constructor.
     // Should be run before every test 
-    
+
     [Fact]
     public void Setup()
     {
         Assert.NotNull(testBot);
         if (testBot.Downloadfolderstring != null && testBot.Options != null)
         {
-            string Preferenceddownloadfolderstring = testBot.Options.ToString();
-            Console.WriteLine(Preferenceddownloadfolderstring);
+           string output = "I am an output";
+
+            Console.WriteLine(output);
+            //Assert.Equal(testBot.Downloadfolderstring, downloadFolderString);
+            testBot.StopBot();
+        }
+        else
+        {
             //Assert.Equal(testBot.Downloadfolderstring, downloadFolderString);
         }
     }
