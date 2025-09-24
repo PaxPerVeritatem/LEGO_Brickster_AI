@@ -47,7 +47,7 @@ public class Bot
     public Bot(string Url)
     {
         this.Url = Url;
-        driver = new();
+        driver = new ChromeDriver();
 
         // driver must be instantiated before wait can utilize it.  
         wait = new(driver, TimeSpan.FromSeconds(2));
@@ -64,7 +64,7 @@ public class Bot
         this.Url = Url;
         this.Downloadfolderstring = Downloadfolderstring;
         options = InitializeBotPrefs(Downloadfolderstring);
-        driver = new(options);
+        driver = new ChromeDriver(options);
 
         // driver must be instantiated before wait can utilize it.  
         wait = new(driver, TimeSpan.FromSeconds(2));
