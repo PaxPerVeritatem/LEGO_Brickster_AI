@@ -7,7 +7,7 @@ using OpenQA.Selenium.Chrome;
 
 public class BotTests
 {
-    private static readonly string downloadFolderString = @"C:\Users\admin\OneDrive\Skrivebord\LEGO_Brickster_AI\LEGO_Brickster_AI\LEGO_Data";
+    private static readonly string downloadFolderString = Path.GetFullPath(@"..\..\..\LEGO_Data");
     private static readonly string url = "https://library.ldraw.org/omr/sets";
 
     private static readonly Bot testBot = new(url, downloadFolderString);

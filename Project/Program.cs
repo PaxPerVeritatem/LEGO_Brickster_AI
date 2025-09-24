@@ -18,11 +18,13 @@ static class Program
 
 
 
-       //process the Ldraw website LEGO set and download them. 
-        string downloadFolderString = @"C:\Users\admin\OneDrive\Skrivebord\LEGO_Brickster_AI\LEGO_Brickster_AI\LEGO_Data";
+        //process the Ldraw website LEGO set and download them. 
+       
+        // The relative path of the data folder 
+        string downloadFolderString = Path.GetFullPath(@"..\..\..\LEGO_Data");
+        Console.WriteLine(downloadFolderString);
         string url = "https://library.ldraw.org/omr/sets";
-        Bot bot = new(url, downloadFolderString);
-
+        Bot bot = new(url,downloadFolderString);
         try
         {
             // Attempt to access webpage
@@ -78,7 +80,7 @@ static class Program
                         while (true)
                         {
                             bot.WaitIfExists(downloadButtonElement);
-                            // we an add a check here to avoid downloads of files we already have
+                            // we can an add a check here later to avoid downloads of files we already have
                             Bot.ClickElement(downloadButtonElement);
                             downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "XP", downloadButtonElement);
                         }
