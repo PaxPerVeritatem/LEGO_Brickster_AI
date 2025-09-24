@@ -1,6 +1,5 @@
-
-using System;
 namespace LEGO_Brickster_AI; 
+using System;
 public class BotException : Exception
 //Base BotException class
 {
