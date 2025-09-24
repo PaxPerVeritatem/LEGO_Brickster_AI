@@ -1,6 +1,4 @@
 namespace LEGO_Brickster_AI;
-
-using System.ComponentModel.DataAnnotations;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
@@ -63,7 +61,6 @@ public class Bot
         options.AddUserProfilePreference("disable-popup-blocking", "true");
         // initialize bot with predefined preference
         return options;
-
     }
 
 
