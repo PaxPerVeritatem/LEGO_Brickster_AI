@@ -1,10 +1,6 @@
-using OpenQA.Selenium.Chrome;
-
 namespace LEGO_Brickster_AI;
-
-using System.Security.Cryptography.X509Certificates;
-using System.Windows.Forms.VisualStyles;
 using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
 static class Program
 {
     /// <summary>
@@ -23,7 +19,7 @@ static class Program
 
 
        //process the Ldraw website LEGO set and download them. 
-        string downloadFolderString = @"C:\Users\admin\OneDrive\Skrivebord\LEGO_Brickster_AI\LEGO_Data";
+        string downloadFolderString = @"C:\Users\admin\OneDrive\Skrivebord\LEGO_Brickster_AI\LEGO_Brickster_AI\LEGO_Data";
         string url = "https://library.ldraw.org/omr/sets";
         Bot bot = new(url, downloadFolderString);
 

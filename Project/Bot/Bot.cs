@@ -1,4 +1,4 @@
-namespace LEGO_Brickster_AI;
+namespace LEGO_Brickster_AI; 
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
@@ -6,6 +6,26 @@ using OpenQA.Selenium.Support.UI;
 public class Bot
 {
     private readonly ChromeDriver driver;
+    public ChromeDriver Driver
+    {
+        get { return driver; }
+    }
+    private readonly ChromeOptions? options = null;
+    public ChromeOptions? Options
+    {
+        get
+        {
+            if (options != null)
+            {
+                return options;
+            }
+            else
+            {
+                return null;
+            }
+        }
+    }
+
     private readonly WebDriverWait wait;
     private IList<string> nameList = [];
     public IList<string> NameList
@@ -15,16 +35,18 @@ public class Bot
     }
     public string Url { get; set; }
 
+    public string? Downloadfolderstring { get; set; } = null;
+
 
 
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Bot"/> class with the URL of the webpage to navigate to.
     /// </summary>
-    /// <param name="url">The URL of the webpage to navigate to.</param>
-    public Bot(string url)
+    /// <param name="Url">The URL of the webpage to navigate to.</param>
+    public Bot(string Url)
     {
-        Url = url;
+        this.Url = Url;
         driver = new();
 
         // driver must be instantiated before wait can utilize it.  
@@ -34,13 +56,14 @@ public class Bot
     /// <summary>
     /// Initializes a new instance of the <see cref="Bot"/> class, with a pre-defined download folder preference.
     /// </summary>
-    /// <param name="url">The URL of the webpage to navigate to.</param>
+    /// <param name="URL">The URL of the webpage to navigate to.</param>
     /// <param name="Downloadfolderstring">The path to the download folder.</param>
 
-    public Bot(string url, string Downloadfolderstring)
+    public Bot(string Url, string Downloadfolderstring)
     {
-        Url = url;
-        ChromeOptions options = InitializeBotPrefs(Downloadfolderstring);
+        this.Url = Url;
+        this.Downloadfolderstring = Downloadfolderstring;
+        options = InitializeBotPrefs(Downloadfolderstring);
         driver = new(options);
 
         // driver must be instantiated before wait can utilize it.  
