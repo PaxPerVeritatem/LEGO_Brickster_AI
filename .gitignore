@@ -569,4 +569,8 @@ poetry.toml
 # LSP config files
 pyrightconfig.json
 
+
+# Custom folders 
+Project/LEGO_Data/
+
 # End of https://www.toptal.com/developers/gitignore/api/csharp,python
