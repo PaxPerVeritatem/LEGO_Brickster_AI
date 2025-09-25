@@ -22,7 +22,7 @@ static class Program
        
         // The relative path of the data folder 
         string downloadFolderString = Path.GetFullPath(@"..\..\..\LEGO_Data");
-        Console.WriteLine(downloadFolderString);
+        Console.WriteLine($"Download folder: {downloadFolderString}");
         string url = "https://library.ldraw.org/omr/sets";
         Bot bot = new(url,downloadFolderString);
         try
@@ -50,7 +50,7 @@ static class Program
         }
 
         //find the first next button
-        IWebElement? nextButtonClassElement = bot.FindPageElement("fi-pagination-next-btn", "CLASSNAME");
+        IWebElement nextButtonClassElement = bot.FindPageElement("fi-pagination-next-btn", "CLASSNAME");
         // while there is an other page of set to go to. 
         while (nextButtonClassElement != null)
         {
@@ -61,19 +61,19 @@ static class Program
                 try
                 {
                     // Attempt to find LEGO set LinkTest element
-                    IWebElement? nameElement = bot.FindPageElement(name, "LT");
+                    IWebElement nameElement = bot.FindPageElement(name, "LT");
 
                     // if current LinkText is not null call Click()
                     Bot.ClickElement(nameElement);
 
                     // Attempt to find 'Model' element on LEGO set page
-                    IWebElement? ModelElement = bot.FindPageElement("//div[contains(text(),'Model')]", "XP");
+                    IWebElement ModelElement = bot.FindPageElement("//div[contains(text(),'Model')]", "XP");
 
                     // wait until ModelElement has rendered on page
                     if (bot.WaitIfExists(ModelElement))
                     {
                         // if the ModelElement is not null, attempt to find the first download button element
-                        IWebElement? downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "XP", ModelElement);
+                        IWebElement downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "XP", ModelElement);
 
                         // while there are download buttons on the page find them and press them., 
                         while (true)

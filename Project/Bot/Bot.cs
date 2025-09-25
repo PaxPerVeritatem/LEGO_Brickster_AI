@@ -1,4 +1,5 @@
-namespace LEGO_Brickster_AI; 
+namespace LEGO_Brickster_AI;
+
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using System;
@@ -60,11 +61,11 @@ public class Bot
     /// <param name="URL">The URL of the webpage to navigate to.</param>
     /// <param name="Downloadfolderstring">The path to the download folder.</param>
 
-    public Bot(string Url, string Downloadfolderstring)
+    public Bot(string Url, string DownloadFolderString)
     {
         this.Url = Url;
-        this.Downloadfolderstring = Downloadfolderstring;
-        options = InitializeBotPrefs(Downloadfolderstring);
+        this.Downloadfolderstring = DownloadFolderString;
+        options = InitializeBotPrefs(DownloadFolderString);
         driver = new ChromeDriver(options);
 
         // driver must be instantiated before wait can utilize it.  
@@ -74,13 +75,13 @@ public class Bot
     /// <summary>
     /// Initializes a new instance of the <see cref="ChromeOptions"/> class, with a pre-defined download folder preference.
     /// </summary>
-    /// <param name="Downloadfolderstring">The path to the download folder.</param>
+    /// <param name="DownloadFolderString">The path to the download folder.</param>
     /// <returns>A new instance of <see cref="ChromeOptions"/> with the pre-defined download folder preference.</returns>
-    public static ChromeOptions InitializeBotPrefs(string Downloadfolderstring)
+    public static ChromeOptions InitializeBotPrefs(string DownloadFolderString)
     {
         ChromeOptions options = new();
         // add preferenced download folder to options preferences.
-        options.AddUserProfilePreference("download.default_directory", Downloadfolderstring);
+        options.AddUserProfilePreference("download.default_directory", DownloadFolderString);
         // to allow for multiple downloads and prevent the browser from blocking them 'allow multiple downloads' prombt
         options.AddUserProfilePreference("disable-popup-blocking", "true");
         // initialize bot with predefined preference
@@ -95,7 +96,7 @@ public class Bot
     /// <param name="ByMechanism">The mechanism to use for finding the element (Link Text or XPath).</param>
     /// <param name="AncestorElement">The ancestor element to search for the desired element in. If null, the entire webpage is searched.</param>
     /// <returns>The found element, or null if not found.</returns>
-    public IWebElement? FindPageElement(string ElementString, string ByMechanism, IWebElement? AncestorElement = null)
+    public IWebElement FindPageElement(string ElementString, string ByMechanism, IWebElement? AncestorElement = null)
     {
         IWebElement element;
         try
@@ -202,9 +203,13 @@ public class Bot
     }
 
 
-    public void FindSelectElement(IWebElement element)
+    public SelectElement FindSelectElement(string ElementString, string ByMechanism)
     {
-       Sele select = new SelectElement (element);
+
+        IWebElement element = FindPageElement(ElementString, ByMechanism);
+        SelectElement selectElement = new(element);
+        return selectElement;
+
     }
 
 
@@ -241,7 +246,7 @@ public class Bot
     /// Waits until the given element is displayed.
     /// </summary>
     /// <param name="element">The element to wait for.</param>
-    public bool WaitIfExists(IWebElement? element)
+    public bool WaitIfExists(IWebElement element)
     {
         if (element != null)
         {
@@ -258,7 +263,7 @@ public class Bot
     /// </summary>
     /// <param name="element">The element to attempt to click.</param>
     /// <exception cref="BotElementException">Thrown if the element data is stale.</exception>
-    public static void ClickElement(IWebElement? element)
+    public static void ClickElement(IWebElement element)
     {
         try
         {
