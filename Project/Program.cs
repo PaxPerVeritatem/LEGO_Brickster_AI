@@ -50,7 +50,7 @@ static class Program
         }
 
         //find the first next button
-        IWebElement nextButtonClassElement = bot.FindPageElement("fi-pagination-next-btn", "CLASSNAME");
+        IWebElement nextButtonClassElement = bot.FindPageElement("//button[@rel='next']", "XP");
         // while there is an other page of set to go to. 
         while (nextButtonClassElement != null)
         {
@@ -76,9 +76,8 @@ static class Program
                         IWebElement downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "XP", ModelElement);
 
                         // while there are download buttons on the page find them and press them., 
-                        while (true)
+                        while (bot.WaitIfExists(downloadButtonElement))
                         {
-                            bot.WaitIfExists(downloadButtonElement);
                             // we can an add a check here later to avoid downloads of files we already have
                             Bot.ClickElement(downloadButtonElement);
                             downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "XP", downloadButtonElement);
@@ -100,12 +99,14 @@ static class Program
                     bot.StopBot();
                 }
             }
-            nextButtonClassElement = bot.FindPageElement("fi-pagination-next-btn", "CLASSNAME");
             /*We try to find the next button, after all elements for current page 
-            have been download. This is to avoid stale data for the next button state. */
-            // find the next button class element
-            //click the button if it is there
-            Bot.ClickElement(nextButtonClassElement); 
+            have been download. This is to avoid stale data for the next button state.*/
+            nextButtonClassElement = bot.FindPageElement("//button[@rel='next']", "XP");
+            if(bot.WaitIfExists(nextButtonClassElement))
+            {
+                Bot.ClickElement(nextButtonClassElement);  
+            }
+            
             bot.NameList = []; 
         }
     }
