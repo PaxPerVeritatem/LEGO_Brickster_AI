@@ -1,6 +1,7 @@
 namespace LEGO_Brickster_AI; 
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using System;
 using OpenQA.Selenium.Support.UI;
 
 public class Bot
@@ -198,6 +199,12 @@ public class Bot
         {
             throw new BotMechanismException($"mechanism '{ByMechanism}' cannot be passed to By().");
         }
+    }
+
+
+    public void FindSelectElement(IWebElement element)
+    {
+       Sele select = new SelectElement (element);
     }
 
 

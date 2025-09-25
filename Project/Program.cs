@@ -1,6 +1,6 @@
 namespace LEGO_Brickster_AI;
 using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Support.UI;
 static class Program
 {
     /// <summary>
@@ -49,7 +49,6 @@ static class Program
             bot.StopBot();
         }
 
-
         //find the first next button
         IWebElement? nextButtonClassElement = bot.FindPageElement("fi-pagination-next-btn", "CLASSNAME");
         // while there is an other page of set to go to. 
@@ -67,10 +66,10 @@ static class Program
                     // if current LinkText is not null call Click()
                     Bot.ClickElement(nameElement);
 
-                    // Attempt to find 'Main Model' element on LEGO set page
+                    // Attempt to find 'Model' element on LEGO set page
                     IWebElement? ModelElement = bot.FindPageElement("//div[contains(text(),'Model')]", "XP");
 
-                    // wait if ModelElement is not null
+                    // wait until ModelElement has rendered on page
                     if (bot.WaitIfExists(ModelElement))
                     {
                         // if the ModelElement is not null, attempt to find the first download button element
