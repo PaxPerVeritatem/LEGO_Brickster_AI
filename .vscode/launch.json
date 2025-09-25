@@ -9,7 +9,8 @@
             "args": [],
             "cwd": "${workspaceFolder}/Project",
             "console": "internalConsole",
-            "stopAtEntry": false
+            "stopAtEntry": false,
+            "preLaunchTask": "dotnet: build"  
         },
     ]
 }
