@@ -1,5 +1,4 @@
-namespace LEGO_Brickster_AI;
-
+using LEGO_Brickster_AI; 
 using Xunit;
 using Xunit.Abstractions;
 using OpenQA.Selenium;
