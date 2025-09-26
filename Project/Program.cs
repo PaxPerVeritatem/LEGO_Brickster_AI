@@ -1,4 +1,5 @@
 namespace LEGO_Brickster_AI;
+
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 static class Program
@@ -19,12 +20,12 @@ static class Program
 
 
         //process the Ldraw website LEGO set and download them. 
-       
+
         // The relative path of the data folder 
         string downloadFolderString = Path.GetFullPath(@"..\..\..\LEGO_Data");
         Console.WriteLine($"Download folder: {downloadFolderString}");
         string url = "https://library.ldraw.org/omr/sets";
-        Bot bot = new(url,downloadFolderString);
+        Bot bot = new(url, downloadFolderString);
         try
         {
             // Attempt to access webpage
@@ -49,10 +50,8 @@ static class Program
             bot.StopBot();
         }
 
-        //find the first next button
-        IWebElement nextButtonClassElement = bot.FindPageElement("//button[@rel='next']", "XP");
-        // while there is an other page of set to go to. 
-        while (nextButtonClassElement != null)
+        IWebElement nextButtonClassElement;
+        do
         {
             // Attempt to get the list of LEGO set names for the current main page
             bot.NameList = bot.FindPageElements("fi-ta-cell-name", "CLASSNAME");
@@ -66,14 +65,14 @@ static class Program
                     // if current LinkText is not null call Click()
                     Bot.ClickElement(nameElement);
 
-                    // Attempt to find 'Model' element on LEGO set page
-                    IWebElement ModelElement = bot.FindPageElement("//div[contains(text(),'Model')]", "XP");
+                    // Attempt to find 'Models' element on LEGO set page
+                    IWebElement ModelsElement = bot.FindPageElement("//div[contains(text(),'Model')]", "XP");
 
                     // wait until ModelElement has rendered on page
-                    if (bot.WaitIfExists(ModelElement))
+                    if (bot.WaitIfExists(ModelsElement))
                     {
                         // if the ModelElement is not null, attempt to find the first download button element
-                        IWebElement downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "XP", ModelElement);
+                        IWebElement downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "XP", ModelsElement);
 
                         // while there are download buttons on the page find them and press them., 
                         while (bot.WaitIfExists(downloadButtonElement))
@@ -83,7 +82,6 @@ static class Program
                             downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "XP", downloadButtonElement);
                         }
                     }
-                    bot.GoBack();
                 }
                 catch (BotElementException ex)
                 {
@@ -95,19 +93,21 @@ static class Program
                 catch (BotMechanismException ex)
                 {
                     Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
-                    Console.WriteLine("Closeing driver");
-                    bot.StopBot();
+                    
                 }
             }
             /*We try to find the next button, after all elements for current page 
             have been download. This is to avoid stale data for the next button state.*/
             nextButtonClassElement = bot.FindPageElement("//button[@rel='next']", "XP");
-            if(bot.WaitIfExists(nextButtonClassElement))
+            // click next button if it is loaded. 
+            if (bot.WaitIfExists(nextButtonClassElement))
             {
-                Bot.ClickElement(nextButtonClassElement);  
+                Bot.ClickElement(nextButtonClassElement);
+                Thread.Sleep(3000);
             }
             
-            bot.NameList = []; 
-        }
+            bot.NameList = [];
+        // while there is an other page of sets to go to. 
+        } while (nextButtonClassElement != null);
     }
 }
