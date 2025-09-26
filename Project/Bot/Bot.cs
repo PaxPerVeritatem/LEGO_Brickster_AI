@@ -64,12 +64,15 @@ public class Bot
     public Bot(string Url, string DownloadFolderString)
     {
         this.Url = Url;
-        this.Downloadfolderstring = DownloadFolderString;
-        options = InitializeBotPrefs(DownloadFolderString);
+        Downloadfolderstring = DownloadFolderString;
+        options = InitializeBotPrefs(Downloadfolderstring);
         driver = new ChromeDriver(options);
 
         // driver must be instantiated before wait can utilize it.  
         wait = new(driver, TimeSpan.FromSeconds(2));
+        Console.WriteLine($"Original download folder: {DownloadFolderString}");
+        Console.WriteLine($"Absolute path: {Path.GetFullPath(DownloadFolderString)}");
+        Console.WriteLine($"Directory exists: {Directory.Exists(DownloadFolderString)}");
     }
 
     /// <summary>
@@ -84,7 +87,7 @@ public class Bot
         options.AddUserProfilePreference("download.default_directory", DownloadFolderString);
         // to allow for multiple downloads and prevent the browser from blocking them 'allow multiple downloads' prombt
         options.AddUserProfilePreference("disable-popup-blocking", "true");
-        // initialize bot with predefined preference
+        options.PageLoadStrategy = PageLoadStrategy.Normal;
         return options;
     }
 
