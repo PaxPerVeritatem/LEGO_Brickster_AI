@@ -1,6 +1,5 @@
 namespace LEGO_Brickster_AI;
 
-using System.Diagnostics;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 static class Program
@@ -24,10 +23,7 @@ static class Program
 
         /* Use AppContext.BaseDirectory to the get the static path to the program .dll file. Combine it with the relative
         LEGO_Data path.Finally, GetFullPath to resolve all the relative paths '/..' and get the final absolute path */
-        Console.WriteLine($"AppContext.BaseDirectory: {AppContext.BaseDirectory}");
-        string downloadFolderString = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, @"..\..\..\LEGO_Data"));
-        Console.WriteLine($"Download folder: {downloadFolderString}");
-        Console.WriteLine("Hossein"); 
+        string downloadFolderString = @"..\..\..\LEGO_Data";
         string url = "https://library.ldraw.org/omr/sets";
         Bot bot = new(url, downloadFolderString);
         try

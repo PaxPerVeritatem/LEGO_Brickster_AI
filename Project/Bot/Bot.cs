@@ -7,37 +7,26 @@ using OpenQA.Selenium.Support.UI;
 
 public class Bot
 {
-    private readonly ChromeDriver driver;
-    public ChromeDriver Driver
-    {
-        get { return driver; }
-    }
-    private readonly ChromeOptions? options = null;
-    public ChromeOptions? Options
-    {
-        get
-        {
-            if (options != null)
-            {
-                return options;
-            }
-            else
-            {
-                return null;
-            }
-        }
-    }
+    private readonly ChromeDriver _driver;
+    public ChromeDriver Driver => _driver;
 
-    private readonly WebDriverWait wait;
-    private IList<string> nameList = [];
+    private readonly ChromeOptions? _options = null;
+    public ChromeOptions? Options => _options;
+
+    private readonly WebDriverWait _wait;
+
+    private IList<string> _nameList = [];
     public IList<string> NameList
     {
-        get { return nameList; }
-        set { nameList = value; }
+        get  => _nameList; 
+        set => _nameList = value;
     }
+
     public string Url { get; set; }
 
-    public string? Downloadfolderstring { get; set; } = null;
+    private readonly string? _downloadFolderPath = null; 
+    public string? DownloadFolderPath => _downloadFolderPath;
+        
 
 
 
@@ -45,46 +34,52 @@ public class Bot
     /// <summary>
     /// Initializes a new instance of the <see cref="Bot"/> class with the URL of the webpage to navigate to.
     /// </summary>
-    /// <param name="Url">The URL of the webpage to navigate to.</param>
-    public Bot(string Url)
+    /// <param name="url">The URL of the webpage to navigate to.</param>
+    public Bot(string url)
     {
-        this.Url = Url;
-        driver = new ChromeDriver();
+        Url = url;
+        _driver = new ChromeDriver();
 
         // driver must be instantiated before wait can utilize it.  
-        wait = new(driver, TimeSpan.FromSeconds(2));
+        _wait = new(_driver, TimeSpan.FromSeconds(2));
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Bot"/> class, with a pre-defined download folder preference.
     /// </summary>
-    /// <param name="URL">The URL of the webpage to navigate to.</param>
-    /// <param name="Downloadfolderstring">The path to the download folder.</param>
+    /// <param name="url">The URL of the webpage to navigate to.</param>
+    /// <param name="downloadFolderPath">The path to the download folder.</param>
 
-    public Bot(string Url, string DownloadFolderString)
+    public Bot(string url, string downloadFolderPath)
     {
-        this.Url = Url;
-        Downloadfolderstring = DownloadFolderString;
-        options = InitializeBotPrefs(Downloadfolderstring);
-        driver = new ChromeDriver(options);
+        Url = url;
+        downloadFolderPath = GetAbsoluteDownloadFolderPath(downloadFolderPath);
+        _options = InitializeBotPrefs(downloadFolderPath);
+        _driver = new ChromeDriver(_options);
 
         // driver must be instantiated before wait can utilize it.  
-        wait = new(driver, TimeSpan.FromSeconds(2));
-        Console.WriteLine($"Original download folder: {DownloadFolderString}");
-        Console.WriteLine($"Absolute path: {Path.GetFullPath(DownloadFolderString)}");
-        Console.WriteLine($"Directory exists: {Directory.Exists(DownloadFolderString)}");
+        _wait = new(_driver, TimeSpan.FromSeconds(2));
     }
+
+
+    public static string GetAbsoluteDownloadFolderPath(string DownloadFolderPath)
+    {
+        string downloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, DownloadFolderPath));
+        Console.WriteLine($"Download folder set to: {downloadFolderPath}");
+        return downloadFolderPath;
+    }
+
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ChromeOptions"/> class, with a pre-defined download folder preference.
     /// </summary>
-    /// <param name="DownloadFolderString">The path to the download folder.</param>
+    /// <param name="DownloadFolderPath">The path to the download folder.</param>
     /// <returns>A new instance of <see cref="ChromeOptions"/> with the pre-defined download folder preference.</returns>
-    public static ChromeOptions InitializeBotPrefs(string DownloadFolderString)
+    public static ChromeOptions InitializeBotPrefs(string DownloadFolderPath)
     {
         ChromeOptions options = new();
         // add preferenced download folder to options preferences.
-        options.AddUserProfilePreference("download.default_directory", DownloadFolderString);
+        options.AddUserProfilePreference("download.default_directory", DownloadFolderPath);
         // to allow for multiple downloads and prevent the browser from blocking them 'allow multiple downloads' prombt
         options.AddUserProfilePreference("disable-popup-blocking", "true");
         options.PageLoadStrategy = PageLoadStrategy.Normal;
@@ -112,7 +107,7 @@ public class Bot
                     "Name" => AncestorElement.FindElement(By.Name(ElementString)),
                     "ID" => AncestorElement.FindElement(By.Id(ElementString)),
                     "CSS" => AncestorElement.FindElement(By.CssSelector(ElementString)),
-                    "CLASSNAME" => driver.FindElement(By.ClassName(ElementString)),
+                    "CLASSNAME" => AncestorElement.FindElement(By.ClassName(ElementString)),
                     "LT" => AncestorElement.FindElement(By.LinkText(ElementString)),
                     "XP" => AncestorElement.FindElement(By.XPath(ElementString)),
                     _ => throw new NotImplementedException(""),
@@ -122,12 +117,12 @@ public class Bot
             {
                 element = ByMechanism switch
                 {
-                    "NAME" => driver.FindElement(By.Name(ElementString)),
-                    "ID" => driver.FindElement(By.Id(ElementString)),
-                    "CSS" => driver.FindElement(By.CssSelector(ElementString)),
-                    "CLASSNAME" => driver.FindElement(By.ClassName(ElementString)),
-                    "LT" => driver.FindElement(By.LinkText(ElementString)),
-                    "XP" => driver.FindElement(By.XPath(ElementString)),
+                    "NAME" => _driver.FindElement(By.Name(ElementString)),
+                    "ID" => _driver.FindElement(By.Id(ElementString)),
+                    "CSS" => _driver.FindElement(By.CssSelector(ElementString)),
+                    "CLASSNAME" => _driver.FindElement(By.ClassName(ElementString)),
+                    "LT" => _driver.FindElement(By.LinkText(ElementString)),
+                    "XP" => _driver.FindElement(By.XPath(ElementString)),
                     _ => throw new NotImplementedException(""),
                 };
             }
@@ -162,12 +157,12 @@ public class Bot
             // find each element. 
             IList<IWebElement> elementList = ByMechanism switch
             {
-                "NAME" => driver.FindElements(By.Name(ElementString)),
-                "ID" => driver.FindElements(By.Id(ElementString)),
-                "CSS" => driver.FindElements(By.CssSelector(ElementString)),
-                "CLASSNAME" => driver.FindElements(By.ClassName(ElementString)),
-                "LT" => driver.FindElements(By.LinkText(ElementString)),
-                "XP" => driver.FindElements(By.XPath(ElementString)),
+                "NAME" => _driver.FindElements(By.Name(ElementString)),
+                "ID" => _driver.FindElements(By.Id(ElementString)),
+                "CSS" => _driver.FindElements(By.CssSelector(ElementString)),
+                "CLASSNAME" => _driver.FindElements(By.ClassName(ElementString)),
+                "LT" => _driver.FindElements(By.LinkText(ElementString)),
+                "XP" => _driver.FindElements(By.XPath(ElementString)),
                 _ => throw new NotImplementedException(""),
             };
             foreach (IWebElement e in elementList)
@@ -176,16 +171,16 @@ public class Bot
                 string name = e.Text;
                 if (string.IsNullOrEmpty(name))
                 {
-                    nameList.Add("null");
+                    _nameList.Add("null");
                 }
                 else
                 {
-                    nameList.Add(name);
+                    _nameList.Add(name);
                 }
 
             }
             // if the element is not null add it to the list. 
-            return nameList;
+            return _nameList;
 
         }
         // if ElementString was null
@@ -228,8 +223,8 @@ public class Bot
     {
         try
         {
-            driver.Navigate().GoToUrl(url);
-            Console.WriteLine($"Title of Webpage: {driver.Title}\n");
+            _driver.Navigate().GoToUrl(url);
+            Console.WriteLine($"Title of Webpage: {_driver.Title}\n");
         }
 
         //if URL is null
@@ -253,7 +248,7 @@ public class Bot
     {
         if (element != null)
         {
-            wait.Until(driver => element.Displayed);
+            _wait.Until(driver => element.Displayed);
             return true;
         }
         return false;
@@ -282,7 +277,7 @@ public class Bot
     /// </summary>
     public void GoBack()
     {
-        driver.Navigate().Back();
+        _driver.Navigate().Back();
     }
 
     /// <summary>
@@ -290,11 +285,11 @@ public class Bot
     /// </summary>
     public void CloseBrowser()
     {
-        driver.Close();
+        _driver.Close();
     }
 
     public void StopBot()
     {
-        driver.Quit();
+        _driver.Quit();
     }
 }
