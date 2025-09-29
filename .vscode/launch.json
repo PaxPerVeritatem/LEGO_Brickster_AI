@@ -6,8 +6,8 @@
             "type": "coreclr",
             "request": "launch",
             "program": "${workspaceFolder}/Project/bin/Debug/net9.0-windows/Project.dll",
+            "cwd": "${workspaceFolder}",
             "args": [],
-            "cwd": "${workspaceFolder}/Project",
             "console": "internalConsole",
             "stopAtEntry": false,
             "preLaunchTask": "dotnet: build"  
