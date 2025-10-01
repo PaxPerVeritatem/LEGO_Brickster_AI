@@ -94,7 +94,7 @@ public class Bot
     /// <param name="ByMechanism">The mechanism to use for finding the element (Link Text or XPath).</param>
     /// <param name="AncestorElement">The ancestor element to search for the desired element in. If null, the entire webpage is searched.</param>
     /// <returns>The found element, or null if not found.</returns>
-    public IWebElement FindPageElement(string ElementString, string ByMechanism, IWebElement? AncestorElement = null)
+    public IWebElement? FindPageElement(string ElementString, string ByMechanism, IWebElement? AncestorElement = null)
     {
         IWebElement element;
         try
@@ -201,16 +201,6 @@ public class Bot
     }
 
 
-    public SelectElement FindSelectElement(string ElementString, string ByMechanism)
-    {
-
-        IWebElement element = FindPageElement(ElementString, ByMechanism);
-        SelectElement selectElement = new(element);
-        return selectElement;
-
-    }
-
-
 
 
 
@@ -244,7 +234,7 @@ public class Bot
     /// Waits until the given element is displayed.
     /// </summary>
     /// <param name="element">The element to wait for.</param>
-    public bool WaitIfExists(IWebElement element)
+    public bool WaitTillExists(IWebElement? element)
     {
         if (element != null)
         {
@@ -254,14 +244,12 @@ public class Bot
         return false;
     }
 
-
-
     /// <summary>
     /// Attempts to click the given element.
     /// </summary>
     /// <param name="element">The element to attempt to click.</param>
     /// <exception cref="BotElementException">Thrown if the element data is stale.</exception>
-    public static void ClickElement(IWebElement element)
+    public static void ClickElement(IWebElement? element)
     {
         try
         {

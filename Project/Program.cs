@@ -17,14 +17,15 @@ static class Program
         //ApplicationConfiguration.Initialize();
         //Application.Run(new Form1());
 
-
-
         //process the Ldraw website LEGO set and download them. 
 
         /* Use AppContext.BaseDirectory to the get the static path to the program .dll file. Combine it with the relative
         LEGO_Data path.Finally, GetFullPath to resolve all the relative paths '/..' and get the final absolute path */
+
         string downloadFolderString = @"..\..\..\LEGO_Data";
         string url = "https://library.ldraw.org/omr/sets";
+        int downloadAmount = 1465;
+        int downloadCounter = 0;
         Bot bot = new(url, downloadFolderString);
         try
         {
@@ -50,7 +51,7 @@ static class Program
             bot.StopBot();
         }
 
-        IWebElement nextButtonClassElement;
+        IWebElement? nextButtonClassElement;
         do
         {
             // Attempt to get the list of LEGO set names for the current main page
@@ -60,26 +61,43 @@ static class Program
                 try
                 {
                     // Attempt to find LEGO set LinkTest element
-                    IWebElement nameElement = bot.FindPageElement(name, "LT");
+                    IWebElement? setNameElement = bot.FindPageElement(name, "LT");
 
                     // if current LinkText is not null call Click()
-                    Bot.ClickElement(nameElement);
-
+                    if (bot.WaitTillExists(setNameElement))
+                    {
+                        Bot.ClickElement(setNameElement);
+                    }
+                
+                    // add for each LEGO set. Should finally match 'downloadAmount'
+                    downloadCounter += 1;
                     // Attempt to find 'Models' element on LEGO set page
-                    IWebElement ModelsElement = bot.FindPageElement("//div[contains(text(),'Model')]", "XP");
-
+                    IWebElement? ModelsElement = bot.FindPageElement("//div[contains(text(),'Model')]", "XP");
+                    
                     // wait until ModelElement has rendered on page
-                    if (bot.WaitIfExists(ModelsElement))
+                    if (bot.WaitTillExists(ModelsElement))
                     {
                         // if the ModelElement is not null, attempt to find the first download button element
-                        IWebElement downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "XP", ModelsElement);
+                        IWebElement? downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "XP", ModelsElement);
 
                         // while there are download buttons on the page find them and press them., 
-                        while (bot.WaitIfExists(downloadButtonElement))
+                        while (bot.WaitTillExists(downloadButtonElement))
                         {
                             // we can an add a check here later to avoid downloads of files we already have
+                            // click current downloadButton
                             Bot.ClickElement(downloadButtonElement);
-                            downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "XP", downloadButtonElement);
+                            
+                            // check if the downloadbutton does  leads to 404 page error
+                            if (bot.WaitTillExists(bot.FindPageElement("px-4 text-lg text-gray-500 border-r border-gray-400 tracking-wider", "CLASSNAME")))
+                            {
+                                bot.GoBack();
+                                
+                            }
+                            else
+                            {
+                                downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "XP", downloadButtonElement);
+                            }
+                            
                         }
                     }
                 }
@@ -93,21 +111,40 @@ static class Program
                 catch (BotMechanismException ex)
                 {
                     Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
-                    
+
                 }
             }
             /*We try to find the next button, after all elements for current page 
             have been download. This is to avoid stale data for the next button state.*/
             nextButtonClassElement = bot.FindPageElement("//button[@rel='next']", "XP");
             // click next button if it is loaded. 
-            if (bot.WaitIfExists(nextButtonClassElement))
+            if (bot.WaitTillExists(nextButtonClassElement))
             {
                 Bot.ClickElement(nextButtonClassElement);
                 Thread.Sleep(3000);
             }
-            
+
             bot.NameList = [];
-        // while there is an other page of sets to go to. 
+            // while there is an other page of sets to go to. 
         } while (nextButtonClassElement != null);
+
+        try
+        {
+
+            if (downloadAmount == downloadCounter)
+            {
+                Console.WriteLine($"{downloadAmount} have been correctly infered and downloaded");
+            }
+            else
+            {
+                throw new BotDownloadAmountException($"{downloadAmount} did not match {downloadCounter}");
+            }
+        }
+        catch (BotDownloadAmountException ex)
+        {
+            Console.WriteLine($"{ex}: Assumed amount of LEGO Sets was either not correct or something went wrong during downloading");
+        }
+
     }
+
 }
