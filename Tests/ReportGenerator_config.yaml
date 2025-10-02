@@ -1,0 +1,19 @@
+# In this file you can specify the configuration for the ReportGenerator tool.
+# For more information see https://github.com/danielpalme/ReportGenerator
+
+
+# The wildcard path to the directory that contains the xml reports.
+reports: "**/*.cobertura.xml"
+ 
+
+# The path to the directory that will contain the report.
+targetdir: TestResults/Reports
+
+# The filters to apply to the reports.
+classfilters:
+  included: '+' 
+
+  excluded: '-'
+
+# More arguments are available at commandline arguments are at https://reportgenerator.io/usage, but are not directly 
+# supported by this projects ReportGenerator.py
