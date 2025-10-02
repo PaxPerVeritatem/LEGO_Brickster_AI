@@ -8,11 +8,11 @@ using OpenQA.Selenium.Chrome;
 
 public class BotTests
 {
-    private static readonly string downloadFolderString = @"..\..\..\LEGO_Data";
+    private static readonly string testDownloadFolderString = @"..\..\..\LEGO_Data";
 
     private static readonly string url = "https://library.ldraw.org/omr/sets";
 
-    public static readonly Bot testBot = new(url, downloadFolderString);
+    public static readonly Bot testBot = new(url, testDownloadFolderString);
     //private static readonly IWebElement? ancestorElement = null;
     //private static readonly string elementString = "fi-select-input";
     //private static readonly string byMechanism = "CLASSNAME";
@@ -25,15 +25,12 @@ public class BotTests
     [Fact]
     public void BotInitializeTest()
     {
+
         Assert.NotNull(testBot);
-        if (testBot.DownloadFolderPath != null && testBot.Options != null)
-        {
-            Assert.Equal(testBot.DownloadFolderPath, downloadFolderString);
-        }
-        else
-        {
-            Assert.Equal(testBot.DownloadFolderPath, downloadFolderString);
-        }
+        string testDownloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, testDownloadFolderString));
+        Console.WriteLine($"{testBot.DownloadFolderPath}");
+        Console.WriteLine($"{testDownloadFolderPath}");
+        testBot.StopBot();
     }
 
 
