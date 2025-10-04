@@ -13,50 +13,50 @@ using OpenQA.Selenium.Chrome;
  - Need to categorize tests? → Add [Trait] to any test
 */
 
-
-public class BotTest
+public sealed class BotTest : IDisposable
 {
-    private static readonly string downloadFolderPath = @"..\..\..\LEGO_Data";
+    private const string TestDownloadFolderPath = @"..\..\..\LEGO_Data";
 
-    private static readonly string url = "https://library.ldraw.org/omr/sets";
+    private const string TestUrl = "https://library.ldraw.org/omr/sets";
 
-    private readonly Bot _testBot;
-    //private static readonly IWebElement? ancestorElement = null;
-    //private static readonly string elementString = "fi-select-input";
-    //private static readonly string byMechanism = "CLASSNAME";
+    private readonly Bot _basicBot;
+    private readonly Bot _configuredBot;
 
     public BotTest()
     {
-        _testBot = new(url, downloadFolderPath);
-        _testBot.CloseBrowser(); // close browser so we dont have to do it manually for each test. 
 
+        _basicBot = new(TestUrl);
+        _configuredBot = new(TestUrl, TestDownloadFolderPath);
     }
 
 
-
-
-
-
-    /// <summary>
-    /// Tests the Bot class constructor to ensure that a new instance of the class is created successfully.
-    /// </summary>
-    /// <remarks>
-    /// This test creates a new instance of the Bot class and checks that it is not null.
-    /// It also checks that the download folder path is set correctly.
-    /// </remarks>
-    [Theory]
-    [InlineData(@"..\..\..\LEGO_Data")]
-    public void BotInitializeTest(string testAbsDownloadFolderPath)
+    public void Dispose()
     {
-        Assert.NotNull(_testBot);
-        Assert.Equal(testAbsDownloadFolderPath, _testBot.AbsDownloadFolderPath);
-        _testBot.Dispose();
+        _basicBot.CloseBot();
+        _configuredBot.CloseBot();
     }
+
+
+
+    [Fact]
+    public void InitializeBotTest()
+    {
+        Assert.NotNull(_basicBot.Driver);
+
+        Assert.NotNull(_configuredBot.Driver);
+        string testAbsDownloadFolderPath = Bot.GetAbsoluteDownloadFolderPath(TestDownloadFolderPath);
+        Assert.Equal(testAbsDownloadFolderPath, _configuredBot.AbsDownloadFolderPath);
+    }
+
 
     [Fact]
     public void GoToWebpageTest()
     {
-        _testBot.GoToWebpage(); 
+        _basicBot.GoToWebpage();
+        _configuredBot.GoToWebpage();
+
+        Assert.Equal(TestUrl, _basicBot.Driver.Url);
+        Assert.Equal(TestUrl, _configuredBot.Driver.Url);
     }
 
 
