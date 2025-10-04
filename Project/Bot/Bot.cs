@@ -202,19 +202,22 @@ public class Bot
 
 
 
-    /// <summary>
-    /// Navigates to a webpage via the driver object.
-    /// </summary>
-    /// <param name="url">The URL of the webpage to navigate to.</param>
-    /// <exception cref="BotUrlException">Thrown if the URL is null or the webpage could not be loaded.</exception>
-    public void GoToWebpage(string url)
+  
+        /// <summary>
+        /// Navigates to the webpage specified by the 'Url' field.
+        /// </summary>
+        /// <remarks>
+        /// Will throw a <see cref="BotUrlException"/> if the 'Url' field is null.
+        /// Will throw a <see cref="BotUrlException"/> if the webpage could not be loaded and the URL is invalid.
+        /// </remarks>
+    public void GoToWebpage()
     {
         try
         {
-            _driver.Navigate().GoToUrl(url);
+            _driver.Navigate().GoToUrl(Url);
             Console.WriteLine($"Title of Webpage: {_driver.Title}\n");
         }
-
+        
         //if URL is null
         catch (ArgumentNullException ex)
         {
