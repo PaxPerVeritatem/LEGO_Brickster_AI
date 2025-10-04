@@ -51,6 +51,7 @@ static class Program
             bot.StopBot();
         }
 
+        // initialize the next button class element for the main page
         IWebElement? nextButtonClassElement;
         do
         {
@@ -88,10 +89,9 @@ static class Program
                             Bot.ClickElement(downloadButtonElement);
                             
                             // check if the downloadbutton does  leads to 404 page error
-                            if (bot.WaitTillExists(bot.FindPageElement("px-4 text-lg text-gray-500 border-r border-gray-400 tracking-wider", "CLASSNAME")))
+                            if (bot.WaitTillExists(bot.FindPageElement(".px-4.text-lg.text-gray-500.border-r.border-gray-400.tracking-wider", "CSS")))
                             {
                                 bot.GoBack();
-                                
                             }
                             else
                             {
@@ -104,7 +104,6 @@ static class Program
                 catch (BotElementException ex)
                 {
                     // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all
-
                     Console.WriteLine($"Failed to return an html element\n{ex.Message}");
                     bot.GoBack();
                 }
@@ -121,7 +120,7 @@ static class Program
             if (bot.WaitTillExists(nextButtonClassElement))
             {
                 Bot.ClickElement(nextButtonClassElement);
-                Thread.Sleep(3000);
+                Thread.Sleep(500);
             }
 
             bot.NameList = [];

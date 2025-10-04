@@ -18,15 +18,15 @@ public class Bot
     private IList<string> _nameList = [];
     public IList<string> NameList
     {
-        get  => _nameList; 
+        get => _nameList;
         set => _nameList = value;
     }
 
     public string Url { get; set; }
 
-    private readonly string? _downloadFolderPath = null; 
+    private readonly string? _downloadFolderPath = null;
     public string? DownloadFolderPath => _downloadFolderPath;
-        
+
 
 
 
@@ -188,7 +188,7 @@ public class Bot
         {
             throw new BotElementException("ElementString argument is null.");
         }
-        // No element was found by FinElement() with the designated 'ByMechanism'
+        // No element was found by FindElement() with the designated 'ByMechanism'
         catch (NoSuchElementException)
         {
             throw new BotElementException($"No element called '{ElementString}' was found by FindElement() with by mechanism '{ByMechanism}'.");
@@ -199,8 +199,6 @@ public class Bot
             throw new BotMechanismException($"mechanism '{ByMechanism}' cannot be passed to By().");
         }
     }
-
-
 
 
 
