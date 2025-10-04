@@ -10,7 +10,7 @@
             "args": [],
             "console": "internalConsole",
             "stopAtEntry": false,
-            "preLaunchTask": "dotnet: build"  
+            "preLaunchTask": "dotnet: build"
         },
     ]
 }

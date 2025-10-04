@@ -5,6 +5,14 @@ using Xunit;
 using Xunit.Abstractions;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+/* Quick Decision Guide  for tests
+
+ - Single test case, no parameters? → Use [Fact]
+ - Same test, multiple inputs? → Use [Theory] with [InlineData]
+ - Complex or reusable test data? → Use [Theory] with [MemberData] or [ClassData]
+ - Need to categorize tests? → Add [Trait] to any test
+*/
+
 
 public class BotTests
 {
