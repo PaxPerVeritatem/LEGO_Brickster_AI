@@ -7,7 +7,7 @@ reports: "**/*.cobertura.xml"
  
 
 # The path to the directory that will contain the report.
-targetdir: TestResults/Reports
+targetdir: Tests/TestResults/Reports
 
 # The filters to apply to the reports.
 classfilters:
