@@ -48,7 +48,7 @@ static class Program
         {
             Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
             Console.WriteLine("Closeing driver");
-            bot.StopBot();
+            bot.DisposeBot();
         }
 
         // initialize the next button class element for the main page

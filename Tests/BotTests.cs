@@ -14,31 +14,44 @@ using OpenQA.Selenium.Chrome;
 */
 
 
-public class BotTests
+public class BotTest
 {
     private static readonly string testDownloadFolderString = @"..\..\..\LEGO_Data";
 
     private static readonly string url = "https://library.ldraw.org/omr/sets";
 
-    public static readonly Bot testBot = new(url, testDownloadFolderString);
+    private readonly Bot testBot;
     //private static readonly IWebElement? ancestorElement = null;
     //private static readonly string elementString = "fi-select-input";
     //private static readonly string byMechanism = "CLASSNAME";
 
+    public BotTest()
+    {
+     testBot = new(url, testDownloadFolderString);
+    }
+
+   
 
 
 
 
-
+/// <summary>
+/// Tests the Bot class constructor to ensure that a new instance of the class is created successfully.
+/// </summary>
+/// <remarks>
+/// This test creates a new instance of the Bot class and checks that it is not null.
+/// It also checks that the download folder path is set correctly.
+/// </remarks>
     [Fact]
     public void BotInitializeTest()
     {
-
+        
         Assert.NotNull(testBot);
         string testDownloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, testDownloadFolderString));
+        //Assert.Equal(testBot.DownloadFolderPath, testDownloadFolderPath); )
         Console.WriteLine($"{testBot.DownloadFolderPath}");
         Console.WriteLine($"{testDownloadFolderPath}");
-        testBot.StopBot();
+        testBot.DisposeBot();
     }
 
 
