@@ -16,42 +16,41 @@ using OpenQA.Selenium.Chrome;
 
 public class BotTest
 {
-    private static readonly string testDownloadFolderString = @"..\..\..\LEGO_Data";
+    private static readonly string downloadFolderPath = @"..\..\..\LEGO_Data";
 
     private static readonly string url = "https://library.ldraw.org/omr/sets";
 
-    private readonly Bot testBot;
+    private readonly Bot _testBot;
     //private static readonly IWebElement? ancestorElement = null;
     //private static readonly string elementString = "fi-select-input";
     //private static readonly string byMechanism = "CLASSNAME";
 
     public BotTest()
     {
-     testBot = new(url, testDownloadFolderString);
+        _testBot = new(url, downloadFolderPath);
+        _testBot.CloseBrowser(); // close browser so we dont have to do it manually for each test. 
+     
     }
 
-   
 
 
 
 
-/// <summary>
-/// Tests the Bot class constructor to ensure that a new instance of the class is created successfully.
-/// </summary>
-/// <remarks>
-/// This test creates a new instance of the Bot class and checks that it is not null.
-/// It also checks that the download folder path is set correctly.
-/// </remarks>
-    [Fact]
-    public void BotInitializeTest()
+
+    /// <summary>
+    /// Tests the Bot class constructor to ensure that a new instance of the class is created successfully.
+    /// </summary>
+    /// <remarks>
+    /// This test creates a new instance of the Bot class and checks that it is not null.
+    /// It also checks that the download folder path is set correctly.
+    /// </remarks>
+    [Theory]
+    [InlineData(@"..\..\..\LEGO_Data")]
+    public void BotInitializeTest(string testAbsDownloadFolderPath)
     {
-        
-        Assert.NotNull(testBot);
-        string testDownloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, testDownloadFolderString));
-        //Assert.Equal(testBot.DownloadFolderPath, testDownloadFolderPath); )
-        Console.WriteLine($"{testBot.DownloadFolderPath}");
-        Console.WriteLine($"{testDownloadFolderPath}");
-        testBot.DisposeBot();
+        Assert.NotNull(_testBot);
+        Assert.Equal(testAbsDownloadFolderPath, _testBot.AbsDownloadFolderPath);
+        _testBot.Dispose();
     }
 
 

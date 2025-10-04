@@ -10,7 +10,7 @@ public class Bot
     private readonly ChromeDriver _driver;
     public ChromeDriver Driver => _driver;
 
-    private readonly ChromeOptions? _options = null;
+    private readonly ChromeOptions? _options;
     public ChromeOptions? Options => _options;
 
     private readonly WebDriverWait _wait;
@@ -24,8 +24,8 @@ public class Bot
 
     public string Url { get; set; }
 
-    private readonly string? _downloadFolderPath = null;
-    public string? DownloadFolderPath => _downloadFolderPath;
+    private readonly string? _absDownloadFolderPath;
+    public string? AbsDownloadFolderPath => _absDownloadFolderPath;
 
 
 
@@ -53,8 +53,8 @@ public class Bot
     public Bot(string url, string downloadFolderPath)
     {
         Url = url;
-        downloadFolderPath = GetAbsoluteDownloadFolderPath(downloadFolderPath);
-        _options = InitializeBotPrefs(downloadFolderPath);
+        _absDownloadFolderPath = GetAbsoluteDownloadFolderPath(downloadFolderPath);
+        _options = InitializeBotPrefs(_absDownloadFolderPath);
         _driver = new ChromeDriver(_options);
 
         // driver must be instantiated before wait can utilize it.  
@@ -64,9 +64,9 @@ public class Bot
 
     public static string GetAbsoluteDownloadFolderPath(string DownloadFolderPath)
     {
-        string downloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, DownloadFolderPath));
-        Console.WriteLine($"Download folder set to: {downloadFolderPath}");
-        return downloadFolderPath;
+        string absDownloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, DownloadFolderPath));
+        Console.WriteLine($"Download folder set to: {absDownloadFolderPath}");
+        return absDownloadFolderPath;
     }
 
 
@@ -267,15 +267,27 @@ public class Bot
     }
 
     /// <summary>
-    /// Closes the browser instance.
+    /// Only closes the browser instance of the Bot.
     /// </summary>
     public void CloseBrowser()
     {
         _driver.Close();
     }
 
-    public void DisposeBot()
+
+    /// <summary>
+    /// Only stops the webdriver instance of the Bot .
+    /// </summary>
+    public void CloseDriver()
     {
-        _driver.Quit();
+        _driver.Dispose();
+    }
+
+    /// <summary>
+    ///  Closes and stops both the browser and the webdriver instance of the Bot. 
+    /// </summary>
+    public void Dispose()
+    {
+        _driver.Dispose();
     }
 }
