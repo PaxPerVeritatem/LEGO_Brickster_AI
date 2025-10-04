@@ -274,7 +274,7 @@ public class Bot
         _driver.Close();
     }
 
-    public void StopBot()
+    public void DisposeBot()
     {
         _driver.Quit();
     }
