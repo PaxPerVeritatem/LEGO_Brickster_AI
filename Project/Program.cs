@@ -22,12 +22,13 @@ static class Program
         /* Use AppContext.BaseDirectory to the get the static path to the program .dll file. Combine it with the relative
         LEGO_Data path.Finally, GetFullPath to resolve all the relative paths '/..' and get the final absolute path */
 
-        string downloadFolderPath = @"..\..\..\LEGO_Data";
-        string url = "https://library.ldraw.org/omr/sets";
-        int downloadAmount = 1465;
+        const string DownloadFolderPath = @"..\..\..\LEGO_Data";
+        const string Url = "https://library.ldraw.org/omr/sets";
+        const int downloadAmount = 1465;
+
         int downloadCounter = 0;
-        Bot bot = new(url, downloadFolderPath);
-        try
+        Bot bot = new(Url, DownloadFolderPath);
+        try 
         {
             // Attempt to access webpage
             bot.GoToWebpage();
@@ -48,7 +49,7 @@ static class Program
         {
             Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
             Console.WriteLine("Closeing driver");
-            bot.Dispose();
+            bot.CloseBot();
         }
 
         // initialize the next button class element for the main page

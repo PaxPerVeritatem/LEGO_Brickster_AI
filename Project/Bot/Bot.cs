@@ -65,7 +65,6 @@ public class Bot
     public static string GetAbsoluteDownloadFolderPath(string DownloadFolderPath)
     {
         string absDownloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, DownloadFolderPath));
-        Console.WriteLine($"Download folder set to: {absDownloadFolderPath}");
         return absDownloadFolderPath;
     }
 
@@ -215,7 +214,6 @@ public class Bot
         try
         {
             _driver.Navigate().GoToUrl(Url);
-            Console.WriteLine($"Title of Webpage: {_driver.Title}\n");
         }
         
         //if URL is null
@@ -289,7 +287,7 @@ public class Bot
     /// <summary>
     ///  Closes and stops both the browser and the webdriver instance of the Bot. 
     /// </summary>
-    public void Dispose()
+    public void CloseBot()
     {
         _driver.Dispose();
     }

@@ -13,9 +13,9 @@ def getNewReport():
     default target dir also contains the .XML file for the report to be made from, hence the need to delete it.
     for every new report. 
     """
+    
     subprocess.run([
-        "dotnet", "test",
-        "--collect", "Xplat Code Coverage"
+        "dotnet", "test","--collect", "Xplat Code Coverage"
      ])
 
     with open("Tests/ReportGenerator_config.yaml") as f : 
