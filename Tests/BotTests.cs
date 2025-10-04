@@ -29,7 +29,7 @@ public class BotTest
     {
         _testBot = new(url, downloadFolderPath);
         _testBot.CloseBrowser(); // close browser so we dont have to do it manually for each test. 
-     
+
     }
 
 
@@ -51,6 +51,12 @@ public class BotTest
         Assert.NotNull(_testBot);
         Assert.Equal(testAbsDownloadFolderPath, _testBot.AbsDownloadFolderPath);
         _testBot.Dispose();
+    }
+
+    [Fact]
+    public void GoToWebpageTest()
+    {
+        _testBot.GoToWebpage(); 
     }
 
 

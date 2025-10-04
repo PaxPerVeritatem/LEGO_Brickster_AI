@@ -30,7 +30,7 @@ static class Program
         try
         {
             // Attempt to access webpage
-            bot.GoToWebpage(url);
+            bot.GoToWebpage();
         }
         catch (BotUrlException ex)
         {
