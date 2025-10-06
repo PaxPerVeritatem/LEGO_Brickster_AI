@@ -22,17 +22,17 @@ public sealed class BotTest : IDisposable
 
     private readonly Bot _basicBot ; 
     private readonly Bot _configuredBot; 
-
-    private readonly TestOutputHelper _testOutput;
-
-
+      private readonly ITestOutputHelper _output;
+  
 
 
 
 
-    public BotTest()
+
+
+    public BotTest(ITestOutputHelper output)
     {
-        _testOutput = new TestOutputHelper();
+        _output = output;
         _basicBot = new(TestUrl);
         _configuredBot = new(TestUrl, TestDownloadFolderPath);
     }
@@ -68,31 +68,36 @@ public sealed class BotTest : IDisposable
 
     [Theory]
     [InlineData("tableSearch", "NAME")]
-    //[InlineData("//a[@href='https://www.ldraw.org']", "ID")]
-    //[InlineData("//a[@href='https://www.ldraw.org']", "CSS")]
-    //[InlineData("//a[@href='https://www.ldraw.org']", "CLASSNAME")]
-    //[InlineData("//a[@href='https://www.ldraw.org']", "LT")]
-    [InlineData("//a[@href='https://www.ldraw.org']", "XP")]
+    [InlineData("main-logo","ID")]
+    [InlineData(".fi-ta-header-heading", "CSS")]
+    [InlineData("fi-ta-header-heading", "CLASSNAME")]
+    [InlineData ("Metroliner", "LT")]
+    [InlineData("//img[@id='main-logo']", "XP")]
     public void FindElementTest(string ElementString, string ByMechanism)
     {
-       
         _configuredBot.GoToWebpage();
         IWebElement? pageElement = _configuredBot.FindPageElement(ElementString, ByMechanism);
         // make sure the IWeb element is not null. 
         Assert.NotNull(pageElement);
-        string elementText = pageElement.Text; 
-        _testOutput.WriteLine(elementText); 
-        if (_configuredBot.WaitTillExists(pageElement))
-        {
-            Bot.ClickElement(pageElement);
-        }   
+        
+        string? elementOuter = pageElement.GetAttribute("outerHTML");
+        _output.WriteLine($"{ElementString} outer HTML: {elementOuter}\n------------------------------------------------\n");   
     }
-
     [Fact]
     public void FindElementsTest()
     { 
         
     }
+
+    //[Theory]
+    //[InlineData]
+    //public void ClickElementTest()
+    //{
+    //    if (_configuredBot.WaitTillExists(pageElement))
+    //    {
+    //        Bot.ClickElement(pageElement);
+    //    }
+    //}
 
     [Fact]
     public void CloseBrowserTest()
