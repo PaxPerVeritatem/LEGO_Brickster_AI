@@ -280,7 +280,7 @@ public class Bot
     /// <summary>
     /// Only closes the browser instance of the Bot.
     /// </summary>
-    public void CloseBrowser()
+    public void CloseBotBrowser()
     {
         _driver.Close();
     }
@@ -289,7 +289,7 @@ public class Bot
     /// <summary>
     /// Only stops the webdriver instance of the Bot .
     /// </summary>
-    public void CloseDriver()
+    public void CloseBotDriver()
     {
         _driver.Dispose();
     }

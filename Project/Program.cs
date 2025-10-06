@@ -36,14 +36,13 @@ static class Program
         catch (BotUrlException ex)
         {
             Console.WriteLine($"Failed to load webpage: {ex.Message}");
-            Console.WriteLine("Closeing driver");
-            bot.CloseBrowser();
+            bot.CloseBot();
         }
         catch (BotElementException ex)
         {
             Console.WriteLine($"Failed to return an html element\n{ex.Message}");
             Console.WriteLine("Closeing driver");
-            bot.CloseBrowser();
+            bot.CloseBot();
         }
         catch (BotMechanismException ex)
         {
