@@ -5,6 +5,7 @@ using Xunit;
 using Xunit.Abstractions;
 using OpenQA.Selenium;
 using Xunit.Sdk;
+using OpenQA.Selenium.Chrome;
 
 /* Quick Decision Guide  for tests
 
@@ -70,24 +71,65 @@ public sealed class BotTest(ITestOutputHelper output)
         configuredBot.CloseBot();
     }
 
-    
-    [Theory]
-    [InlineData("Metroliner", "NOT_IMPLEMENTED_MECHANISM")]
-    public void BotMechanismExceptionTest(string ElementString, string ByMechanism)
-    {
-        Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
-        configuredBot.GoToWebpage();
-        Assert.Throws<BotMechanismException>(() =>configuredBot.FindPageElement(ElementString, ByMechanism));
-        configuredBot.CloseBot();
-    }
-
-
-
-    [Fact]
+     [Fact]
     public void FindElementsTest()
     {
 
     }
+
+
+    [Theory]
+    [InlineData("Metroliner", "NOT_IMPLEMENTED_MECHANISM")]
+    public void BotMechanismExceptionTest(string ElementString, string ByMechanism)
+    {
+        Bot basicBot = new(TestUrl);
+        basicBot.GoToWebpage();
+        Assert.Throws<BotMechanismException>(() => basicBot.FindPageElement(ElementString, ByMechanism));
+        basicBot.CloseBot();
+    }
+
+    [Theory]
+    [InlineData("NO_SUCH_ELEMENT", "LT")]
+    public void NoSuchElementExceptionTest(string ElementString, string ByMechanism)
+    {
+        Bot basicBot = new(TestUrl);
+        basicBot.GoToWebpage();
+        Assert.Throws<BotElementException>(() => basicBot.FindPageElement(ElementString, ByMechanism));
+        basicBot.CloseBot();
+    }
+
+
+    [Theory]
+    [InlineData(null,"LT")]
+    public void NullElementTest(string? ElementString, string ByMechanism)
+    {
+        Bot basicBot = new(TestUrl);
+        basicBot.GoToWebpage();
+        Assert.Throws<BotElementException>(() => basicBot.FindPageElement(ElementString!, ByMechanism));
+        basicBot.CloseBot();
+    }
+
+    [Theory]
+    [InlineData("www.NotAWebsiteForBots.Bot.com")]
+    public void InvalidUrlTest(string InvalidUrl)
+    {
+        Bot basicBot = new(InvalidUrl);
+        Assert.Throws<BotUrlException>(basicBot.GoToWebpage);
+        basicBot.CloseBot();  
+    }
+
+    [Theory]
+    [InlineData(null)]
+    public void NullUrlTest(string? NullUrl)
+    {
+        Bot basicBot = new(NullUrl!);
+        Assert.Throws<BotUrlException>(basicBot.GoToWebpage);
+        basicBot.CloseBot(); 
+        
+    }
+
+
+   
 
     //[Theory]
     //[InlineData]
@@ -103,7 +145,7 @@ public sealed class BotTest(ITestOutputHelper output)
     public void CloseBrowserTest()
     {
         Bot basicBot = new(TestUrl);
-        basicBot.CloseBrowser();
+        basicBot.CloseBotBrowser();
         // use a Action type with delegator to reference the method
         Assert.Throws<BotDriverException>(basicBot.GoToWebpage);
         basicBot.CloseBot();
@@ -113,11 +155,36 @@ public sealed class BotTest(ITestOutputHelper output)
     public void CloseDriverTest()
     {
         Bot basicBot = new(TestUrl);
-        basicBot.CloseDriver();
+        basicBot.CloseBotDriver();
         // use a Action type with delegator to reference the method
         Assert.Throws<BotDriverException>(basicBot.GoToWebpage);
         basicBot.CloseBot();
     }
+
+
+    [Fact]
+    public void GetChromeOptionsTest()
+    {
+        Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
+        ChromeOptions? actualOptions = configuredBot.Options; 
+        Assert.NotNull(actualOptions);
+        configuredBot.CloseBot();
+    }
+
+
+    [Fact]
+    public void GetNameListTest()
+    {
+        Bot configuredBot = new(TestUrl, TestDownloadFolderPath)
+        {
+            NameList = ["Test_NameList"]
+        };
+        string[] expectedList = ["Test_NameList"];
+        Assert.NotNull(configuredBot.NameList);
+        Assert.Equal(expectedList, configuredBot.NameList);
+        configuredBot.CloseBot();
+    }
+
 
 
 
