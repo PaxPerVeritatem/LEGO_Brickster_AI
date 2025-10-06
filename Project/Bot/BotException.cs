@@ -10,18 +10,31 @@ public class BotException : Exception
     public BotException(string message, Exception inner) : base(message, inner) { }
 }
 
+/// <summary>
+///  A general Bot exception for when the webdriver itself throws exceptions
+/// </summary>
+public class  BotDriverException : BotException
+{
+    public BotDriverException() : base() { }
+
+    public BotDriverException(string message) : base(message) { }
+
+public BotDriverException(string message, Exception inner) : base(message, inner) { }  
+}
+
 
 /// <summary>
 /// Exception thrown when a bot fails to navigate to a webpage due to an invalid URL.
 /// </summary>
 public class BotUrlException : BotException
-{ 
-    public BotUrlException() : base() {}
+{
+    public BotUrlException() : base() { }
 
-    public BotUrlException(string message) : base(message) {}
+    public BotUrlException(string message) : base(message) { }
 
     public BotUrlException(string message, Exception inner) : base(message, inner) { }
 }
+
 
 /// <summary>
 /// Exception thrown when a bot fails to navigate to a webpage due to an invalid 'By' lolocator mechanism (Link Text, XPath etc).

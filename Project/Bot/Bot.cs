@@ -201,21 +201,22 @@ public class Bot
 
 
 
-  
-        /// <summary>
-        /// Navigates to the webpage specified by the 'Url' field.
-        /// </summary>
-        /// <remarks>
-        /// Will throw a <see cref="BotUrlException"/> if the 'Url' field is null.
-        /// Will throw a <see cref="BotUrlException"/> if the webpage could not be loaded and the URL is invalid.
-        /// </remarks>
+
+    /// <summary>
+    /// Navigates to the webpage specified by the 'Url' field.
+    /// </summary>
+    /// <remarks>
+    /// Will throw a <see cref="BotUrlException"/> if the 'Url' field is null.
+    /// Will throw a <see cref="BotUrlException"/> if the webpage could not be loaded and the URL is invalid.
+    /// </remarks>
     public void GoToWebpage()
     {
         try
         {
             _driver.Navigate().GoToUrl(Url);
         }
-        
+
+
         //if URL is null
         catch (ArgumentNullException ex)
         {
@@ -226,6 +227,16 @@ public class Bot
         catch (WebDriverArgumentException ex)
         {
             throw new BotUrlException("Webpage could not be loaded, URL may be invalid", ex);
+        }
+        // if the browser is already closed
+        catch (WebDriverException)
+        {
+            throw new BotDriverException("webdriver failed to access website due to the browser already being closed");
+        }
+        // if the driver is already closed
+        catch (ObjectDisposedException)
+        {
+            throw new BotDriverException("webdriver failed to access website due to the webdriver alredy being closed");
         }
     }
 
