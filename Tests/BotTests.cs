@@ -14,86 +14,86 @@ using Xunit.Sdk;
 - Need to categorize tests? → Add [Trait] to any test
 */
 
-public sealed class BotTest : IDisposable
+public sealed class BotTest(ITestOutputHelper output)
 {
     private const string TestDownloadFolderPath = @"..\..\..\LEGO_Data";
 
     private const string TestUrl = "https://library.ldraw.org/omr/sets";
 
-    private readonly Bot _basicBot ; 
-    private readonly Bot _configuredBot; 
-      private readonly ITestOutputHelper _output;
-  
-
-
-
-
-
-
-    public BotTest(ITestOutputHelper output)
-    {
-        _output = output;
-        _basicBot = new(TestUrl);
-        _configuredBot = new(TestUrl, TestDownloadFolderPath);
-    }
-
-    public void Dispose()
-    {
-        _basicBot.CloseBot();
-        _configuredBot.CloseBot();
-    }
+    private readonly ITestOutputHelper _output = output;
 
 
 
     [Fact]
     public void InitializeBotTest()
     {
-        Assert.NotNull(_basicBot.Driver);
+        Bot basicBot = new(TestUrl);
+        Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
+        Assert.NotNull(basicBot.Driver);
 
-        Assert.NotNull(_configuredBot.Driver);
+        Assert.NotNull(configuredBot.Driver);
         string testAbsDownloadFolderPath = Bot.GetAbsoluteDownloadFolderPath(TestDownloadFolderPath);
-        Assert.Equal(testAbsDownloadFolderPath, _configuredBot.AbsDownloadFolderPath);
+        Assert.Equal(testAbsDownloadFolderPath, configuredBot.AbsDownloadFolderPath);
+        basicBot.CloseBot();
+        configuredBot.CloseBot();
     }
 
 
     [Fact]
     public void GoToWebpageTest()
     {
-        _basicBot.GoToWebpage();
-
-        Assert.Equal(TestUrl, _basicBot.Driver.Url);
+        Bot basicBot = new(TestUrl);
+        basicBot.GoToWebpage();
+        Assert.Equal(TestUrl, basicBot.Driver.Url);
+        basicBot.CloseBot();
     }
 
 
 
     [Theory]
     [InlineData("tableSearch", "NAME")]
-    [InlineData("main-logo","ID")]
+    [InlineData("main-logo", "ID")]
     [InlineData(".fi-ta-header-heading", "CSS")]
     [InlineData("fi-ta-header-heading", "CLASSNAME")]
-    [InlineData ("Metroliner", "LT")]
+    [InlineData("Metroliner", "LT")]
     [InlineData("//img[@id='main-logo']", "XP")]
     public void FindElementTest(string ElementString, string ByMechanism)
     {
-        _configuredBot.GoToWebpage();
-        IWebElement? pageElement = _configuredBot.FindPageElement(ElementString, ByMechanism);
-        // make sure the IWeb element is not null. 
+
+        Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
+        configuredBot.GoToWebpage();
+        IWebElement? pageElement = configuredBot.FindPageElement(ElementString, ByMechanism);
+        // make sure the IWeb element is not null.
         Assert.NotNull(pageElement);
-        
         string? elementOuter = pageElement.GetAttribute("outerHTML");
-        _output.WriteLine($"{ElementString} outer HTML: {elementOuter}\n------------------------------------------------\n");   
+        _output.WriteLine($"{ElementString} outer HTML via {ByMechanism}:\n {elementOuter}\n------------------------------------------------\n");
+        configuredBot.CloseBot();
     }
+
+    
+    [Theory]
+    [InlineData("Metroliner", "NOT_IMPLEMENTED_MECHANISM")]
+    public void BotMechanismExceptionTest(string ElementString, string ByMechanism)
+    {
+        Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
+        configuredBot.GoToWebpage();
+        Assert.Throws<BotMechanismException>(() =>configuredBot.FindPageElement(ElementString, ByMechanism));
+        configuredBot.CloseBot();
+    }
+
+
+
     [Fact]
     public void FindElementsTest()
-    { 
-        
+    {
+
     }
 
     //[Theory]
     //[InlineData]
     //public void ClickElementTest()
     //{
-    //    if (_configuredBot.WaitTillExists(pageElement))
+    //    if (configuredBot.WaitTillExists(pageElement))
     //    {
     //        Bot.ClickElement(pageElement);
     //    }
@@ -102,18 +102,21 @@ public sealed class BotTest : IDisposable
     [Fact]
     public void CloseBrowserTest()
     {
-
-        _basicBot.CloseBrowser();
+        Bot basicBot = new(TestUrl);
+        basicBot.CloseBrowser();
         // use a Action type with delegator to reference the method
-        Assert.Throws<BotDriverException>(_basicBot.GoToWebpage);
+        Assert.Throws<BotDriverException>(basicBot.GoToWebpage);
+        basicBot.CloseBot();
     }
 
     [Fact]
     public void CloseDriverTest()
     {
-        _basicBot.CloseDriver();
+        Bot basicBot = new(TestUrl);
+        basicBot.CloseDriver();
         // use a Action type with delegator to reference the method
-        Assert.Throws<BotDriverException>(_basicBot.GoToWebpage);
+        Assert.Throws<BotDriverException>(basicBot.GoToWebpage);
+        basicBot.CloseBot();
     }
 
 
