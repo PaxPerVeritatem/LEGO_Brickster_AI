@@ -103,7 +103,7 @@ public class Bot
 
                 element = ByMechanism switch
                 {
-                    "Name" => AncestorElement.FindElement(By.Name(ElementString)),
+                    "NAME" => AncestorElement.FindElement(By.Name(ElementString)),
                     "ID" => AncestorElement.FindElement(By.Id(ElementString)),
                     "CSS" => AncestorElement.FindElement(By.CssSelector(ElementString)),
                     "CLASSNAME" => AncestorElement.FindElement(By.ClassName(ElementString)),
@@ -125,7 +125,6 @@ public class Bot
                     _ => throw new NotImplementedException(""),
                 };
             }
-            Console.WriteLine($"{element.Text} found \n");
             return element;
 
         }
