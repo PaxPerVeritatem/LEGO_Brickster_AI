@@ -4,13 +4,14 @@ using LEGO_Brickster_AI;
 using Xunit;
 using Xunit.Abstractions;
 using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
+using Xunit.Sdk;
+
 /* Quick Decision Guide  for tests
 
- - Single test case, no parameters? → Use [Fact]
- - Same test, multiple inputs? → Use [Theory] with [InlineData]
- - Complex or reusable test data? → Use [Theory] with [MemberData] or [ClassData]
- - Need to categorize tests? → Add [Trait] to any test
+- Single test case, no parameters? → Use [Fact]
+- Same test, multiple inputs? → Use [Theory] with [InlineData]
+- Complex or reusable test data? → Use [Theory] with [MemberData] or [ClassData]
+- Need to categorize tests? → Add [Trait] to any test
 */
 
 public sealed class BotTest : IDisposable
@@ -19,16 +20,22 @@ public sealed class BotTest : IDisposable
 
     private const string TestUrl = "https://library.ldraw.org/omr/sets";
 
-    private readonly Bot _basicBot;
-    private readonly Bot _configuredBot;
+    private readonly Bot _basicBot ; 
+    private readonly Bot _configuredBot; 
+
+    private readonly TestOutputHelper _testOutput;
+
+
+
+
+
 
     public BotTest()
     {
-
+        _testOutput = new TestOutputHelper();
         _basicBot = new(TestUrl);
         _configuredBot = new(TestUrl, TestDownloadFolderPath);
     }
-
 
     public void Dispose()
     {
@@ -53,11 +60,40 @@ public sealed class BotTest : IDisposable
     public void GoToWebpageTest()
     {
         _basicBot.GoToWebpage();
-        _configuredBot.GoToWebpage();
 
         Assert.Equal(TestUrl, _basicBot.Driver.Url);
-        Assert.Equal(TestUrl, _configuredBot.Driver.Url);
     }
+
+
+
+    [Theory]
+    [InlineData("tableSearch", "NAME")]
+    //[InlineData("//a[@href='https://www.ldraw.org']", "ID")]
+    //[InlineData("//a[@href='https://www.ldraw.org']", "CSS")]
+    //[InlineData("//a[@href='https://www.ldraw.org']", "CLASSNAME")]
+    //[InlineData("//a[@href='https://www.ldraw.org']", "LT")]
+    [InlineData("//a[@href='https://www.ldraw.org']", "XP")]
+    public void FindElementTest(string ElementString, string ByMechanism)
+    {
+       
+        _configuredBot.GoToWebpage();
+        IWebElement? pageElement = _configuredBot.FindPageElement(ElementString, ByMechanism);
+        // make sure the IWeb element is not null. 
+        Assert.NotNull(pageElement);
+        string elementText = pageElement.Text; 
+        _testOutput.WriteLine(elementText); 
+        if (_configuredBot.WaitTillExists(pageElement))
+        {
+            Bot.ClickElement(pageElement);
+        }   
+    }
+
+    [Fact]
+    public void FindElementsTest()
+    { 
+        
+    }
+
     [Fact]
     public void CloseBrowserTest()
     {

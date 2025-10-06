@@ -1,3 +1,4 @@
 {
-    "dotnet.defaultSolution": "LEGO_Brickster_AI.sln"
+    "dotnet.defaultSolution": "LEGO_Brickster_AI.sln",
+    "dotnet-test-explorer.testProjectPath": "Tests/Tests.csproj",
 }
