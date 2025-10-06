@@ -58,6 +58,23 @@ public sealed class BotTest : IDisposable
         Assert.Equal(TestUrl, _basicBot.Driver.Url);
         Assert.Equal(TestUrl, _configuredBot.Driver.Url);
     }
+    [Fact]
+    public void CloseBrowserTest()
+    {
+
+        _basicBot.CloseBrowser();
+        // use a Action type with delegator to reference the method
+        Assert.Throws<BotDriverException>(_basicBot.GoToWebpage);
+    }
+
+    [Fact]
+    public void CloseDriverTest()
+    {
+        _basicBot.CloseDriver();
+        // use a Action type with delegator to reference the method
+        Assert.Throws<BotDriverException>(_basicBot.GoToWebpage);
+    }
+
 
 
     // We try to locate the number of set elements pr page, either directly or 
