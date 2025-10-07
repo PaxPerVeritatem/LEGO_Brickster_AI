@@ -29,29 +29,20 @@ public class Bot
 
 
 
+   
     /// <summary>
-    /// Initializes a new instance of the <see cref="Bot"/> class with the provided URL and download folder path.
+    /// Initializes a new instance of the <see cref="Bot"/> class.
     /// </summary>
     /// <param name="url">The URL of the webpage to navigate to.</param>
-    /// <param name="downloadFolderPath">The path to the download folder. If null, the default download folder is used.</param>
-    /// <remarks>
-    /// If the download folder path is not null, it is converted to an absolute path and used to initialize the ChromeDriver with the corresponding download folder preference. If the download folder path is null, the ChromeDriver is initialized without any download folder preference.
-    /// </remarks>
+    /// <param name="downloadFolderPath">The path to the download folder. If null, the default download folder will be used.</param>
     public Bot(string url, string? downloadFolderPath = null)
     {
         Url = url;
         if (downloadFolderPath != null)
         {
             _absDownloadFolderPath = GetAbsoluteDownloadFolderPath(downloadFolderPath);
-            if (_absDownloadFolderPath != null)
-            {
-                _options = InitializeBotPrefs(_absDownloadFolderPath);
-                _driver = new ChromeDriver(_options);
-            }
-            else
-            {
-                _driver = new ChromeDriver();
-            }
+            _options = InitializeBotPrefs(_absDownloadFolderPath);
+            _driver = new ChromeDriver(_options);
         }
         else
         {
@@ -61,19 +52,10 @@ public class Bot
     }
 
 
-    public static string? GetAbsoluteDownloadFolderPath(string DownloadFolderPath)
+    public static string GetAbsoluteDownloadFolderPath(string DownloadFolderPath)
     {
-        try
-        {
-            string absDownloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, DownloadFolderPath));
-            return absDownloadFolderPath;
-        }
-        catch (ArgumentException e)
-        {
-            // Log the error - this is important for the user to know
-            Console.WriteLine($"Warning: Invalid download folder path '{DownloadFolderPath}'. Using default download location. Error: {e.Message}");
-            return null;
-        }
+        string absDownloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, DownloadFolderPath));
+        return absDownloadFolderPath;
     }
 
 

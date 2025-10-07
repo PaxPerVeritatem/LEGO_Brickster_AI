@@ -3,7 +3,7 @@ using System;
 public class BotException : Exception
 //Base BotException class
 {
-    public BotException() : base("An error has occured with the driver") { }
+    public BotException() : base("An error has occured with the Bot") { }
 
     public BotException(string message) : base(message) { }
 
