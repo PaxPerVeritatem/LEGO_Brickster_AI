@@ -33,14 +33,14 @@ public sealed class BotTest(ITestOutputHelper output)
         Bot basicBot = new(TestUrl_1);
         Bot configuredBot = new(TestUrl_1, TestDownloadFolderPath);
         Assert.NotNull(basicBot.Driver);
-
         Assert.NotNull(configuredBot.Driver);
-        string testAbsDownloadFolderPath = Bot.GetAbsoluteDownloadFolderPath(TestDownloadFolderPath);
+
+        string? testAbsDownloadFolderPath = Bot.GetAbsoluteDownloadFolderPath(TestDownloadFolderPath);
+        Assert.NotNull(testAbsDownloadFolderPath);
         Assert.Equal(testAbsDownloadFolderPath, configuredBot.AbsDownloadFolderPath);
         basicBot.CloseBot();
         configuredBot.CloseBot();
     }
-
 
     [Fact]
     public void GoToWebpageTest()
@@ -99,32 +99,34 @@ public sealed class BotTest(ITestOutputHelper output)
     }
 
     [Theory]
-    [InlineData("svg[aria-label='Google']", "//following::input[@class='gNO89b']", "CSS", "XP")]
-    [InlineData("//div[contains(text(),'Model')]", ".//following::a[contains(.,'Download')]", "XP", "XP")]
+    [InlineData(TestUrl_1, "//div[contains(text(),'Model')]", ".//following::a[contains(.,'Download')]", "XP", "XP")]
+    [InlineData(TestUrl_2, "svg[aria-label='Google']", "//following::input[@class='gNO89b']", "CSS", "XP")]
 
-    public void FindElementWithAncestorTest(string AncestorElementString, string DecendentElementString, string AncestorByMechanism, string DecendentByMechanism)
+    public void FindElementWithAncestorTest(string TestUrl, string AncestorElementString, string DecendentElementString, string AncestorByMechanism, string DecendentByMechanism)
     {
-        Bot configuredBot = new(TestUrl_2, TestDownloadFolderPath);
+        Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
         try
         {
-
             configuredBot.GoToWebpage();
-            //press reject to cookies on google.com
-            var RejectButton = configuredBot.FindPageElement("//button[@id='W0wltc']", "XP");
-            Bot.ClickElement(RejectButton);
-
-
+            // niche test but fine for now
+            if (Equals(TestUrl.ToLower(), "www.google.com"))
+            {
+                //press reject to cookies on google.com if 
+                var RejectButton = configuredBot.FindPageElement("//button[@id='W0wltc']", "XP");
+                Bot.ClickElement(RejectButton);
+            }
 
             IWebElement? AncestorElement = configuredBot.FindPageElement(AncestorElementString, AncestorByMechanism);
             Assert.NotNull(AncestorElement);
-            string? svg_font_text = AncestorElement.GetAttribute("aria-label");
-            _output.WriteLine($"The text of the Google.com webpage picture: {svg_font_text}");
+            string? A_valueAttributeString = AncestorElement.GetAttribute("value");
+            _output.WriteLine($"The text of the Google.com webpage picture: {A_valueAttributeString}");
 
 
             IWebElement? DecendentElement = configuredBot.FindPageElement(DecendentElementString, DecendentByMechanism, AncestorElement);
             Assert.NotNull(DecendentElement);
-            string? search_field_value = DecendentElement.GetAttribute("value");
-            _output.WriteLine($"The text of the Google.com search button: {search_field_value}");
+            string? D_valueAttributeString = DecendentElement.GetAttribute("value");
+            _output.WriteLine($"The text  of the decended element value attribute {D_valueAttributeString}");
+
 
             configuredBot.CloseBot();
         }
