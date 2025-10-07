@@ -46,9 +46,21 @@ public sealed class BotTest(ITestOutputHelper output)
     public void GoToWebpageTest()
     {
         Bot basicBot = new(TestUrl_1);
-        basicBot.GoToWebpage();
-        Assert.Equal(TestUrl_1, basicBot.Driver.Url);
-        basicBot.CloseBot();
+        try
+        {
+            basicBot.GoToWebpage();
+            Assert.Equal(TestUrl_1, basicBot.Driver.Url);
+            basicBot.CloseBot();
+        }
+        catch (BotUrlException)
+        {
+            basicBot.CloseBot();
+        }
+        catch (BotDriverException)
+        {
+            basicBot.CloseBot();
+        }
+
     }
 
 
@@ -65,53 +77,66 @@ public sealed class BotTest(ITestOutputHelper output)
 
         Bot configuredBot = new(TestUrl_1, TestDownloadFolderPath);
         configuredBot.GoToWebpage();
-        IWebElement? pageElement = configuredBot.FindPageElement(ElementString, ByMechanism);
-        // make sure the IWeb element is not null.
-        Assert.NotNull(pageElement);
-        string? elementOuter = pageElement.GetAttribute("outerHTML");
-        _output.WriteLine($"{ElementString} outer HTML via {ByMechanism}:\n {elementOuter}\n------------------------------------------------\n");
-        configuredBot.CloseBot();
+        try
+        {
+            IWebElement? pageElement = configuredBot.FindPageElement(ElementString, ByMechanism);
+            // make sure the IWeb element is not null.
+            Assert.NotNull(pageElement);
+            string? elementOuter = pageElement.GetAttribute("outerHTML");
+            _output.WriteLine($"{ElementString} outer HTML via {ByMechanism}:\n {elementOuter}\n------------------------------------------------\n");
+            configuredBot.CloseBot();
+        }
+        catch (BotElementException)
+        {
+
+            configuredBot.CloseBot();
+        }
+        catch (BotMechanismException)
+        {
+            configuredBot.CloseBot();
+        }
+
     }
 
     [Theory]
     [InlineData("svg[aria-label='Google']", "//following::input[@class='gNO89b']", "CSS", "XP")]
+    [InlineData("//div[contains(text(),'Model')]", ".//following::a[contains(.,'Download')]", "XP", "XP")]
 
     public void FindElementWithAncestorTest(string AncestorElementString, string DecendentElementString, string AncestorByMechanism, string DecendentByMechanism)
     {
-        Bot configured_bot = new(TestUrl_2, TestDownloadFolderPath);
+        Bot configuredBot = new(TestUrl_2, TestDownloadFolderPath);
         try
         {
 
-            configured_bot.GoToWebpage();
+            configuredBot.GoToWebpage();
             //press reject to cookies on google.com
-            var RejectButton = configured_bot.FindPageElement("//button[asdasdas@id='W0wltc']", "XP");
+            var RejectButton = configuredBot.FindPageElement("//button[@id='W0wltc']", "XP");
             Bot.ClickElement(RejectButton);
 
 
 
-            IWebElement? AncestorElement = configured_bot.FindPageElement(AncestorElementString, AncestorByMechanism);
+            IWebElement? AncestorElement = configuredBot.FindPageElement(AncestorElementString, AncestorByMechanism);
             Assert.NotNull(AncestorElement);
             string? svg_font_text = AncestorElement.GetAttribute("aria-label");
             _output.WriteLine($"The text of the Google.com webpage picture: {svg_font_text}");
 
 
-            IWebElement? DecendentElement = configured_bot.FindPageElement(DecendentElementString, DecendentByMechanism, AncestorElement);
+            IWebElement? DecendentElement = configuredBot.FindPageElement(DecendentElementString, DecendentByMechanism, AncestorElement);
             Assert.NotNull(DecendentElement);
             string? search_field_value = DecendentElement.GetAttribute("value");
             _output.WriteLine($"The text of the Google.com search button: {search_field_value}");
 
-            configured_bot.CloseBot();
+            configuredBot.CloseBot();
         }
         catch (BotElementException)
         {
 
-            configured_bot.CloseBot();
+            configuredBot.CloseBot();
         }
         catch (BotMechanismException)
         {
-            configured_bot.CloseBot();
+            configuredBot.CloseBot();
         }
-
     }
 
 

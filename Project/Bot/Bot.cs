@@ -29,43 +29,51 @@ public class Bot
 
 
 
-
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="Bot"/> class with the URL of the webpage to navigate to.
+    /// Initializes a new instance of the <see cref="Bot"/> class with the provided URL and download folder path.
     /// </summary>
     /// <param name="url">The URL of the webpage to navigate to.</param>
-    public Bot(string url)
+    /// <param name="downloadFolderPath">The path to the download folder. If null, the default download folder is used.</param>
+    /// <remarks>
+    /// If the download folder path is not null, it is converted to an absolute path and used to initialize the ChromeDriver with the corresponding download folder preference. If the download folder path is null, the ChromeDriver is initialized without any download folder preference.
+    /// </remarks>
+    public Bot(string url, string? downloadFolderPath = null)
     {
         Url = url;
-        _driver = new ChromeDriver();
-
-        // driver must be instantiated before wait can utilize it.  
+        if (downloadFolderPath != null)
+        {
+            _absDownloadFolderPath = GetAbsoluteDownloadFolderPath(downloadFolderPath);
+            if (_absDownloadFolderPath != null)
+            {
+                _options = InitializeBotPrefs(_absDownloadFolderPath);
+                _driver = new ChromeDriver(_options);
+            }
+            else
+            {
+                _driver = new ChromeDriver();
+            }
+        }
+        else
+        {
+            _driver = new ChromeDriver();
+        }
         _wait = new(_driver, TimeSpan.FromSeconds(2));
     }
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Bot"/> class, with a pre-defined download folder preference.
-    /// </summary>
-    /// <param name="url">The URL of the webpage to navigate to.</param>
-    /// <param name="downloadFolderPath">The path to the download folder.</param>
 
-    public Bot(string url, string downloadFolderPath)
+    public static string? GetAbsoluteDownloadFolderPath(string DownloadFolderPath)
     {
-        Url = url;
-        _absDownloadFolderPath = GetAbsoluteDownloadFolderPath(downloadFolderPath);
-        _options = InitializeBotPrefs(_absDownloadFolderPath);
-        _driver = new ChromeDriver(_options);
-
-        // driver must be instantiated before wait can utilize it.  
-        _wait = new(_driver, TimeSpan.FromSeconds(2));
-    }
-
-
-    public static string GetAbsoluteDownloadFolderPath(string DownloadFolderPath)
-    {
-        string absDownloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, DownloadFolderPath));
-        return absDownloadFolderPath;
+        try
+        {
+            string absDownloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, DownloadFolderPath));
+            return absDownloadFolderPath;
+        }
+        catch (ArgumentException e)
+        {
+            // Log the error - this is important for the user to know
+            Console.WriteLine($"Warning: Invalid download folder path '{DownloadFolderPath}'. Using default download location. Error: {e.Message}");
+            return null;
+        }
     }
 
 
@@ -128,7 +136,7 @@ public class Bot
             return element;
 
         }
-        // if ElementString was null
+        //ElementString was null
         catch (ArgumentNullException)
         {
             throw new BotElementException("ElementString argument is null.");
@@ -139,16 +147,16 @@ public class Bot
             throw new BotElementException($"No element called '{ElementString}' was found by FindElement() with by mechanism '{ByMechanism}'.");
 
         }
-        // The ElementString paramater did not match any By class mechanisms
+        // The 'ElementString' paramater did not match to the designated 'ByMechanism'
         catch (InvalidSelectorException)
         {
-            throw new BotMechanismException($"The {ElementString} does not match the type of mechanism '{ByMechanism}'type designated.");
+            throw new BotMechanismException($"The 'ElementString': {ElementString} did not match to the designated 'ByMechanism': {ByMechanism}");
         }
 
-        // The 'ByMechanism' paramater did not match any defined By class mechanisms
+        // The 'ByMechanism' paramater did not match any defined ByMechanism
         catch (NotImplementedException)
         {
-            throw new BotMechanismException($"mechanism '{ByMechanism}' cannot be passed to By().");
+            throw new BotMechanismException($"The 'ByMechanism': {ByMechanism} did not match any defined ByMechanism");
         }
     }
 
@@ -187,7 +195,7 @@ public class Bot
             return _nameList;
 
         }
-        // if ElementString was null
+        //ElementString was null
         catch (ArgumentNullException)
         {
             throw new BotElementException("ElementString argument is null.");
@@ -196,16 +204,18 @@ public class Bot
         catch (NoSuchElementException)
         {
             throw new BotElementException($"No element called '{ElementString}' was found by FindElement() with by mechanism '{ByMechanism}'.");
+
         }
-        // The ElementString paramater did not match any By class mechanisms
+        // The 'ElementString' paramater did not match to the designated 'ByMechanism'
         catch (InvalidSelectorException)
         {
-            throw new BotMechanismException($"The {ElementString} does not match the type of mechanism '{ByMechanism}'type designated.");
+            throw new BotMechanismException($"The 'ElementString': {ElementString} did not match to the designated 'ByMechanism': {ByMechanism}");
         }
-        // The 'ByMechanism' paramater did not match any By class mechanisms
+
+        // The 'ByMechanism' paramater did not match any defined ByMechanism
         catch (NotImplementedException)
         {
-            throw new BotMechanismException($"mechanism '{ByMechanism}' cannot be passed to By().");
+            throw new BotMechanismException($"The 'ByMechanism': {ByMechanism} did not match any defined ByMechanism");
         }
     }
 
