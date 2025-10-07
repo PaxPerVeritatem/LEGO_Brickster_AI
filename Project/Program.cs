@@ -22,12 +22,12 @@ static class Program
         /* Use AppContext.BaseDirectory to the get the static path to the program .dll file. Combine it with the relative
         LEGO_Data path.Finally, GetFullPath to resolve all the relative paths '/..' and get the final absolute path */
 
-        const string DownloadFolderPath = @"..\..\..\LEGO_Data";
-        const string Url = "https://library.ldraw.org/omr/sets";
+        const string downloadFolderPath = @"..\..\..\LEGO_Data";
+        const string url = "https://library.ldraw.org/omr/sets";
         const int downloadAmount = 1465;
 
         int downloadCounter = 0;
-        Bot bot = new(Url, DownloadFolderPath);
+        Bot bot = new(url,downloadFolderPath);
         try 
         {
             // Attempt to access webpage
@@ -73,7 +73,7 @@ static class Program
                     // add for each LEGO set. Should finally match 'downloadAmount'
                     downloadCounter += 1;
                     // Attempt to find 'Models' element on LEGO set page
-                    IWebElement? ModelsElement = bot.FindPageElement("//svg[contains(@class,'lnXdpd')]", "XP");
+                    IWebElement? ModelsElement = bot.FindPageElement("//div[contains(text(),'Model')]", "XP");
                     
                     // wait until ModelElement has rendered on page
                     if (bot.WaitTillExists(ModelsElement))
