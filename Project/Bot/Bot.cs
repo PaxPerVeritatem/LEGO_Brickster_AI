@@ -133,13 +133,19 @@ public class Bot
         {
             throw new BotElementException("ElementString argument is null.");
         }
-        // No element was found by FinElement() with the designated 'ByMechanism'
+        // No element was found by FindElement() with the designated 'ByMechanism'
         catch (NoSuchElementException)
         {
             throw new BotElementException($"No element called '{ElementString}' was found by FindElement() with by mechanism '{ByMechanism}'.");
 
         }
-        // The 'ByMechanism' paramater did not match any By class mechanisms
+        // The ElementString paramater did not match any By class mechanisms
+        catch (InvalidSelectorException)
+        {
+            throw new BotMechanismException($"The {ElementString} does not match the type of mechanism '{ByMechanism}'type designated.");
+        }
+
+        // The 'ByMechanism' paramater did not match any defined By class mechanisms
         catch (NotImplementedException)
         {
             throw new BotMechanismException($"mechanism '{ByMechanism}' cannot be passed to By().");
@@ -190,6 +196,11 @@ public class Bot
         catch (NoSuchElementException)
         {
             throw new BotElementException($"No element called '{ElementString}' was found by FindElement() with by mechanism '{ByMechanism}'.");
+        }
+        // The ElementString paramater did not match any By class mechanisms
+        catch (InvalidSelectorException)
+        {
+            throw new BotMechanismException($"The {ElementString} does not match the type of mechanism '{ByMechanism}'type designated.");
         }
         // The 'ByMechanism' paramater did not match any By class mechanisms
         catch (NotImplementedException)

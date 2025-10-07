@@ -73,7 +73,7 @@ static class Program
                     // add for each LEGO set. Should finally match 'downloadAmount'
                     downloadCounter += 1;
                     // Attempt to find 'Models' element on LEGO set page
-                    IWebElement? ModelsElement = bot.FindPageElement("//div[contains(text(),'Model')]", "XP");
+                    IWebElement? ModelsElement = bot.FindPageElement("//svg[contains(@class,'lnXdpd')]", "XP");
                     
                     // wait until ModelElement has rendered on page
                     if (bot.WaitTillExists(ModelsElement))
