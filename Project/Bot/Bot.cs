@@ -48,7 +48,8 @@ public class Bot
         {
             _driver = new ChromeDriver();
         }
-        _wait = new(_driver, TimeSpan.FromSeconds(2));
+    
+            _wait = new(_driver, TimeSpan.FromSeconds(2));
     }
 
 
@@ -93,12 +94,12 @@ public class Bot
 
                 element = ByMechanism switch
                 {
-                    "NAME" => AncestorElement.FindElement(By.Name(ElementString)),
-                    "ID" => AncestorElement.FindElement(By.Id(ElementString)),
-                    "CSS" => AncestorElement.FindElement(By.CssSelector(ElementString)),
-                    "CLASSNAME" => AncestorElement.FindElement(By.ClassName(ElementString)),
-                    "LT" => AncestorElement.FindElement(By.LinkText(ElementString)),
-                    "XP" => AncestorElement.FindElement(By.XPath(ElementString)),
+                    "name" => AncestorElement.FindElement(By.Name(ElementString)),
+                    "id" => AncestorElement.FindElement(By.Id(ElementString)),
+                    "css" => AncestorElement.FindElement(By.CssSelector(ElementString)),
+                    "class" => AncestorElement.FindElement(By.ClassName(ElementString)),
+                    "lt" => AncestorElement.FindElement(By.LinkText(ElementString)),
+                    "xp" => AncestorElement.FindElement(By.XPath(ElementString)),
                     _ => throw new NotImplementedException(""),
                 };
             }
@@ -106,12 +107,12 @@ public class Bot
             {
                 element = ByMechanism switch
                 {
-                    "NAME" => _driver.FindElement(By.Name(ElementString)),
-                    "ID" => _driver.FindElement(By.Id(ElementString)),
-                    "CSS" => _driver.FindElement(By.CssSelector(ElementString)),
-                    "CLASSNAME" => _driver.FindElement(By.ClassName(ElementString)),
-                    "LT" => _driver.FindElement(By.LinkText(ElementString)),
-                    "XP" => _driver.FindElement(By.XPath(ElementString)),
+                    "name" => _driver.FindElement(By.Name(ElementString)),
+                    "id" => _driver.FindElement(By.Id(ElementString)),
+                    "css" => _driver.FindElement(By.CssSelector(ElementString)),
+                    "class" => _driver.FindElement(By.ClassName(ElementString)),
+                    "lt" => _driver.FindElement(By.LinkText(ElementString)),
+                    "xp" => _driver.FindElement(By.XPath(ElementString)),
                     _ => throw new NotImplementedException(""),
                 };
             }
@@ -151,12 +152,12 @@ public class Bot
             // find each element. 
             IList<IWebElement> elementList = ByMechanism switch
             {
-                "NAME" => _driver.FindElements(By.Name(ElementString)),
-                "ID" => _driver.FindElements(By.Id(ElementString)),
-                "CSS" => _driver.FindElements(By.CssSelector(ElementString)),
-                "CLASSNAME" => _driver.FindElements(By.ClassName(ElementString)),
-                "LT" => _driver.FindElements(By.LinkText(ElementString)),
-                "XP" => _driver.FindElements(By.XPath(ElementString)),
+                "name" => _driver.FindElements(By.Name(ElementString)),
+                "id" => _driver.FindElements(By.Id(ElementString)),
+                "css" => _driver.FindElements(By.CssSelector(ElementString)),
+                "class" => _driver.FindElements(By.ClassName(ElementString)),
+                "lt" => _driver.FindElements(By.LinkText(ElementString)),
+                "xp" => _driver.FindElements(By.XPath(ElementString)),
                 _ => throw new NotImplementedException(""),
             };
             foreach (IWebElement e in elementList)

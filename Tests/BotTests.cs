@@ -60,11 +60,7 @@ public sealed class BotTest(ITestOutputHelper output)
         {
             basicBot.CloseBot();
         }
-
     }
-
-
-
     [Theory]
     [InlineData("tableSearch", "NAME")]
     [InlineData("main-logo", "ID")]
@@ -74,7 +70,6 @@ public sealed class BotTest(ITestOutputHelper output)
     [InlineData("//img[@id='main-logo']", "XP")]
     public void FindElementTest(string ElementString, string ByMechanism)
     {
-
         Bot configuredBot = new(TestUrl_1, TestDownloadFolderPath);
         configuredBot.GoToWebpage();
         try
@@ -86,21 +81,24 @@ public sealed class BotTest(ITestOutputHelper output)
             _output.WriteLine($"{ElementString} outer HTML via {ByMechanism}:\n {elementOuter}\n------------------------------------------------\n");
             configuredBot.CloseBot();
         }
-        catch (BotElementException)
+        finally
         {
-
-            configuredBot.CloseBot();
+            configuredBot.CloseBot(); 
         }
-        catch (BotMechanismException)
-        {
-            configuredBot.CloseBot();
-        }
-
     }
 
     [Theory]
-    [InlineData(TestUrl_1, "//div[contains(text(),'Model')]", ".//following::a[contains(.,'Download')]", "XP", "XP")]
-    [InlineData(TestUrl_2, "svg[aria-label='Google']", "//following::input[@class='gNO89b']", "CSS", "XP")]
+    //[InlineData(TestUrl_1, "pt_search_comp", ".//following::input[@placeholder='Quick Search']", "NAME", "XP")]
+    //[InlineData(TestUrl_2, "gb", ".//a[@class='gb_Z']", "ID", "XP")]
+    //[InlineData(TestUrl_2, "svg[aria-label='Google']", ".//following::input[@class='gNO89b']", "CSS", "XP")]
+    [InlineData(TestUrl_2,"gb_y",".//a[@class='gb_Z']","CLASSNAME","XP")]
+    //[InlineData(TestUrl_1,,,LT,XP)]
+    //[InlineData(TestUrl_1, "//div[contains(text(),'Model')]", ".//following::a[contains(.,'Download')]", "XP", "XP")]
+
+
+
+
+
 
     public void FindElementWithAncestorTest(string TestUrl, string AncestorElementString, string DecendentElementString, string AncestorByMechanism, string DecendentByMechanism)
     {
@@ -108,34 +106,38 @@ public sealed class BotTest(ITestOutputHelper output)
         try
         {
             configuredBot.GoToWebpage();
-            // niche test but fine for now
+            // kinda weird but fine for now
             if (Equals(TestUrl.ToLower(), "www.google.com"))
             {
-                //press reject to cookies on google.com if 
+                //press reject to cookies on google.com if TestUrl_2 is utilized
                 var RejectButton = configuredBot.FindPageElement("//button[@id='W0wltc']", "XP");
                 Bot.ClickElement(RejectButton);
             }
 
+            // AncestorElement
             IWebElement? AncestorElement = configuredBot.FindPageElement(AncestorElementString, AncestorByMechanism);
             Assert.NotNull(AncestorElement);
-            string? A_valueAttributeString = AncestorElement.GetAttribute("value");
-            _output.WriteLine($"The text of the Google.com webpage picture: {A_valueAttributeString}");
+            string? a_AttributeString = AncestorElement.GetAttribute($"{AncestorByMechanism.ToLower()}");
+            _output.WriteLine($"The value of the ancestor {AncestorByMechanism} attribute: {a_AttributeString}");
 
 
+            //DecendentElement
             IWebElement? DecendentElement = configuredBot.FindPageElement(DecendentElementString, DecendentByMechanism, AncestorElement);
             Assert.NotNull(DecendentElement);
-            string? D_valueAttributeString = DecendentElement.GetAttribute("value");
-            _output.WriteLine($"The text  of the decended element value attribute {D_valueAttributeString}");
-
-
-            configuredBot.CloseBot();
+            string? d_AttributeString;
+            // Handle string interpolation for "XP" byMechanism
+            if (Equals(DecendentElement.GetAttribute($"{AncestorByMechanism.ToLower()}"), "xp"))
+            {
+                // hope there is a class if xp 
+                d_AttributeString = DecendentElement.GetAttribute("class");
+            }
+            else
+            { 
+                d_AttributeString = DecendentElement.GetAttribute($"{AncestorByMechanism.ToLower()}");
+            }
+            _output.WriteLine($"The value of the decended {DecendentByMechanism} attribute: {d_AttributeString}\n------------------------------");
         }
-        catch (BotElementException)
-        {
-
-            configuredBot.CloseBot();
-        }
-        catch (BotMechanismException)
+        finally
         {
             configuredBot.CloseBot();
         }
@@ -167,9 +169,16 @@ public sealed class BotTest(ITestOutputHelper output)
     public void NoSuchElementExceptionTest(string ElementString, string ByMechanism)
     {
         Bot basicBot = new(TestUrl_1);
-        basicBot.GoToWebpage();
-        Assert.Throws<BotElementException>(() => basicBot.FindPageElement(ElementString, ByMechanism));
-        basicBot.CloseBot();
+        try
+        {
+            basicBot.GoToWebpage();
+            Assert.Throws<BotElementException>(() => basicBot.FindPageElement(ElementString, ByMechanism));
+        }
+        finally
+        {
+            basicBot.CloseBot();
+        }
+
     }
 
 
@@ -178,9 +187,17 @@ public sealed class BotTest(ITestOutputHelper output)
     public void NullElementTest(string? ElementString, string ByMechanism)
     {
         Bot basicBot = new(TestUrl_1);
-        basicBot.GoToWebpage();
-        Assert.Throws<BotElementException>(() => basicBot.FindPageElement(ElementString!, ByMechanism));
-        basicBot.CloseBot();
+        try
+        {
+            basicBot.GoToWebpage();
+            Assert.Throws<BotElementException>(() => basicBot.FindPageElement(ElementString!, ByMechanism));
+        }
+        finally
+        {
+            basicBot.CloseBot();
+        }
+
+
     }
 
     [Theory]
@@ -188,21 +205,31 @@ public sealed class BotTest(ITestOutputHelper output)
     public void InvalidUrlTest(string InvalidUrl)
     {
         Bot basicBot = new(InvalidUrl);
-        Assert.Throws<BotUrlException>(basicBot.GoToWebpage);
-        basicBot.CloseBot();
+        try
+        {
+            Assert.Throws<BotUrlException>(basicBot.GoToWebpage);
+        }
+        finally
+        {
+            basicBot.CloseBot();
+        }
     }
 
     [Theory]
     [InlineData(null)]
     public void NullUrlTest(string? NullUrl)
     {
+        // use null forgiveness to actually make test possible 
         Bot basicBot = new(NullUrl!);
-        Assert.Throws<BotUrlException>(basicBot.GoToWebpage);
-        basicBot.CloseBot();
-
+        try
+        {
+            Assert.Throws<BotUrlException>(basicBot.GoToWebpage);
+        }
+        finally
+        {
+            basicBot.CloseBot();
+        }
     }
-
-
 
 
     //[Theory]
@@ -219,20 +246,35 @@ public sealed class BotTest(ITestOutputHelper output)
     public void CloseBrowserTest()
     {
         Bot basicBot = new(TestUrl_1);
-        basicBot.CloseBotBrowser();
-        // use a Action type with delegator to reference the method
-        Assert.Throws<BotDriverException>(basicBot.GoToWebpage);
-        basicBot.CloseBot();
+        try
+        {
+            basicBot.CloseBotBrowser();
+            // use a Action type with delegator to reference the method
+            Assert.Throws<BotDriverException>(basicBot.GoToWebpage);
+        }
+        finally
+        {
+            basicBot.CloseBot();
+        }
     }
 
     [Fact]
     public void CloseDriverTest()
     {
         Bot basicBot = new(TestUrl_1);
-        basicBot.CloseBotDriver();
-        // use a Action type with delegator to reference the method
-        Assert.Throws<BotDriverException>(basicBot.GoToWebpage);
-        basicBot.CloseBot();
+        try
+        {
+            basicBot.CloseBotDriver();
+            // use a Action type with delegator to reference the method
+            Assert.Throws<BotDriverException>(basicBot.GoToWebpage);
+        }
+        finally
+        {
+            basicBot.CloseBot();
+        }
+
+
+
     }
 
 
@@ -240,9 +282,15 @@ public sealed class BotTest(ITestOutputHelper output)
     public void GetChromeOptionsTest()
     {
         Bot configuredBot = new(TestUrl_1, TestDownloadFolderPath);
-        ChromeOptions? actualOptions = configuredBot.Options;
-        Assert.NotNull(actualOptions);
-        configuredBot.CloseBot();
+        try
+        {
+            ChromeOptions? actualOptions = configuredBot.Options;
+            Assert.NotNull(actualOptions);
+        }
+        finally
+        {
+            configuredBot.CloseBot();
+        }
     }
 
 
@@ -253,10 +301,16 @@ public sealed class BotTest(ITestOutputHelper output)
         {
             NameList = ["Test_NameList"]
         };
-        string[] expectedList = ["Test_NameList"];
-        Assert.NotNull(configuredBot.NameList);
-        Assert.Equal(expectedList, configuredBot.NameList);
-        configuredBot.CloseBot();
+        try
+        {
+            string[] expectedList = ["Test_NameList"];
+            Assert.NotNull(configuredBot.NameList);
+            Assert.Equal(expectedList, configuredBot.NameList);
+        }
+        finally
+        {
+            configuredBot.CloseBot();
+        }
     }
 
 
