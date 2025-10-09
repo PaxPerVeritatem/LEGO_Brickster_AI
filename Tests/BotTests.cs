@@ -32,14 +32,19 @@ public sealed class BotTest(ITestOutputHelper output)
     {
         Bot basicBot = new(TestUrl_1);
         Bot configuredBot = new(TestUrl_1, TestDownloadFolderPath);
-        Assert.NotNull(basicBot.Driver);
-        Assert.NotNull(configuredBot.Driver);
-
-        string? testAbsDownloadFolderPath = Bot.GetAbsoluteDownloadFolderPath(TestDownloadFolderPath);
-        Assert.NotNull(testAbsDownloadFolderPath);
-        Assert.Equal(testAbsDownloadFolderPath, configuredBot.AbsDownloadFolderPath);
-        basicBot.CloseBot();
-        configuredBot.CloseBot();
+        try
+        {
+            Assert.NotNull(basicBot.Driver);
+            Assert.NotNull(configuredBot.Driver);
+            string? testAbsDownloadFolderPath = Bot.GetAbsoluteDownloadFolderPath(TestDownloadFolderPath);
+            Assert.NotNull(testAbsDownloadFolderPath);
+            Assert.Equal(testAbsDownloadFolderPath, configuredBot.AbsDownloadFolderPath);
+            basicBot.CloseBot();
+        }
+        finally
+        {
+            configuredBot.CloseBot();
+        }
     }
 
     [Fact]
@@ -62,12 +67,12 @@ public sealed class BotTest(ITestOutputHelper output)
         }
     }
     [Theory]
-    [InlineData("tableSearch", "NAME")]
-    [InlineData("main-logo", "ID")]
-    [InlineData(".fi-ta-header-heading", "CSS")]
-    [InlineData("fi-ta-header-heading", "CLASSNAME")]
-    [InlineData("Metroliner", "LT")]
-    [InlineData("//img[@id='main-logo']", "XP")]
+    [InlineData("tableSearch", "name")]
+    [InlineData("main-logo", "id")]
+    [InlineData(".fi-ta-header-heading", "css")]
+    [InlineData("fi-ta-header-heading", "class")]
+    [InlineData("Metroliner", "lt")]
+    [InlineData("//img[@id='main-logo']", "xp")]
     public void FindElementTest(string ElementString, string ByMechanism)
     {
         Bot configuredBot = new(TestUrl_1, TestDownloadFolderPath);
@@ -83,26 +88,28 @@ public sealed class BotTest(ITestOutputHelper output)
         }
         finally
         {
-            configuredBot.CloseBot(); 
+            configuredBot.CloseBot();
         }
     }
 
     [Theory]
-    //[InlineData(TestUrl_1, "pt_search_comp", ".//following::input[@placeholder='Quick Search']", "NAME", "XP")]
-    //[InlineData(TestUrl_2, "gb", ".//a[@class='gb_Z']", "ID", "XP")]
-    //[InlineData(TestUrl_2, "svg[aria-label='Google']", ".//following::input[@class='gNO89b']", "CSS", "XP")]
-    [InlineData(TestUrl_2,"gb_y",".//a[@class='gb_Z']","CLASSNAME","XP")]
-    //[InlineData(TestUrl_1,,,LT,XP)]
-    //[InlineData(TestUrl_1, "//div[contains(text(),'Model')]", ".//following::a[contains(.,'Download')]", "XP", "XP")]
-
-
-
-
-
-
+    [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", ".//following::a[@href='https://library.ldraw.org/omr/sets/657']", "xp", "xp")]
     public void FindElementWithAncestorTest(string TestUrl, string AncestorElementString, string DecendentElementString, string AncestorByMechanism, string DecendentByMechanism)
     {
         Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
+
+        //local function
+        static IList<string> InterpolateByMechanism(IWebElement element, string elementByMechanism)
+        {
+            // use null forgiveness in order to test
+            IList<string> elementAttributeList = [];
+            string? attributeString;
+            attributeString = element.GetAttribute("class");
+            elementAttributeList.Add("class");
+            elementAttributeList.Add(attributeString!);
+            return elementAttributeList;
+        }
+
         try
         {
             configuredBot.GoToWebpage();
@@ -117,25 +124,17 @@ public sealed class BotTest(ITestOutputHelper output)
             // AncestorElement
             IWebElement? AncestorElement = configuredBot.FindPageElement(AncestorElementString, AncestorByMechanism);
             Assert.NotNull(AncestorElement);
-            string? a_AttributeString = AncestorElement.GetAttribute($"{AncestorByMechanism.ToLower()}");
-            _output.WriteLine($"The value of the ancestor {AncestorByMechanism} attribute: {a_AttributeString}");
+            IList<string> a_AttributeList = InterpolateByMechanism(AncestorElement, AncestorByMechanism);
+            Assert.Equal(2, a_AttributeList.Count);
+            _output.WriteLine($"The value of the ancestor element {a_AttributeList[0]} attribute:{a_AttributeList[1]}");
 
 
             //DecendentElement
             IWebElement? DecendentElement = configuredBot.FindPageElement(DecendentElementString, DecendentByMechanism, AncestorElement);
             Assert.NotNull(DecendentElement);
-            string? d_AttributeString;
-            // Handle string interpolation for "XP" byMechanism
-            if (Equals(DecendentElement.GetAttribute($"{AncestorByMechanism.ToLower()}"), "xp"))
-            {
-                // hope there is a class if xp 
-                d_AttributeString = DecendentElement.GetAttribute("class");
-            }
-            else
-            { 
-                d_AttributeString = DecendentElement.GetAttribute($"{AncestorByMechanism.ToLower()}");
-            }
-            _output.WriteLine($"The value of the decended {DecendentByMechanism} attribute: {d_AttributeString}\n------------------------------");
+            IList<string> d_AttributeList = InterpolateByMechanism(DecendentElement, DecendentByMechanism);
+            Assert.Equal(2, d_AttributeList.Count);
+            _output.WriteLine($"The value of the decendent element {d_AttributeList[0]} attribute:{d_AttributeList[1]})\n------------------------------");
         }
         finally
         {
@@ -155,17 +154,36 @@ public sealed class BotTest(ITestOutputHelper output)
 
 
     [Theory]
-    [InlineData("Metroliner", "NOT_IMPLEMENTED_MECHANISM")]
-    public void BotMechanismExceptionTest(string ElementString, string ByMechanism)
+    [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "NOT_IMPLEMENTED_BY_MECHANISM", null, null)]
+    [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "xp", ".//following::a[@href='https://library.ldraw.org/omr/sets/657']", "NOT_IMPLEMENTED_BY_MECHANISM")]
+    public void BotMechanismExceptionTest(string TestURl, string FirstElementString, string FirstByMechanism, string? SecondElementString, string? SecondByMechanism)
     {
-        Bot basicBot = new(TestUrl_1);
+        Bot basicBot = new(TestURl);
         basicBot.GoToWebpage();
-        Assert.Throws<BotMechanismException>(() => basicBot.FindPageElement(ElementString, ByMechanism));
-        basicBot.CloseBot();
+        try
+        {
+
+            // if we are testing for ancestor element pattern matching
+            if (SecondElementString != null && SecondByMechanism != null)
+            {
+
+                IWebElement? FirstElement = basicBot.FindPageElement(FirstElementString, FirstByMechanism);
+                Assert.NotNull(FirstElement);
+                Assert.Throws<BotMechanismException>(() => basicBot.FindPageElement(SecondElementString, SecondByMechanism, FirstElement));
+            }
+            else
+            {
+                Assert.Throws<BotMechanismException>(() => basicBot.FindPageElement(FirstElementString, FirstByMechanism));
+            }
+        }
+        finally
+        {
+            basicBot.CloseBot();
+        }
     }
 
     [Theory]
-    [InlineData("NO_SUCH_ELEMENT", "LT")]
+    [InlineData("NO_SUCH_ELEMENT", "lt")]
     public void NoSuchElementExceptionTest(string ElementString, string ByMechanism)
     {
         Bot basicBot = new(TestUrl_1);
@@ -183,8 +201,8 @@ public sealed class BotTest(ITestOutputHelper output)
 
 
     [Theory]
-    [InlineData(null, "LT")]
-    public void NullElementTest(string? ElementString, string ByMechanism)
+    [InlineData(null, "lt")]
+    public void NullFindElementTest(string? ElementString, string ByMechanism)
     {
         Bot basicBot = new(TestUrl_1);
         try
@@ -196,9 +214,24 @@ public sealed class BotTest(ITestOutputHelper output)
         {
             basicBot.CloseBot();
         }
-
-
     }
+
+    [Theory]
+    [InlineData("//h2[@class='fi-ta-header-heading'", "xp")]
+    public void InvalidSelectorTest(string ElementString, string ByMechanism)
+    {
+        Bot basicBot = new(TestUrl_1);
+        try
+        {
+            basicBot.GoToWebpage();
+            Assert.Throws<BotMechanismException>(() => basicBot.FindPageElement(ElementString, ByMechanism));
+        }
+        finally
+        {
+            basicBot.CloseBot();
+        }
+    }
+
 
     [Theory]
     [InlineData("www.NotAWebsiteForBots.Bot.com")]
