@@ -91,14 +91,8 @@ public class Bot
         {
             if (AncestorElement != null)
             {
-
                 element = ByMechanism switch
                 {
-                    "name" => AncestorElement.FindElement(By.Name(ElementString)),
-                    "id" => AncestorElement.FindElement(By.Id(ElementString)),
-                    "css" => AncestorElement.FindElement(By.CssSelector(ElementString)),
-                    "class" => AncestorElement.FindElement(By.ClassName(ElementString)),
-                    "lt" => AncestorElement.FindElement(By.LinkText(ElementString)),
                     "xp" => AncestorElement.FindElement(By.XPath(ElementString)),
                     _ => throw new NotImplementedException(""),
                 };
@@ -130,13 +124,13 @@ public class Bot
             throw new BotElementException($"No element called '{ElementString}' was found by FindElement() with by mechanism '{ByMechanism}'.");
 
         }
-        // The 'ElementString' paramater did not match to the designated 'ByMechanism'
+        // Thrown when the ElementString is syntactically invalid for the valid chosen ByMechanism, eg missing a [] in xp. 
         catch (InvalidSelectorException)
         {
             throw new BotMechanismException($"The 'ElementString': {ElementString} did not match to the designated 'ByMechanism': {ByMechanism}");
         }
 
-        // The 'ByMechanism' paramater did not match any defined ByMechanism
+        // The 'ByMechanism' parameter did not match any defined ByMechanism
         catch (NotImplementedException)
         {
             throw new BotMechanismException($"The 'ByMechanism': {ByMechanism} did not match any defined ByMechanism");

@@ -37,7 +37,7 @@ def getNewReport():
 if __name__ == "__main__": 
     test_result_folder = Path("Tests/TestResults")
     if(test_result_folder.exists()): 
-        print("Old report found. Deleteing old report\n")
+        print("Old report found. Deleting old report\n")
         shutil.rmtree(test_result_folder)
         getNewReport()
     else: 
