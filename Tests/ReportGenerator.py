@@ -25,6 +25,7 @@ def getNewReport():
         #classfilters = data ["classfilters"]
 
     subprocess.run([
+        "dotnet",
         "reportgenerator", 
         f"-reports:{reports}",
         f"-targetdir:{targetdir}"
