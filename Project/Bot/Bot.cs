@@ -245,12 +245,11 @@ public class Bot
     {
         if (element != null)
         {
-            _wait.Until(driver => element.Displayed);
+            _wait.Until(driver => element.Displayed || element.Enabled );
             return true;
         }
         return false;
     }
-
     /// <summary>
     /// Attempts to click the given element.
     /// </summary>
@@ -297,6 +296,6 @@ public class Bot
     /// </summary>
     public void CloseBot()
     {
-        _driver.Dispose();
+        _driver.Quit();
     }
 }
