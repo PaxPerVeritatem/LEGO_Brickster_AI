@@ -113,13 +113,6 @@ public sealed class BotTest(ITestOutputHelper output)
         try
         {
             configuredBot.GoToWebpage();
-            // kinda weird but fine for now
-            if (Equals(TestUrl.ToLower(), "www.google.com"))
-            {
-                //press reject to cookies on google.com if TestUrl_2 is utilized
-                var RejectButton = configuredBot.FindPageElement("//button[@id='W0wltc']", "XP");
-                Bot.ClickElement(RejectButton);
-            }
 
             // AncestorElement
             IWebElement? AncestorElement = configuredBot.FindPageElement(AncestorElementString, AncestorByMechanism);
@@ -151,6 +144,94 @@ public sealed class BotTest(ITestOutputHelper output)
     {
 
     }
+
+    [Theory]
+    [InlineData(TestUrl_1, "//a[@href='https://library.ldraw.org/documentation']", null)]
+    [InlineData(TestUrl_2, "div.FPdoLc.lJ9FBc", ".//input[@class='RNmpXc']")]
+    public void ClickElementTest(string TestUrl, string AncestorElementString, string? DecendentElementString)
+    {
+        Bot basic_bot = new(TestUrl);
+        try
+        {
+            basic_bot.GoToWebpage();
+
+            // kinda weird but fine for now
+            if (Equals(TestUrl.ToLower(), "https://www.google.com") && DecendentElementString != null)
+            {
+                //press reject to cookies on google.com if TestUrl_2 is utilized
+                IWebElement? RejectButton = basic_bot.FindPageElement("//button[@id='W0wltc']", "xp");
+                Assert.NotNull(RejectButton);
+                Bot.ClickElement(RejectButton);
+
+                IWebElement? AncestorElement = basic_bot.FindPageElement(AncestorElementString, "css");
+                Assert.NotNull(AncestorElement);
+                IWebElement? DecendentElement = basic_bot.FindPageElement(DecendentElementString, "xp", AncestorElement);
+                Assert.NotNull(DecendentElement);
+
+                if (basic_bot.WaitTillExists(DecendentElement))
+                {
+                    Bot.ClickElement(DecendentElement);
+                }
+                basic_bot.GoBack();
+                IWebElement? sameClickableElement = basic_bot.FindPageElement(AncestorElementString, "css");
+                Assert.NotNull(sameClickableElement);
+            }
+            else
+            {
+                IWebElement? AncestorElement = basic_bot.FindPageElement(AncestorElementString, "xp");
+                Assert.NotNull(AncestorElement);
+                if (basic_bot.WaitTillExists(AncestorElement))
+                {
+                    Bot.ClickElement(AncestorElement);
+                }
+                basic_bot.GoBack();
+                IWebElement? sameClickableElement = basic_bot.FindPageElement(AncestorElementString, "xp");
+                Assert.NotNull(sameClickableElement);
+            }
+        }
+        finally
+        {
+            basic_bot.CloseBot();
+        }
+    }
+
+    [Fact]
+    public void WaitTillExistsFalseTest()
+    {
+        Bot basic_bot = new(TestUrl_1);
+        basic_bot.GoToWebpage();
+        try
+        {
+            IWebElement? element = null; 
+            Assert.False(basic_bot.WaitTillExists(element));
+        }
+        finally
+        {
+            basic_bot.CloseBot();
+        }
+    }
+
+
+    [Theory]
+    [InlineData("//a[@href='https://library.ldraw.org/documentation']")]
+    public void ClickElementExceptionTest(string elementString)
+    {
+        Bot basic_bot = new(TestUrl_1);
+        basic_bot.GoToWebpage();
+        IWebElement? element = basic_bot.FindPageElement(elementString, "xp");
+        Assert.NotNull(element);
+        try
+        {
+            basic_bot.GoToWebpage();
+            Assert.Throws<BotElementException>(() => Bot.ClickElement(element));
+        }
+        finally
+        {
+            basic_bot.CloseBot();
+        }
+    }
+
+
 
 
     [Theory]
