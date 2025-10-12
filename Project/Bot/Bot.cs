@@ -168,9 +168,7 @@ public class Bot
                 }
 
             }
-            // if the element is not null add it to the list. 
             return _nameList;
-
         }
         //ElementString was null
         catch (ArgumentNullException)
