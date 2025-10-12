@@ -29,7 +29,7 @@ public class Bot
 
 
 
-   
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Bot"/> class.
     /// </summary>
@@ -48,8 +48,8 @@ public class Bot
         {
             _driver = new ChromeDriver();
         }
-    
-            _wait = new(_driver, TimeSpan.FromSeconds(2));
+
+        _wait = new(_driver, TimeSpan.FromSeconds(2));
     }
 
 
@@ -137,13 +137,12 @@ public class Bot
         }
     }
 
-    public IList<string> FindPageElements(string ElementString, string ByMechanism)
+    public IList<string> FindPageElements(string ElementString, string ByMechanism, string IdentifierAttribute = "Text")
     {
 
         try
         {
-            //string list for element ID's 
-            // find each element. 
+            // will return empty collection if not elements are found, hence does not throw NoSuchElementException
             IList<IWebElement> elementList = ByMechanism switch
             {
                 "name" => _driver.FindElements(By.Name(ElementString)),
@@ -154,26 +153,36 @@ public class Bot
                 "xp" => _driver.FindElements(By.XPath(ElementString)),
                 _ => throw new NotImplementedException(""),
             };
-            foreach (IWebElement e in elementList)
+
+            if (IdentifierAttribute != "Text")
             {
-                string name = e.Text;
-                if (!string.IsNullOrEmpty(name))
+                foreach (IWebElement e in elementList)
                 {
-                    _nameList.Add(name);
+                    string? elementAspect = e.GetAttribute(IdentifierAttribute);
+                    if (!string.IsNullOrEmpty(elementAspect))
+                    {
+                        _nameList.Add(elementAspect);
+                    }
+                }
+            }
+            else
+            {
+                foreach (IWebElement e in elementList)
+                {
+                    string? elementText = e.Text;
+                    if (!string.IsNullOrEmpty(elementText))
+                    {
+                        _nameList.Add(elementText);
+                    }
                 }
             }
             return _nameList;
         }
+
         //ElementString was null
         catch (ArgumentNullException)
         {
             throw new BotElementException("ElementString argument is null.");
-        }
-        // No element was found by FindElement() with the designated 'ByMechanism'
-        catch (NoSuchElementException)
-        {
-            throw new BotElementException($"No element called '{ElementString}' was found by FindElement() with by mechanism '{ByMechanism}'.");
-
         }
         // The 'ElementString' paramater did not match to the designated 'ByMechanism'
         catch (InvalidSelectorException)
@@ -263,7 +272,7 @@ public class Bot
     /// </summary>
     public void GoBack()
     {
-        
+
         _driver.Navigate().Back();
     }
 
