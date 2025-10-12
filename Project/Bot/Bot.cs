@@ -156,17 +156,11 @@ public class Bot
             };
             foreach (IWebElement e in elementList)
             {
-
                 string name = e.Text;
-                if (string.IsNullOrEmpty(name))
-                {
-                    _nameList.Add("null");
-                }
-                else
+                if (!string.IsNullOrEmpty(name))
                 {
                     _nameList.Add(name);
                 }
-
             }
             return _nameList;
         }

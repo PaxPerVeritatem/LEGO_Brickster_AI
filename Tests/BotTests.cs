@@ -142,10 +142,10 @@ public sealed class BotTest(ITestOutputHelper output)
         Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
 
         //local function
-        static IList<string> InterpolateByMechanism(IWebElement element, string elementByMechanism)
+        static List<string> InterpolateByMechanism(IWebElement element, string elementByMechanism)
         {
             // use null forgiveness in order to test
-            IList<string> elementAttributeList = [];
+            List<string> elementAttributeList = [];
             string? attributeString;
             attributeString = element.GetAttribute("class");
             elementAttributeList.Add("class");
@@ -160,7 +160,7 @@ public sealed class BotTest(ITestOutputHelper output)
             // AncestorElement
             IWebElement? AncestorElement = configuredBot.FindPageElement(AncestorElementString, AncestorByMechanism);
             Assert.NotNull(AncestorElement);
-            IList<string> a_AttributeList = InterpolateByMechanism(AncestorElement, AncestorByMechanism);
+            List<string> a_AttributeList = InterpolateByMechanism(AncestorElement, AncestorByMechanism);
             Assert.Equal(2, a_AttributeList.Count);
             _output.WriteLine($"The value of the ancestor element {a_AttributeList[0]} attribute:{a_AttributeList[1]}");
 
@@ -180,14 +180,21 @@ public sealed class BotTest(ITestOutputHelper output)
 
     [Theory]
     [InlineData(TestUrl_1, 25, "fi-ta-cell-name", "class")]
-    //[InlineData(TestUrl_3,)]
-    public void FindElementsTest(string TestUrl, int ExpectedElementAmount, string ElementTypeString, string ByMechanism)
+    [InlineData(TestUrl_3, 50, "//article[contains(@class,'card')]//div[@class='moc-card__designer-name']", "xp")]
+    [InlineData(TestUrl_2,0,"//div[contains(@class,'FPdoLc')]//input[@class='RNmpXc']", "id")]
+    [InlineData(TestUrl_2,0,"//div[contains(@class,'FPdoLc')]//input[@class='RNmpXc']", "css")]
+    [InlineData(TestUrl_2,0,"//div[contains(@class,'FPdoLc')]//input[@class='RNmpXc']", "lt")]
+public void FindElementsTest(string TestUrl, int ExpectedElementAmount, string ElementTypeString, string ByMechanism)
     {
         Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
-        configuredBot.GoToWebpage();
+        AccessTestWebPage(TestUrl, configuredBot);
         try
         {
             configuredBot.NameList = configuredBot.FindPageElements(ElementTypeString, ByMechanism);
+            foreach (string name in configuredBot.NameList)
+            {
+                _output.WriteLine(name);  
+            }
             Assert.Equal(ExpectedElementAmount, configuredBot.NameList.Count);
         }
         finally
