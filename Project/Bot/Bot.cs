@@ -245,7 +245,7 @@ public class Bot
     {
         if (element != null)
         {
-            _wait.Until(driver => element.Displayed || element.Enabled );
+            _wait.Until(driver => element.Displayed);
             return true;
         }
         return false;
@@ -271,6 +271,7 @@ public class Bot
     /// </summary>
     public void GoBack()
     {
+        
         _driver.Navigate().Back();
     }
 
