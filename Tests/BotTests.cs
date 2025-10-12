@@ -179,18 +179,19 @@ public sealed class BotTest(ITestOutputHelper output)
     }
 
     [Theory]
+    [InlineData(TestUrl_1,1,"tableSearch","name","name")]
+    //[InlineData(TestUrl_3)]
+    [InlineData(TestUrl_1, 25, ".fi-ta-cell-name", "css")]
+    //[InlineData(TestUrl_3,]
     [InlineData(TestUrl_1, 25, "fi-ta-cell-name", "class")]
     [InlineData(TestUrl_3, 50, "//article[contains(@class,'card')]//div[@class='moc-card__designer-name']", "xp")]
-    [InlineData(TestUrl_2,0,"//div[contains(@class,'FPdoLc')]//input[@class='RNmpXc']", "id")]
-    [InlineData(TestUrl_2,0,"//div[contains(@class,'FPdoLc')]//input[@class='RNmpXc']", "css")]
-    [InlineData(TestUrl_2,0,"//div[contains(@class,'FPdoLc')]//input[@class='RNmpXc']", "lt")]
-public void FindElementsTest(string TestUrl, int ExpectedElementAmount, string ElementTypeString, string ByMechanism)
+public void FindElementsTest(string TestUrl, int ExpectedElementAmount, string ElementTypeString, string ByMechanism,string IdentifierAttribute="Text")
     {
         Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
         AccessTestWebPage(TestUrl, configuredBot);
         try
         {
-            configuredBot.NameList = configuredBot.FindPageElements(ElementTypeString, ByMechanism);
+            configuredBot.NameList = configuredBot.FindPageElements(ElementTypeString, ByMechanism,IdentifierAttribute);
             foreach (string name in configuredBot.NameList)
             {
                 _output.WriteLine(name);  
