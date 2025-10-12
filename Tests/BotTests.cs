@@ -4,7 +4,7 @@ using LEGO_Brickster_AI;
 using Xunit;
 using Xunit.Abstractions;
 using OpenQA.Selenium;
-using Xunit.Sdk;
+using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Chrome;
 
 /* Quick Decision Guide  for tests
@@ -22,6 +22,8 @@ public sealed class BotTest(ITestOutputHelper output)
     private const string TestUrl_1 = "https://library.ldraw.org/omr/sets";
 
     private const string TestUrl_2 = "https://www.google.com";
+
+    private const string TestUrl_3 = "https://www.bricklink.com/v3/studio/gallery.page";
 
     private readonly ITestOutputHelper _output = output;
 
@@ -146,52 +148,88 @@ public sealed class BotTest(ITestOutputHelper output)
     }
 
     [Theory]
-    [InlineData(TestUrl_1, "//a[@href='https://library.ldraw.org/documentation']", null)]
-    [InlineData(TestUrl_2, "div.FPdoLc.lJ9FBc", ".//input[@class='RNmpXc']")]
-    public void ClickElementTest(string TestUrl, string AncestorElementString, string? DecendentElementString)
+    [InlineData(TestUrl_1, "//a[@href='https://library.ldraw.org/documentation']")]
+    [InlineData(TestUrl_2, "//div[contains(@class,'FPdoLc')]//input[@class='RNmpXc']")]
+    [InlineData(TestUrl_3, "//div[@class='studio-staff-picks__bar l-margin-top--md']")]
+    public void WaitTilExistsElementTest(string TestUrl, string ElementString)
     {
-        Bot basic_bot = new(TestUrl);
-        try
+        static void ClickElementTest(string ElementString, Bot testBot, bool GoBack=false)
         {
-            basic_bot.GoToWebpage();
-
-            // kinda weird but fine for now
-            if (Equals(TestUrl.ToLower(), "https://www.google.com") && DecendentElementString != null)
+            IWebElement? clickableElement;
+            if (GoBack)
             {
-                //press reject to cookies on google.com if TestUrl_2 is utilized
-                IWebElement? RejectButton = basic_bot.FindPageElement("//button[@id='W0wltc']", "xp");
-                Assert.NotNull(RejectButton);
-                Bot.ClickElement(RejectButton);
-
-                IWebElement? AncestorElement = basic_bot.FindPageElement(AncestorElementString, "css");
-                Assert.NotNull(AncestorElement);
-                IWebElement? DecendentElement = basic_bot.FindPageElement(DecendentElementString, "xp", AncestorElement);
-                Assert.NotNull(DecendentElement);
-
-                if (basic_bot.WaitTillExists(DecendentElement))
+                for (int i = 0; i < 2; i++)
                 {
-                    Bot.ClickElement(DecendentElement);
+                    clickableElement = testBot.FindPageElement(ElementString, "xp");
+                    Assert.NotNull(clickableElement);
+                    if (testBot.WaitTillExists(clickableElement))
+                    {
+                        Bot.ClickElement(clickableElement);
+                        testBot.GoBack();
+                    }
                 }
-                basic_bot.GoBack();
-                IWebElement? sameClickableElement = basic_bot.FindPageElement(AncestorElementString, "css");
-                Assert.NotNull(sameClickableElement);
             }
             else
             {
-                IWebElement? AncestorElement = basic_bot.FindPageElement(AncestorElementString, "xp");
-                Assert.NotNull(AncestorElement);
-                if (basic_bot.WaitTillExists(AncestorElement))
+                clickableElement = testBot.FindPageElement(ElementString, "xp");
+                if (testBot.WaitTillExists(clickableElement))
                 {
-                    Bot.ClickElement(AncestorElement);
+                    Bot.ClickElement(clickableElement);
                 }
-                basic_bot.GoBack();
-                IWebElement? sameClickableElement = basic_bot.FindPageElement(AncestorElementString, "xp");
-                Assert.NotNull(sameClickableElement);
+            }
+        }
+
+        Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
+        try
+        {
+            configuredBot.GoToWebpage();
+            switch (TestUrl)
+            {
+                case "https://www.google.com":
+                    //press reject to cookies on google.com if TestUrl_2 is utilized
+                    IWebElement? RejectButton = configuredBot.FindPageElement("//button[@id='W0wltc']", "xp");
+                    Assert.NotNull(RejectButton);
+                    Bot.ClickElement(RejectButton);
+
+                    ClickElementTest(ElementString, configuredBot,true);
+                    break;
+
+                case "https://library.ldraw.org/omr/sets":
+                    ClickElementTest(ElementString, configuredBot,true);
+                    break;
+
+                case "https://www.bricklink.com/v3/studio/gallery.page":
+
+                    ChromeDriver testdriver = configuredBot.Driver;
+                    Actions actionsBuilder = new(testdriver);
+                    // find and click the ageGateElement
+                    IWebElement? ageGateElement = configuredBot.FindPageElement("//input[@class='blp-age-gate__input-field']", "xp");
+                    if (configuredBot.WaitTillExists(ageGateElement))
+                    {
+                        Bot.ClickElement(ageGateElement);
+                        actionsBuilder.SendKeys("1");
+                        actionsBuilder.SendKeys("9");
+                        actionsBuilder.SendKeys("9");
+                        actionsBuilder.SendKeys("4");
+                        actionsBuilder.Perform();
+                        actionsBuilder.Reset();
+                    }
+                    // find and press cookie button 
+                    IWebElement? cookieButton = configuredBot.FindPageElement("//div[@class='cookie-notice__content']//button[contains(text(), 'Just necessary')]", "xp");
+                    if (configuredBot.WaitTillExists(cookieButton))
+                    {
+                        Bot.ClickElement(cookieButton);
+                    }
+                    ClickElementTest(ElementString, configuredBot);
+                    break;
+
+                default:
+                    break;
             }
         }
         finally
         {
-            basic_bot.CloseBot();
+            configuredBot.CloseBot();
         }
     }
 
@@ -202,7 +240,7 @@ public sealed class BotTest(ITestOutputHelper output)
         basic_bot.GoToWebpage();
         try
         {
-            IWebElement? element = null; 
+            IWebElement? element = null;
             Assert.False(basic_bot.WaitTillExists(element));
         }
         finally
