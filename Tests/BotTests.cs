@@ -48,6 +48,14 @@ public sealed class BotTest(ITestOutputHelper output)
             configuredBot.CloseBot();
         }
     }
+
+    /// <summary>
+    /// This function is useful for making preliminary actions on a test webpage.
+    /// The different actions needs to be implemented on a case by case basis.
+    /// Additionally, this function is also needed for the BotTests class.
+    /// </summary>
+    /// <param name="TestUrl">The URL of the webpage to access and make preliminary actions on.</param>
+    /// <param name="ConfiguredBot">The configured Bot object to use for accessing the webpage and making preliminary actions.</param>
     private static void AccessTestWebPage(string TestUrl, Bot ConfiguredBot)
     {
         ConfiguredBot.GoToWebpage();
@@ -88,6 +96,29 @@ public sealed class BotTest(ITestOutputHelper output)
             default:
                 break;
         }
+    }
+    private static void FindPageElementException(Bot TestBot, string? FirstElementString, string FirstByMechanism, string? SecondElementString, string? SecondByMechanism,bool UseAncestorElementPattern = false)
+    {
+        // if we are testing for ancestor element pattern matching
+        if (UseAncestorElementPattern)
+        {
+            // Forgive possible null reference for FirstElementString
+            IWebElement? FirstElement = TestBot.FindPageElement(FirstElementString!, FirstByMechanism);
+            Assert.NotNull(FirstElement);
+            // Forgive possible null reference for SecondElementString and SecondByMechanism
+            TestBot.FindPageElement(SecondElementString!, SecondByMechanism!, FirstElement);
+        }
+        else
+        {
+            // Forgive possible null reference for FirstElementString
+            TestBot.FindPageElement(FirstElementString!, FirstByMechanism);
+        }
+
+    }
+    private static void FindPageElementsException(Bot TestBot, string? ElementString, string ByMechanism)
+    {
+        // Forgive possible null reference for ElementString
+        TestBot.FindPageElements(ElementString!, ByMechanism);
     }
 
     [Fact]
@@ -179,23 +210,26 @@ public sealed class BotTest(ITestOutputHelper output)
     }
 
     [Theory]
-    [InlineData(TestUrl_1,1,"tableSearch","name","name")]
-    //[InlineData(TestUrl_3)]
+    [InlineData(TestUrl_1, 1, "tableSearch", "name", "class")]
+    [InlineData(TestUrl_1, 1, "main-logo", "id", "src")]
     [InlineData(TestUrl_1, 25, ".fi-ta-cell-name", "css")]
-    //[InlineData(TestUrl_3,]
     [InlineData(TestUrl_1, 25, "fi-ta-cell-name", "class")]
+    [InlineData(TestUrl_3, 1, "Bouldering Rock Wall", "lt")]
     [InlineData(TestUrl_3, 50, "//article[contains(@class,'card')]//div[@class='moc-card__designer-name']", "xp")]
-public void FindElementsTest(string TestUrl, int ExpectedElementAmount, string ElementTypeString, string ByMechanism,string IdentifierAttribute="Text")
+    public void FindElementsTest(string TestUrl, int ExpectedElementAmount, string ElementString, string ByMechanism, string IdentifierAttribute = "Text")
     {
         Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
         AccessTestWebPage(TestUrl, configuredBot);
         try
         {
-            configuredBot.NameList = configuredBot.FindPageElements(ElementTypeString, ByMechanism,IdentifierAttribute);
+            configuredBot.NameList = configuredBot.FindPageElements(ElementString, ByMechanism, IdentifierAttribute);
+            _output.WriteLine($"{configuredBot.NameList.Count} of element(s) by{IdentifierAttribute} added to the Bot._nameList");
+            _output.WriteLine("--------------------");
             foreach (string name in configuredBot.NameList)
             {
-                _output.WriteLine(name);  
+                _output.WriteLine(name);
             }
+            _output.WriteLine("--------------------\n\n");
             Assert.Equal(ExpectedElementAmount, configuredBot.NameList.Count);
         }
         finally
@@ -204,12 +238,22 @@ public void FindElementsTest(string TestUrl, int ExpectedElementAmount, string E
         }
     }
 
+    /// <summary>
+    /// A test to verify that the Bot can wait for and click an element on a webpage.
+    /// </summary>
+    /// <param name="TestUrl">The URL of the webpage to test.</param>
+    /// <param name="ElementString">The string to use for finding the element.</param>
+    /// <param name="Goback">Whether to go back after clicking the element.</param>
     [Theory]
-    [InlineData(TestUrl_1, "//a[@href='https://library.ldraw.org/documentation']",true)]
-    [InlineData(TestUrl_2, "//div[contains(@class,'FPdoLc')]//input[@class='RNmpXc']",true)]
-    [InlineData(TestUrl_3, "//div[@class='studio-staff-picks__bar l-margin-top--md']",false)]
-    public void WaitTilExistsElementTest(string TestUrl, string ElementString,bool Goback)
+    [InlineData(TestUrl_1, "//a[@href='https://library.ldraw.org/documentation']", true)]
+    [InlineData(TestUrl_2, "//div[contains(@class,'FPdoLc')]//input[@class='RNmpXc']", true)]
+    [InlineData(TestUrl_3, "//div[@class='studio-staff-picks__bar l-margin-top--md']", false)]
+    public void WaitTilElementExistsTest(string TestUrl, string ElementString, bool Goback)
     {
+        /// <note>
+        /// Important to use a configured bot and not a basic bot, since the configured bot defines a wait strategy in the Bot.InitializeBotPrefs(). 
+        /// Using a basic bot can sometimes incur that the Bot will click elements which are not loaded yet.
+        /// </note>
 
         Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
         try
@@ -248,6 +292,8 @@ public void FindElementsTest(string TestUrl, int ExpectedElementAmount, string E
         }
     }
 
+
+
     [Fact]
     public void WaitTillExistsFalseTest()
     {
@@ -284,65 +330,49 @@ public void FindElementsTest(string TestUrl, int ExpectedElementAmount, string E
         }
     }
 
-
-
-
     [Theory]
-    [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "NOT_IMPLEMENTED_BY_MECHANISM", null, null)]
-    [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "xp", ".//following::a[@href='https://library.ldraw.org/omr/sets/657']", "NOT_IMPLEMENTED_BY_MECHANISM")]
-    public void BotMechanismExceptionTest(string TestURl, string FirstElementString, string FirstByMechanism, string? SecondElementString, string? SecondByMechanism)
+    // Call FindPageElement() and catch exception 
+    [InlineData(TestUrl_1, null, "xp", null, "xp")]
+    // Call FindPageElements() and catch exception
+    [InlineData(TestUrl_1, null, "xp", null, "xp", true)]
+    // Call FindPageElement() but with an ancestor element pattern and catch exception
+    [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "xp", null, "xp", false, true)]
+    public void ArgumentNullExceptionTest(string TestURl, string? FirstElementString, string FirstByMechanism, string? SecondElementString, string SecondByMechanism, bool UseFindElements = false, bool UseAncestorElementPattern = false)
     {
-        Bot basicBot = new(TestURl);
-        basicBot.GoToWebpage();
+        Bot configuredBot = new(TestURl, TestDownloadFolderPath);
+        AccessTestWebPage(TestURl, configuredBot);
         try
         {
-
-            // if we are testing for ancestor element pattern matching
-            if (SecondElementString != null && SecondByMechanism != null)
+            // if UseFindElements is true, we will check exceptions in FindElements() as opposed to FindElement()
+            if (UseFindElements)
             {
-
-                IWebElement? FirstElement = basicBot.FindPageElement(FirstElementString, FirstByMechanism);
-                Assert.NotNull(FirstElement);
-                Assert.Throws<BotMechanismException>(() => basicBot.FindPageElement(SecondElementString, SecondByMechanism, FirstElement));
+                Assert.Throws<BotElementException>(() => FindPageElementsException(configuredBot, FirstElementString, FirstByMechanism));
             }
             else
             {
-                Assert.Throws<BotMechanismException>(() => basicBot.FindPageElement(FirstElementString, FirstByMechanism));
+                Assert.Throws<BotElementException>(() => FindPageElementException(configuredBot, FirstElementString, FirstByMechanism, SecondElementString, SecondByMechanism,UseAncestorElementPattern));
             }
         }
         finally
         {
-            basicBot.CloseBot();
+            configuredBot.CloseBot();
         }
     }
 
+
+    /// <summary>
+    /// Tests that the FindPageElement() function throws NoSuchElementException when an element is not found.
+    /// Note that the FindElements() function never throws NoSuchElementException, but instead returns an empty collection, hence why it does not have case in this test. 
+    /// </summary>
     [Theory]
-    [InlineData("NO_SUCH_ELEMENT", "lt")]
-    public void NoSuchElementExceptionTest(string ElementString, string ByMechanism)
+    [InlineData(TestUrl_1, "NO_SUCH_ELEMENT", "lt")]
+    public void NoSuchElementExceptionTest(string TestURl, string ElementString, string ByMechanism)
     {
-        Bot basicBot = new(TestUrl_1);
+        Bot basicBot = new(TestURl);
+        AccessTestWebPage(TestURl, basicBot);
         try
         {
-            basicBot.GoToWebpage();
-            Assert.Throws<BotElementException>(() => basicBot.FindPageElement(ElementString, ByMechanism));
-        }
-        finally
-        {
-            basicBot.CloseBot();
-        }
-
-    }
-
-
-    [Theory]
-    [InlineData(null, "lt")]
-    public void NullFindElementTest(string? ElementString, string ByMechanism)
-    {
-        Bot basicBot = new(TestUrl_1);
-        try
-        {
-            basicBot.GoToWebpage();
-            Assert.Throws<BotElementException>(() => basicBot.FindPageElement(ElementString!, ByMechanism));
+            Assert.Throws<BotElementException>(() => FindPageElementException(basicBot, ElementString, ByMechanism, null, null));
         }
         finally
         {
@@ -350,22 +380,65 @@ public void FindElementsTest(string TestUrl, int ExpectedElementAmount, string E
         }
     }
 
+
     [Theory]
-    [InlineData("//h2[@class='fi-ta-header-heading'", "xp")]
-    public void InvalidSelectorTest(string ElementString, string ByMechanism)
+    // Call FindPageElement() and catch exception 
+    [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading'", "xp", null, null)]
+    // Call FindPageElements() and catch exception
+    [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading'", "xp", null, null, true)]
+    // Call FindPageElement() but with an ancestor element pattern and catch exception
+    [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "xp", ".//following::a[@href='https://library.ldraw.org/omr/sets/657'", "xp", false, true)]
+    public void InvalidSelectorTest(string TestURl, string FirstElementString, string FirstByMechanism, string? SecondElementString, string? SecondByMechanism, bool UseFindElements = false, bool UseAncestorElementPattern = false)
     {
-        Bot basicBot = new(TestUrl_1);
+        Bot configuredBot = new(TestURl, TestDownloadFolderPath);
+        AccessTestWebPage(TestURl, configuredBot);
         try
         {
-            basicBot.GoToWebpage();
-            Assert.Throws<BotMechanismException>(() => basicBot.FindPageElement(ElementString, ByMechanism));
+            // if UseFindElements is true, we will check exceptions in FindElements() as opposed to FindElement()
+            if (UseFindElements)
+            {
+                Assert.Throws<BotMechanismException>(() => FindPageElementsException(configuredBot, FirstElementString, FirstByMechanism));
+            }
+            else
+            {
+                Assert.Throws<BotMechanismException>(() => FindPageElementException(configuredBot, FirstElementString, FirstByMechanism, SecondElementString, SecondByMechanism,UseAncestorElementPattern));
+            }
         }
         finally
         {
-            basicBot.CloseBot();
+            configuredBot.CloseBot();
         }
     }
 
+
+    [Theory]
+    // Call FindPageElement() and catch exception 
+    [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "NOT_IMPLEMENTED_BY_MECHANISM", null, null)]
+    // Call FindPageElements() and catch exception
+    [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "NOT_IMPLEMENTED_BY_MECHANISM", null, null, true)]
+    // Call FindPageElement() but with an ancestor element pattern and catch exception
+    [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "xp", ".//following::a[@href='https://library.ldraw.org/omr/sets/657']", "NOT_IMPLEMENTED_BY_MECHANISM",false,true)]
+    public void NotImplementedExceptionTest(string TestURl, string FirstElementString, string FirstByMechanism, string? SecondElementString, string? SecondByMechanism, bool UseFindElements = false,bool UseAncestorElementPattern = false)
+    {
+        Bot configuredBot = new(TestURl, TestDownloadFolderPath);
+        AccessTestWebPage(TestURl, configuredBot);
+        try
+        {
+            // if UseFindElements is true, we will check exceptions in FindElements() as opposed to FindElement()
+            if (UseFindElements)
+            {
+                Assert.Throws<BotMechanismException>(() => FindPageElementsException(configuredBot, FirstElementString, FirstByMechanism));
+            }
+            else
+            {
+                Assert.Throws<BotMechanismException>(() => FindPageElementException(configuredBot, FirstElementString, FirstByMechanism, SecondElementString, SecondByMechanism,UseAncestorElementPattern));
+            }
+        }
+        finally
+        {
+            configuredBot.CloseBot();
+        }
+    }
 
     [Theory]
     [InlineData("www.NotAWebsiteForBots.Bot.com")]
@@ -398,17 +471,6 @@ public void FindElementsTest(string TestUrl, int ExpectedElementAmount, string E
         }
     }
 
-
-    //[Theory]
-    //[InlineData]
-    //public void ClickElementTest()
-    //{
-    //    if (configuredBot.WaitTillExists(pageElement))
-    //    {
-    //        Bot.ClickElement(pageElement);
-    //    }
-    //}
-
     [Fact]
     public void CloseBrowserTest()
     {
@@ -439,11 +501,7 @@ public void FindElementsTest(string TestUrl, int ExpectedElementAmount, string E
         {
             basicBot.CloseBot();
         }
-
-
-
     }
-
 
     [Fact]
     public void GetChromeOptionsTest()
@@ -459,7 +517,6 @@ public void FindElementsTest(string TestUrl, int ExpectedElementAmount, string E
             configuredBot.CloseBot();
         }
     }
-
 
     [Fact]
     public void GetNameListTest()
@@ -479,71 +536,4 @@ public void FindElementsTest(string TestUrl, int ExpectedElementAmount, string E
             configuredBot.CloseBot();
         }
     }
-
-
-
-
-    // We try to locate the number of set elements pr page, either directly or 
-    // via an ancestor element. 
-    // IWebElement ancestorElement Xpath = "//div[contains(class(fi-pagination-records-per-page-select)"
-    // IWebElement decendantElement Xpath = ".//following[contains](text("fi-input-wrp-content-ctn"))
-
-    // [Theory]
-    // // without AncestorElement
-    // [InlineData("//div[contains(class() 'fi-input-wrp-content-ctn'", "//button[@aria-label='Go to page 59']", "XP")]
-    // // with AncestorElement
-    // public static int GetClickAmount(string SetsPrPageString, string TotalPagesString, string ByMechanism, IWebElement? AncestorElement = null)
-    // {
-    //     IWebElement? setsPrPageElement;
-    //     IWebElement? TotalPagesElement;
-    //     int setsPrPage;
-    //     testBot.GoToWebpage(url);
-
-
-    //     if (AncestorElement != null)
-    //     {
-    //         // find sets pr page value 
-    //         setsPrPageElement = testBot.FindPageElement(SetsPrPageString, ByMechanism);
-    //     }
-    //     else
-    //     {
-    //         setsPrPageElement = testBot.FindPageElement(SetsPrPageString, ByMechanism, AncestorElement);
-    //     }
-    //     // find total pages element
-    //     TotalPagesElement = testBot.FindPageElement(TotalPagesString, ByMechanism);
-
-
-    //     // convert element text field to int32 
-    //     setsPrPage = Convert.ToInt32(setsPrPageElement?.Text);
-    //     Console.WriteLine($"Amount of LEGO sets pr page:{setsPrPage}");
-
-
-    //     //convert text field to int32'
-    //     int totalPages = Convert.ToInt32(TotalPagesElement?.Text);
-    //     Console.WriteLine($"Amount of Pages:{totalPages}");
-
-
-    //     int clickAmount = setsPrPage * totalPages;
-    //     return clickAmount;
-    // }
-
-
-
-
-    // [Fact]
-    // public static bool ExpectedClickAmount(int ClickAmount)
-    // {
-    //     GetClickAmount(testBot, byMechanism, ClickAmount,elementString, ancestorElement);
-
-
-
-    //     }
-    //     else
-    //     {
-    //         testBot.GoToWebpage(url);
-    //         IWebElement? element = testBot.FindPageElement(ElementString, ByMechanism);
-    //         Console.WriteLine(element.Text);
-    //     }
-    // }
-
 }
