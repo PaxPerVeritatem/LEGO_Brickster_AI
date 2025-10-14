@@ -143,12 +143,11 @@ public class GetDataLdraw
         catch (BotElementException)
         {
             Console.WriteLine($"No more next buttons. Reached last page.");
+        }
+        finally
+        {
             bot.CloseBot();
         }
-
-
-
-
         try
         {
             if (_downloadAmount == downloadCounter)
