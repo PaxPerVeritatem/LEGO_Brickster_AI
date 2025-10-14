@@ -57,6 +57,8 @@ public class BotMechanismException : BotException
     public BotMechanismException(string message, Exception inner) : base(message, inner) { }
 }
 
+
+
 public class BotDownloadAmountException : BotException
 {
     public BotDownloadAmountException() : base() { }

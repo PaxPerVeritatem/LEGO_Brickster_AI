@@ -3,7 +3,7 @@ namespace LEGO_Brickster_AI;
 using OpenQA.Selenium;
 public class GetDataLdraw
 {
-    private static readonly bool _startFromPage = true;
+    private static readonly bool _startFromPage = false;
     private const string _downloadFolderPath = @"..\..\..\LEGO_Data";
     private readonly static string _urlPageVarient = "?page=";
 
@@ -53,7 +53,7 @@ public class GetDataLdraw
             bot.CloseBot();
         }
 
-        // initialize the next button class element for the main page
+        // initialize the 'Next' button element for the main page
         IWebElement? nextButtonElement;
         try
         {
@@ -72,10 +72,11 @@ public class GetDataLdraw
                         if (bot.WaitTillExists(setNameElement))
                         {
                             Bot.ClickElement(setNameElement);
+                            // add for each LEGO set. Should finally match 'downloadAmount'
+                            downloadCounter += 1;
                         }
 
-                        // add for each LEGO set. Should finally match 'downloadAmount'
-                        downloadCounter += 1;
+
                         // Attempt to find 'Models' element on LEGO set page
                         IWebElement? ModelsElement = bot.FindPageElement("//div[contains(text(),'Model')]", "xp");
 
@@ -118,26 +119,29 @@ public class GetDataLdraw
                         Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
 
                     }
-                    catch (Exception ex)
+                    // should be thrown in case of stale element or 404 page error. 
+                    catch (BotException ex)
                     {
                         Console.WriteLine(ex.Message);
                         bot.GoBack();
                     }
                 }
 
-                /*We try to find the next button, after all elements for current page 
-                have been download. This is to avoid stale data for the next button state.
-                Based on the webpage size, the next might be changed due to responsiveness of the page. Hence we need to look for two possible next buttons*/
+                // look for the next page button 
                 nextButtonElement = bot.FindPageElement("//button[@aria-label='Next']", "xp");
+
                 // click next button if it is loaded. 
                 if (bot.WaitTillExists(nextButtonElement))
                 {
                     Bot.ClickElement(nextButtonElement);
-                    // wait until 
+
+                    // Bot should not proceed until the next page to loaded after clicking the 'Next' page button
                     bot.ExplicitWait();
                 }
+                // reset the bot attribute list for next page of elements. 
                 bot.AttributeList = [];
-                // while there is an other page of sets to go to. 
+
+            // while there is an other page of sets to go to. 
             } while (nextButtonElement != null);
         }
         catch (BotElementException)
@@ -148,12 +152,14 @@ public class GetDataLdraw
         {
             bot.CloseBot();
         }
+
+
         try
         {
             if (_downloadAmount == downloadCounter)
             {
                 Console.WriteLine($"{_downloadAmount} have been correctly infered and downloaded");
-                
+
             }
             else
             {

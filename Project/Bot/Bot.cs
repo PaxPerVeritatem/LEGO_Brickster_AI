@@ -167,7 +167,7 @@ public class Bot
         // if the element is stale due to page state.  
         catch (StaleElementReferenceException ex)
         {
-            throw new Exception("Stale element reference exception", ex);
+            throw new BotException($"The element {ElementString} was stale due to page state:{ex}");
         }
     }
 
