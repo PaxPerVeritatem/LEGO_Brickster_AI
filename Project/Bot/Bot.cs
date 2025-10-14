@@ -5,6 +5,11 @@ using OpenQA.Selenium.Chrome;
 using System;
 using OpenQA.Selenium.Support.UI;
 
+/// <summary>
+/// A class which wraps and simplifies some functionality of the Selenium ChromeDriver class.
+/// Currently not implemented with other stypes of driver (like FirefoxDriver).
+/// To be implemented in the future
+/// </summary>
 public class Bot
 {
     private readonly ChromeDriver _driver;
@@ -29,12 +34,14 @@ public class Bot
 
 
 
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="Bot"/> class.
+    /// A constructor for a so called Basic and configured version of the Bot class, depending if the downloadFolderPath parameter is provided or not.
+    /// If the downloadFolderPath parameter is provided, the Bot object is configured with the provided download folder path as the default download folder.
+    /// Additionally, the bot will allow multiple downloads and prevent the browser from blocking them with a 'allow multiple downloads' prompt.
+    /// Lastly, the bot's page loading strategy is set to "Normal".
     /// </summary>
-    /// <param name="url">The URL of the webpage to navigate to.</param>
-    /// <param name="downloadFolderPath">The path to the download folder. If null, the default download folder will be used.</param>
+    /// <param name="url">The URL of the webpage to access.</param>
+    /// <param name="downloadFolderPath">The path to the default download folder for the bot.</param>
     public Bot(string url, string? downloadFolderPath = null)
     {
         Url = url;
@@ -51,8 +58,13 @@ public class Bot
 
         _wait = new(_driver, TimeSpan.FromSeconds(2));
     }
+        
 
-
+    /// <summary>
+    /// Returns the absolute path to the download folder by combining the provided relative download folder path with the application's base directory.
+    /// </summary>
+    /// <param name="DownloadFolderPath">The relative path to the download folder.</param>
+    /// <returns>The absolute path to the download folder.</returns>
     public static string GetAbsoluteDownloadFolderPath(string DownloadFolderPath)
     {
         string absDownloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, DownloadFolderPath));
@@ -60,15 +72,23 @@ public class Bot
     }
 
 
+    
     /// <summary>
-    /// Initializes a new instance of the <see cref="ChromeOptions"/> class, with a pre-defined download folder preference.
+    /// Initializes a ChromeOptions object with preferences for a bot with a designated download folder path.
+    /// The bot will use the provided download folder path as the default download folder.
+    /// Additionally, the bot will allow multiple downloads and prevent the browser from blocking them with a 'allow multiple downloads' prompt.
+    /// Lastly, the bot's page loading strategy is set to normal.
     /// </summary>
-    /// <param name="DownloadFolderPath">The path to the download folder.</param>
-    /// <returns>A new instance of <see cref="ChromeOptions"/> with the pre-defined download folder preference.</returns>
+    /// <param name="DownloadFolderPath">The path to the default download folder for the bot.</param>
+    /// <returns>A ChromeOptions object with the specified preferences.</returns>
+    /// <remarks>
+    /// Only bots with the constructor containing a downloadFolderPath call this preliminary function.
+    /// Basic bots utilize the default download folder path of the system and do not have a designated page loading strategy.
+    /// </remarks>
     public static ChromeOptions InitializeBotPrefs(string DownloadFolderPath)
     {
         ChromeOptions options = new();
-        // add preferenced download folder to options preferences.
+        // add preferenced download folder to optionsPreferences.
         options.AddUserProfilePreference("download.default_directory", DownloadFolderPath);
         // to allow for multiple downloads and prevent the browser from blocking them 'allow multiple downloads' prombt
         options.AddUserProfilePreference("disable-popup-blocking", "true");
@@ -77,13 +97,20 @@ public class Bot
     }
 
 
-    /// <summary>
-    /// Finds a single element on the webpage by a given mechanism (link text or XPath).
-    /// </summary>
-    /// <param name="ElementString">The string to use for finding the element.</param>
-    /// <param name="ByMechanism">The mechanism to use for finding the element (Link Text or XPath).</param>
-    /// <param name="AncestorElement">The ancestor element to search for the desired element in. If null, the entire webpage is searched.</param>
-    /// <returns>The found element, or null if not found.</returns>
+    
+        /// <summary>
+        /// Finds a page element based on the ElementString and ByMechanism provided.
+        /// If AncestorElement is not null, the function will search for the element within the AncestorElement.
+        /// </summary>
+        /// <param name="ElementString">The string to use for finding the element.</param>
+        /// <param name="ByMechanism">The mechanism to use for finding the element, such as By.Name, By.Id, By.CssSelector, etc.</param>
+        /// <param name="AncestorElement">The ancestor element to search for the element within. If null, search the entire webpage.</param>
+        /// <returns>The found element, or null if no element was found.</returns>
+        /// <exception cref="BotElementException">Thrown when the ElementString argument is null.</exception>
+        /// <exception cref="BotMechanismException">Thrown when the ElementString did not match to the designated ByMechanism or the ByMechanism did not match any defined ByMechanism.</exception>
+        /// <exception cref="NoSuchElementException">Thrown when no element was found by FindElement() with the designated 'ByMechanism'.</exception>
+        /// <exception cref="InvalidSelectorException">Thrown when the ElementString is syntactically invalid for the valid chosen ByMechanism, eg missing a [] in xp.</exception>
+        /// <exception cref="NotImplementedException">Thrown when the 'ByMechanism' parameter did not match any defined ByMechanism.</exception>
     public IWebElement? FindPageElement(string ElementString, string ByMechanism, IWebElement? AncestorElement = null)
     {
         IWebElement element;
@@ -137,6 +164,17 @@ public class Bot
         }
     }
 
+        /// <summary>
+        /// Finds a list of elements on a webpage based on the ByMechanism and ElementString provided.
+        /// The list of elements is then iterated over and the attribute specified by IdentifierAttribute is added to the Bot._nameList for each element.
+        /// If IdentifierAttribute is not provided, the Text of the element is utilized as default.
+        /// </summary>
+        /// <param name="ElementString">The string to use for finding the elements.</param>
+        /// <param name="ByMechanism">The mechanism to use for finding the elements, such as By.Name, By.Id, By.CssSelector, etc.</param>
+        /// <param name="IdentifierAttribute">The attribute of the element to use when adding to the Bot._nameList. If not provided, uses the text of the element.</param>
+        /// <returns>A list of strings representing the elements found.</returns>
+        /// <exception cref="BotElementException">Thrown when the ElementString argument is null.</exception>
+        /// <exception cref="BotMechanismException">Thrown when the ElementString did not match to the designated ByMechanism or the ByMechanism did not match any defined ByMechanism.</exception>
     public IList<string> FindPageElements(string ElementString, string ByMechanism, string IdentifierAttribute = "Text")
     {
 
@@ -178,7 +216,6 @@ public class Bot
             }
             return _nameList;
         }
-
         //ElementString was null
         catch (ArgumentNullException)
         {
@@ -200,21 +237,18 @@ public class Bot
 
 
 
-    /// <summary>
-    /// Navigates to the webpage specified by the 'Url' field.
-    /// </summary>
-    /// <remarks>
-    /// Will throw a <see cref="BotUrlException"/> if the 'Url' field is null.
-    /// Will throw a <see cref="BotUrlException"/> if the webpage could not be loaded and the URL is invalid.
-    /// </remarks>
+    
+        /// <summary>
+        /// Navigates to the webpage specified by the URL property.
+        /// </summary>
+        /// <exception cref="BotUrlException">Thrown when the URL is null or invalid.</exception>
+        /// <exception cref="BotDriverException">Thrown when the webdriver failed to access the website due to the browser already being closed or the webdriver already being closed.</exception>
     public void GoToWebpage()
     {
         try
         {
             _driver.Navigate().GoToUrl(Url);
         }
-
-
         //if URL is null
         catch (ArgumentNullException ex)
         {
@@ -238,24 +272,34 @@ public class Bot
         }
     }
 
+
     /// <summary>
-    /// Waits until the given element is displayed.
+    /// Waits until the referenced IWebElement exists on the webpage.
+    /// If the IWebElement referenced is null, the function will return false.
+    /// Note that if the driver is instanceiated without a generous PageLoadStrategy, 
+    /// some combinations of actions may lead to the blot clicking elements which are not yet loaded on the page 
+    /// or the bot go though its actions to fast and leads to attempting no longer valid actions.
     /// </summary>
-    /// <param name="element">The element to wait for.</param>
+    /// <param name="element">The IWebElement to wait for.</param>
+    /// <returns>true if the element is found, false if the element is null.</returns>
     public bool WaitTillExists(IWebElement? element)
     {
         if (element != null)
         {
-            _wait.Until(driver => element.Displayed);
+            _wait.Until(_driver => element.Displayed);
             return true;
         }
         return false;
     }
-    /// <summary>
-    /// Attempts to click the given element.
-    /// </summary>
-    /// <param name="element">The element to attempt to click.</param>
-    /// <exception cref="BotElementException">Thrown if the element data is stale.</exception>
+
+
+
+
+        /// <summary>
+        /// Attempts to click the referenced IWebElement. If the IWebElement referenced is stale, a BotElementException will be thrown.
+        /// </summary>
+        /// <param name="element">The IWebElement to click.</param>
+        /// <exception cref="BotElementException">Thrown if the referenced element data is stale.</exception>
     public static void ClickElement(IWebElement? element)
     {
         try
@@ -267,9 +311,13 @@ public class Bot
             throw new BotElementException("Referenced element data is stale. Check element state before attempting to click");
         }
     }
-    /// <summary>
-    /// Goes back to the previous webpage via the driver object .
-    /// </summary>
+    
+    
+
+    
+        /// <summary>
+        /// Goes back to the previous webpage in the browser history.
+        /// </summary>
     public void GoBack()
     {
 

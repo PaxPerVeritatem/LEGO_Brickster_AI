@@ -7,16 +7,10 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Chrome;
 
-/* Quick Decision Guide  for tests
-
-- Single test case, no parameters? → Use [Fact]
-- Same test, multiple inputs? → Use [Theory] with [InlineData]
-- Complex or reusable test data? → Use [Theory] with [MemberData] or [ClassData]
-- Need to categorize tests? → Add [Trait] to any test
-*/
 
 public sealed class BotTest(ITestOutputHelper output)
 {
+    // some simple consts for testing. Can be added too. 
     private const string TestDownloadFolderPath = @"..\..\..\LEGO_Data";
 
     private const string TestUrl_1 = "https://library.ldraw.org/omr/sets";
@@ -25,10 +19,18 @@ public sealed class BotTest(ITestOutputHelper output)
 
     private const string TestUrl_3 = "https://www.bricklink.com/v3/studio/gallery.page";
 
+    // an Xunit test output helper which allows to output debug information in the console during the test
     private readonly ITestOutputHelper _output = output;
 
 
 
+    /// <summary>
+    /// A test to verify that the Bot class can be initialized successfully with or without a download folder path.
+    /// </summary>
+    /// <remarks>
+    /// Verifies that the Bot class can be initialized successfully with or without a download folder path.
+    /// It also verifies that the absolute download folder path retrieved from the Bot class is as expected.
+    /// </remarks>
     [Fact]
     public void InitializeBotTest()
     {
@@ -49,13 +51,12 @@ public sealed class BotTest(ITestOutputHelper output)
         }
     }
 
+
     /// <summary>
-    /// This function is useful for making preliminary actions on a test webpage.
-    /// The different actions needs to be implemented on a case by case basis.
-    /// Additionally, this function is also needed for the BotTests class.
+    /// A private helper function to define the different cases and preliminary actions nessesary to access the main page of a test web site.
     /// </summary>
-    /// <param name="TestUrl">The URL of the webpage to access and make preliminary actions on.</param>
-    /// <param name="ConfiguredBot">The configured Bot object to use for accessing the webpage and making preliminary actions.</param>
+    /// <param name="TestUrl">The URL of the test webpage.</param>
+    /// <param name="ConfiguredBot">The configured bot instance.</param>
     private static void AccessTestWebPage(string TestUrl, Bot ConfiguredBot)
     {
         ConfiguredBot.GoToWebpage();
@@ -97,7 +98,16 @@ public sealed class BotTest(ITestOutputHelper output)
                 break;
         }
     }
-    private static void FindPageElementException(Bot TestBot, string? FirstElementString, string FirstByMechanism, string? SecondElementString, string? SecondByMechanism,bool UseAncestorElementPattern = false)
+    /// <summary>
+    /// A privat helper function. Utilized for cases where FindPageElement() should throw some exception.
+    /// </summary>
+    /// <param name="TestBot">The bot instance to test.</param>
+    /// <param name="FirstElementString">The first element string to use for finding the element.</param>
+    /// <param name="FirstByMechanism">The first mechanism to use for finding the element.</param>
+    /// <param name="SecondElementString">The second element string to use for finding the element, if applicable.</param>
+    /// <param name="SecondByMechanism">The second mechanism to use for finding the element, if applicable.</param>
+    /// <param name="UseAncestorElementPattern">Whether to use the ancestor element pattern matching or not. Default to false.</param>
+    private static void FindPageElementException(Bot TestBot, string? FirstElementString, string FirstByMechanism, string? SecondElementString, string? SecondByMechanism, bool UseAncestorElementPattern = false)
     {
         // if we are testing for ancestor element pattern matching
         if (UseAncestorElementPattern)
@@ -113,14 +123,25 @@ public sealed class BotTest(ITestOutputHelper output)
             // Forgive possible null reference for FirstElementString
             TestBot.FindPageElement(FirstElementString!, FirstByMechanism);
         }
-
     }
+    /// <summary>
+    /// A private helper function. Utilized for cases where FindPageElements() should throw some exception.
+    /// </summary>
+    /// <param name="TestBot">The bot instance to test.</param>
+    /// <param name="ElementString">The element string to use for finding the elements.</param>
+    /// <param name="ByMechanism">The mechanism to use for finding the elements.</param>
     private static void FindPageElementsException(Bot TestBot, string? ElementString, string ByMechanism)
     {
         // Forgive possible null reference for ElementString
         TestBot.FindPageElements(ElementString!, ByMechanism);
     }
 
+    /// <summary>
+    /// Tests that GoToWebpage() correctly navigates to a webpage and that the Bot.Driver.Url is updated accordingly.
+    /// </summary>
+    /// <remarks>
+    /// Asserts that the Bot.Driver.Url is equal to TestUrl_1 after calling GoToWebpage().
+    /// </remarks>
     [Fact]
     public void GoToWebpageTest()
     {
@@ -140,6 +161,12 @@ public sealed class BotTest(ITestOutputHelper output)
             basicBot.CloseBot();
         }
     }
+    /// <summary>
+    /// Tests the Bot.FindPageElement() method with various inputs and their respective ByMechanism.
+    /// </summary>
+    /// <remarks>
+    /// Asserts that the Bot.FindPageElement() method returns a non-null IWebElement given the ElementString and ByMechanism.
+    /// </remarks>
     [Theory]
     [InlineData("tableSearch", "name")]
     [InlineData("main-logo", "id")]
@@ -166,6 +193,14 @@ public sealed class BotTest(ITestOutputHelper output)
         }
     }
 
+    /// <summary>
+    /// Tests that Bot.FindPageElement() correctly finds an element when given an ancestor element string and its corresponding ByMechanism.
+    /// </summary>
+    /// <param name="TestUrl">The URL of the webpage to test.</param>
+    /// <param name="AncestorElementString">The string to use for finding the ancestor element.</param>
+    /// <param name="DecendentElementString">The string to use for finding the dependent element.</param>
+    /// <param name="AncestorByMechanism">The mechanism to use for finding the ancestor element.</param>
+    /// <param name="DecendentByMechanism">The mechanism to use for finding the dependent element.</param>
     [Theory]
     [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", ".//following::a[@href='https://library.ldraw.org/omr/sets/657']", "xp", "xp")]
     public void FindElementWithAncestorTest(string TestUrl, string AncestorElementString, string DecendentElementString, string AncestorByMechanism, string DecendentByMechanism)
@@ -183,7 +218,6 @@ public sealed class BotTest(ITestOutputHelper output)
             elementAttributeList.Add(attributeString!);
             return elementAttributeList;
         }
-
         try
         {
             configuredBot.GoToWebpage();
@@ -209,6 +243,17 @@ public sealed class BotTest(ITestOutputHelper output)
         }
     }
 
+    /// <summary>
+    /// Tests the Bot.FindPageElements() method with various inputs and their respective ByMechanism.
+    /// </summary>
+    /// <param name="TestUrl">The URL of the webpage to access.</param>
+    /// <param name="ExpectedElementAmount">The expected amount of elements to find.</param>
+    /// <param name="ElementString">The string to use for finding the elements.</param>
+    /// <param name="ByMechanism">The mechanism to use for finding the elements, such as By.Name, By.Id, By.CssSelector, etc.</param>
+    /// <param name="IdentifierAttribute">The attribute of the element to use when adding to the Bot._nameList. If not provided, uses the text of the element.</param>
+    /// <remarks>
+    /// Asserts that the Bot.FindPageElements() method returns a non-null IWebElement given the ElementString and ByMechanism.
+    /// </remarks>
     [Theory]
     [InlineData(TestUrl_1, 1, "tableSearch", "name", "class")]
     [InlineData(TestUrl_1, 1, "main-logo", "id", "src")]
@@ -238,12 +283,18 @@ public sealed class BotTest(ITestOutputHelper output)
         }
     }
 
+
+
     /// <summary>
-    /// A test to verify that the Bot can wait for and click an element on a webpage.
+    /// Tests the Bot.WaitTillExists() method with various inputs.
     /// </summary>
-    /// <param name="TestUrl">The URL of the webpage to test.</param>
+    /// <param name="TestUrl">The URL of the webpage to access.</param>
     /// <param name="ElementString">The string to use for finding the element.</param>
-    /// <param name="Goback">Whether to go back after clicking the element.</param>
+    /// <param name="Goback">Whether the bot should go back to the previous webpage after clicking the element.</param>
+    /// <remarks>
+    /// Important to use a configured bot and not a basic bot, since the configured bot defines a wait strategy in the Bot.InitializeBotPrefs(). 
+    /// Using a basic bot can sometimes incur that the Bot will click elements which are not loaded yet or actions are performed too early before an element is loaded.
+    /// </remarks>
     [Theory]
     [InlineData(TestUrl_1, "//a[@href='https://library.ldraw.org/documentation']", true)]
     [InlineData(TestUrl_2, "//div[contains(@class,'FPdoLc')]//input[@class='RNmpXc']", true)]
@@ -291,9 +342,9 @@ public sealed class BotTest(ITestOutputHelper output)
             }
         }
     }
-
-
-
+    /// <summary>
+    /// Tests whether WaitTillExists correctly returns false when the provided element is null.
+    /// </summary>
     [Fact]
     public void WaitTillExistsFalseTest()
     {
@@ -309,8 +360,10 @@ public sealed class BotTest(ITestOutputHelper output)
             basic_bot.CloseBot();
         }
     }
-
-
+    /// <summary>
+    /// Tests whether the ClickElement() function throws a BotElementException when the referenced element is stale.
+    /// </summary>
+    /// <param name="elementString">The XPath string to use for finding the element.</param>
     [Theory]
     [InlineData("//a[@href='https://library.ldraw.org/documentation']")]
     public void ClickElementExceptionTest(string elementString)
@@ -330,6 +383,16 @@ public sealed class BotTest(ITestOutputHelper output)
         }
     }
 
+    /// <summary>
+    /// Tests that the FindPageElement() and FindPageElements() functions throw the correct exceptions when null arguments are passed.
+    /// </summary>
+    /// <param name="TestURl">The URL to test.</param>
+    /// <param name="FirstElementString">The XPath string to use for finding the first element.</param>
+    /// <param name="FirstByMechanism">The ByMechanism to use for finding the first element.</param>
+    /// <param name="SecondElementString">The XPath string to use for finding the second element if UseAncestorElementPattern is true.</param>
+    /// <param name="SecondByMechanism">The ByMechanism to use for finding the second element if UseAncestorElementPattern is true.</param>
+    /// <param name="UseFindElements">Whether to test FindPageElements() or FindPageElement().</param>
+    /// <param name="UseAncestorElementPattern">Whether to test FindPageElement() with an ancestor element pattern.</param>
     [Theory]
     // Call FindPageElement() and catch exception 
     [InlineData(TestUrl_1, null, "xp", null, "xp")]
@@ -350,7 +413,7 @@ public sealed class BotTest(ITestOutputHelper output)
             }
             else
             {
-                Assert.Throws<BotElementException>(() => FindPageElementException(configuredBot, FirstElementString, FirstByMechanism, SecondElementString, SecondByMechanism,UseAncestorElementPattern));
+                Assert.Throws<BotElementException>(() => FindPageElementException(configuredBot, FirstElementString, FirstByMechanism, SecondElementString, SecondByMechanism, UseAncestorElementPattern));
             }
         }
         finally
@@ -360,10 +423,13 @@ public sealed class BotTest(ITestOutputHelper output)
     }
 
 
+
     /// <summary>
-    /// Tests that the FindPageElement() function throws NoSuchElementException when an element is not found.
-    /// Note that the FindElements() function never throws NoSuchElementException, but instead returns an empty collection, hence why it does not have case in this test. 
+    /// Tests whether the FindPageElement() and FindPageElements() functions throw a NoSuchElementException when the referenced element does not exist.
     /// </summary>
+    /// <param name="TestURl">The URL to test.</param>
+    /// <param name="ElementString">The XPath string to use for finding the element.</param>
+    /// <param name="ByMechanism">The ByMechanism to use for finding the element.</param>
     [Theory]
     [InlineData(TestUrl_1, "NO_SUCH_ELEMENT", "lt")]
     public void NoSuchElementExceptionTest(string TestURl, string ElementString, string ByMechanism)
@@ -381,6 +447,16 @@ public sealed class BotTest(ITestOutputHelper output)
     }
 
 
+    /// <summary>
+    /// Tests whether the FindPageElement() and FindPageElements() functions throw a BotMechanismException when the ElementString is syntactically invalid for the valid chosen ByMechanism, eg missing a [] in xp.
+    /// </summary>
+    /// <param name="TestURl">The URL to test.</param>
+    /// <param name="FirstElementString">The XPath string to use for finding the first element.</param>
+    /// <param name="FirstByMechanism">The ByMechanism to use for finding the first element.</param>
+    /// <param name="SecondElementString">The XPath string to use for finding the second element if UseAncestorElementPattern is true.</param>
+    /// <param name="SecondByMechanism">The ByMechanism to use for finding the second element if UseAncestorElementPattern is true.</param>
+    /// <param name="UseFindElements">Whether to test FindPageElements() or FindPageElement().</param>
+    /// <param name="UseAncestorElementPattern">Whether to test FindPageElement() with an ancestor element pattern.</param>
     [Theory]
     // Call FindPageElement() and catch exception 
     [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading'", "xp", null, null)]
@@ -401,7 +477,7 @@ public sealed class BotTest(ITestOutputHelper output)
             }
             else
             {
-                Assert.Throws<BotMechanismException>(() => FindPageElementException(configuredBot, FirstElementString, FirstByMechanism, SecondElementString, SecondByMechanism,UseAncestorElementPattern));
+                Assert.Throws<BotMechanismException>(() => FindPageElementException(configuredBot, FirstElementString, FirstByMechanism, SecondElementString, SecondByMechanism, UseAncestorElementPattern));
             }
         }
         finally
@@ -411,14 +487,24 @@ public sealed class BotTest(ITestOutputHelper output)
     }
 
 
+    /// <summary>
+    /// Tests whether the FindPageElement() and FindPageElements() functions throw a NotImplementedExceptionException when the ElementString does not match to the designated ByMechanism.
+    /// </summary>
+    /// <param name="TestURl">The URL to test.</param>
+    /// <param name="FirstElementString">The XPath string to use for finding the first element.</param>
+    /// <param name="FirstByMechanism">The ByMechanism to use for finding the first element.</param>
+    /// <param name="SecondElementString">The XPath string to use for finding the second element if UseAncestorElementPattern is true.</param>
+    /// <param name="SecondByMechanism">The ByMechanism to use for finding the second element if UseAncestorElementPattern is true.</param>
+    /// <param name="UseFindElements">Whether to test FindPageElements() or FindPageElement().</param>
+    /// <param name="UseAncestorElementPattern">Whether to test FindPageElement() with an ancestor element pattern.</param>
     [Theory]
     // Call FindPageElement() and catch exception 
     [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "NOT_IMPLEMENTED_BY_MECHANISM", null, null)]
     // Call FindPageElements() and catch exception
     [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "NOT_IMPLEMENTED_BY_MECHANISM", null, null, true)]
     // Call FindPageElement() but with an ancestor element pattern and catch exception
-    [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "xp", ".//following::a[@href='https://library.ldraw.org/omr/sets/657']", "NOT_IMPLEMENTED_BY_MECHANISM",false,true)]
-    public void NotImplementedExceptionTest(string TestURl, string FirstElementString, string FirstByMechanism, string? SecondElementString, string? SecondByMechanism, bool UseFindElements = false,bool UseAncestorElementPattern = false)
+    [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "xp", ".//following::a[@href='https://library.ldraw.org/omr/sets/657']", "NOT_IMPLEMENTED_BY_MECHANISM", false, true)]
+    public void NotImplementedExceptionTest(string TestURl, string FirstElementString, string FirstByMechanism, string? SecondElementString, string? SecondByMechanism, bool UseFindElements = false, bool UseAncestorElementPattern = false)
     {
         Bot configuredBot = new(TestURl, TestDownloadFolderPath);
         AccessTestWebPage(TestURl, configuredBot);
@@ -431,7 +517,7 @@ public sealed class BotTest(ITestOutputHelper output)
             }
             else
             {
-                Assert.Throws<BotMechanismException>(() => FindPageElementException(configuredBot, FirstElementString, FirstByMechanism, SecondElementString, SecondByMechanism,UseAncestorElementPattern));
+                Assert.Throws<BotMechanismException>(() => FindPageElementException(configuredBot, FirstElementString, FirstByMechanism, SecondElementString, SecondByMechanism, UseAncestorElementPattern));
             }
         }
         finally
@@ -440,6 +526,10 @@ public sealed class BotTest(ITestOutputHelper output)
         }
     }
 
+    /// <summary>
+    /// Tests whether the GoToWebpage() method throws a BotUrlException when an invalid URL is provided to the constructor.
+    /// </summary>
+    /// <param name="InvalidUrl">The invalid URL to test.</param>
     [Theory]
     [InlineData("www.NotAWebsiteForBots.Bot.com")]
     public void InvalidUrlTest(string InvalidUrl)
@@ -455,6 +545,10 @@ public sealed class BotTest(ITestOutputHelper output)
         }
     }
 
+    /// <summary>
+    /// Tests whether the GoToWebpage() method throws a BotUrlException when a null URL is provided to the constructor.
+    /// </summary>
+    /// <param name="NullUrl">The null URL to test.</param>
     [Theory]
     [InlineData(null)]
     public void NullUrlTest(string? NullUrl)
@@ -471,6 +565,9 @@ public sealed class BotTest(ITestOutputHelper output)
         }
     }
 
+    /// <summary>
+    /// Tests whether the Bot class throws a BotDriverException when calling GoToWebpage() after calling CloseBotBrowser().
+    /// </summary>
     [Fact]
     public void CloseBrowserTest()
     {
@@ -487,6 +584,9 @@ public sealed class BotTest(ITestOutputHelper output)
         }
     }
 
+    /// <summary>
+    /// Tests whether the Bot class throws a BotDriverException when calling GoToWebpage() after calling CloseBotDriver().
+    /// </summary>
     [Fact]
     public void CloseDriverTest()
     {
@@ -503,6 +603,9 @@ public sealed class BotTest(ITestOutputHelper output)
         }
     }
 
+/// <summary>
+/// Tests whether the Bot class exposes the ChromeOptions used to initialize the ChromeDriver instance.
+/// </summary>
     [Fact]
     public void GetChromeOptionsTest()
     {
@@ -518,6 +621,9 @@ public sealed class BotTest(ITestOutputHelper output)
         }
     }
 
+        /// <summary>
+        /// Tests whether the Bot class exposes the NameList property, which contains a list of names found on the webpage.
+        /// </summary>
     [Fact]
     public void GetNameListTest()
     {
