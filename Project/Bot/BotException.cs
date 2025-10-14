@@ -63,5 +63,5 @@ public class BotDownloadAmountException : BotException
 
     public BotDownloadAmountException(string message) : base(message) { }
 
-    public BotDownloadAmountException (string message, Exception inner) : base(message, inner) {} 
+    public BotDownloadAmountException(string message, Exception inner) : base(message, inner) { }
 }
