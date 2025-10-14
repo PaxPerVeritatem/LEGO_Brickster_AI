@@ -67,10 +67,10 @@ public class GetDataLdraw
                         IWebElement? downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", ModelsElement);
 
                         // while there are download buttons on the page find them and press them., 
-                        while (bot.WaitTillExists(downloadButtonElement))
+                        while (downloadButtonElement!=null)
                         {
                             // i belive we can forgive here since WaitTillExists checks for null element. We will see. 
-                            string downloadFileSubstring = Bot.GetFileName(downloadButtonElement!, "href");
+                            string downloadFileSubstring = Bot.GetFileName(downloadButtonElement, "href");
 
                             string downloadFilePath = Path.Combine(bot.AbsDownloadFolderPath!, downloadFileSubstring);
                             // if the file has already been downloaded, skip it
