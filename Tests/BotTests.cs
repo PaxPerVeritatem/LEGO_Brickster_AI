@@ -267,15 +267,15 @@ public sealed class BotTest(ITestOutputHelper output)
         AccessTestWebPage(TestUrl, configuredBot);
         try
         {
-            configuredBot.NameList = configuredBot.FindPageElements(ElementString, ByMechanism, IdentifierAttribute);
-            _output.WriteLine($"{configuredBot.NameList.Count} of element(s) by{IdentifierAttribute} added to the Bot._nameList");
+            configuredBot.AttributeList = configuredBot.FindPageElements(ElementString, ByMechanism, IdentifierAttribute);
+            _output.WriteLine($"{configuredBot.AttributeList.Count} of element(s) by{IdentifierAttribute} added to the Bot._nameList");
             _output.WriteLine("--------------------");
-            foreach (string name in configuredBot.NameList)
+            foreach (string name in configuredBot.AttributeList)
             {
                 _output.WriteLine(name);
             }
             _output.WriteLine("--------------------\n\n");
-            Assert.Equal(ExpectedElementAmount, configuredBot.NameList.Count);
+            Assert.Equal(ExpectedElementAmount, configuredBot.AttributeList.Count);
         }
         finally
         {
@@ -629,13 +629,13 @@ public sealed class BotTest(ITestOutputHelper output)
     {
         Bot configuredBot = new(TestUrl_1, TestDownloadFolderPath)
         {
-            NameList = ["Test_NameList"]
+            AttributeList = ["Test_NameList"]
         };
         try
         {
             string[] expectedList = ["Test_NameList"];
-            Assert.NotNull(configuredBot.NameList);
-            Assert.Equal(expectedList, configuredBot.NameList);
+            Assert.NotNull(configuredBot.AttributeList);
+            Assert.Equal(expectedList, configuredBot.AttributeList);
         }
         finally
         {

@@ -4,6 +4,7 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using System;
 using OpenQA.Selenium.Support.UI;
+using System.Text.RegularExpressions;
 
 /// <summary>
 /// A class which wraps and simplifies some functionality of the Selenium ChromeDriver class.
@@ -20,12 +21,13 @@ public class Bot
 
     private readonly WebDriverWait _wait;
 
-    private IList<string> _nameList = [];
-    public IList<string> NameList
+    private IList<string> _attributeList = [];
+    public IList<string> AttributeList
     {
-        get => _nameList;
-        set => _nameList = value;
+        get => _attributeList;
+        set => _attributeList = value;
     }
+
 
     public string Url { get; set; }
 
@@ -58,7 +60,7 @@ public class Bot
 
         _wait = new(_driver, TimeSpan.FromSeconds(2));
     }
-        
+
 
     /// <summary>
     /// Returns the absolute path to the download folder by combining the provided relative download folder path with the application's base directory.
@@ -72,7 +74,7 @@ public class Bot
     }
 
 
-    
+
     /// <summary>
     /// Initializes a ChromeOptions object with preferences for a bot with a designated download folder path.
     /// The bot will use the provided download folder path as the default download folder.
@@ -97,20 +99,20 @@ public class Bot
     }
 
 
-    
-        /// <summary>
-        /// Finds a page element based on the ElementString and ByMechanism provided.
-        /// If AncestorElement is not null, the function will search for the element within the AncestorElement.
-        /// </summary>
-        /// <param name="ElementString">The string to use for finding the element.</param>
-        /// <param name="ByMechanism">The mechanism to use for finding the element, such as By.Name, By.Id, By.CssSelector, etc.</param>
-        /// <param name="AncestorElement">The ancestor element to search for the element within. If null, search the entire webpage.</param>
-        /// <returns>The found element, or null if no element was found.</returns>
-        /// <exception cref="BotElementException">Thrown when the ElementString argument is null.</exception>
-        /// <exception cref="BotMechanismException">Thrown when the ElementString did not match to the designated ByMechanism or the ByMechanism did not match any defined ByMechanism.</exception>
-        /// <exception cref="NoSuchElementException">Thrown when no element was found by FindElement() with the designated 'ByMechanism'.</exception>
-        /// <exception cref="InvalidSelectorException">Thrown when the ElementString is syntactically invalid for the valid chosen ByMechanism, eg missing a [] in xp.</exception>
-        /// <exception cref="NotImplementedException">Thrown when the 'ByMechanism' parameter did not match any defined ByMechanism.</exception>
+
+    /// <summary>
+    /// Finds a page element based on the ElementString and ByMechanism provided.
+    /// If AncestorElement is not null, the function will search for the element within the AncestorElement.
+    /// </summary>
+    /// <param name="ElementString">The string to use for finding the element.</param>
+    /// <param name="ByMechanism">The mechanism to use for finding the element, such as By.Name, By.Id, By.CssSelector, etc.</param>
+    /// <param name="AncestorElement">The ancestor element to search for the element within. If null, search the entire webpage.</param>
+    /// <returns>The found element, or null if no element was found.</returns>
+    /// <exception cref="BotElementException">Thrown when the ElementString argument is null.</exception>
+    /// <exception cref="BotMechanismException">Thrown when the ElementString did not match to the designated ByMechanism or the ByMechanism did not match any defined ByMechanism.</exception>
+    /// <exception cref="NoSuchElementException">Thrown when no element was found by FindElement() with the designated 'ByMechanism'.</exception>
+    /// <exception cref="InvalidSelectorException">Thrown when the ElementString is syntactically invalid for the valid chosen ByMechanism, eg missing a [] in xp.</exception>
+    /// <exception cref="NotImplementedException">Thrown when the 'ByMechanism' parameter did not match any defined ByMechanism.</exception>
     public IWebElement? FindPageElement(string ElementString, string ByMechanism, IWebElement? AncestorElement = null)
     {
         IWebElement element;
@@ -164,17 +166,17 @@ public class Bot
         }
     }
 
-        /// <summary>
-        /// Finds a list of elements on a webpage based on the ByMechanism and ElementString provided.
-        /// The list of elements is then iterated over and the attribute specified by IdentifierAttribute is added to the Bot._nameList for each element.
-        /// If IdentifierAttribute is not provided, the Text of the element is utilized as default.
-        /// </summary>
-        /// <param name="ElementString">The string to use for finding the elements.</param>
-        /// <param name="ByMechanism">The mechanism to use for finding the elements, such as By.Name, By.Id, By.CssSelector, etc.</param>
-        /// <param name="IdentifierAttribute">The attribute of the element to use when adding to the Bot._nameList. If not provided, uses the text of the element.</param>
-        /// <returns>A list of strings representing the elements found.</returns>
-        /// <exception cref="BotElementException">Thrown when the ElementString argument is null.</exception>
-        /// <exception cref="BotMechanismException">Thrown when the ElementString did not match to the designated ByMechanism or the ByMechanism did not match any defined ByMechanism.</exception>
+    /// <summary>
+    /// Finds a list of elements on a webpage based on the ByMechanism and ElementString provided.
+    /// The list of elements is then iterated over and the attribute specified by IdentifierAttribute is added to the Bot._nameList for each element.
+    /// If IdentifierAttribute is not provided, the Text of the element is utilized as default.
+    /// </summary>
+    /// <param name="ElementString">The string to use for finding the elements.</param>
+    /// <param name="ByMechanism">The mechanism to use for finding the elements, such as By.Name, By.Id, By.CssSelector, etc.</param>
+    /// <param name="IdentifierAttribute">The attribute of the element to use when adding to the Bot._nameList. If not provided, uses the text of the element.</param>
+    /// <returns>A list of strings representing the elements found.</returns>
+    /// <exception cref="BotElementException">Thrown when the ElementString argument is null.</exception>
+    /// <exception cref="BotMechanismException">Thrown when the ElementString did not match to the designated ByMechanism or the ByMechanism did not match any defined ByMechanism.</exception>
     public IList<string> FindPageElements(string ElementString, string ByMechanism, string IdentifierAttribute = "Text")
     {
 
@@ -199,7 +201,7 @@ public class Bot
                     string? elementAspect = e.GetAttribute(IdentifierAttribute);
                     if (!string.IsNullOrEmpty(elementAspect))
                     {
-                        _nameList.Add(elementAspect);
+                        _attributeList.Add(elementAspect);
                     }
                 }
             }
@@ -210,11 +212,11 @@ public class Bot
                     string? elementText = e.Text;
                     if (!string.IsNullOrEmpty(elementText))
                     {
-                        _nameList.Add(elementText);
+                        _attributeList.Add(elementText);
                     }
                 }
             }
-            return _nameList;
+            return _attributeList;
         }
         //ElementString was null
         catch (ArgumentNullException)
@@ -237,12 +239,12 @@ public class Bot
 
 
 
-    
-        /// <summary>
-        /// Navigates to the webpage specified by the URL property.
-        /// </summary>
-        /// <exception cref="BotUrlException">Thrown when the URL is null or invalid.</exception>
-        /// <exception cref="BotDriverException">Thrown when the webdriver failed to access the website due to the browser already being closed or the webdriver already being closed.</exception>
+
+    /// <summary>
+    /// Navigates to the webpage specified by the URL property.
+    /// </summary>
+    /// <exception cref="BotUrlException">Thrown when the URL is null or invalid.</exception>
+    /// <exception cref="BotDriverException">Thrown when the webdriver failed to access the website due to the browser already being closed or the webdriver already being closed.</exception>
     public void GoToWebpage()
     {
         try
@@ -295,11 +297,11 @@ public class Bot
 
 
 
-        /// <summary>
-        /// Attempts to click the referenced IWebElement. If the IWebElement referenced is stale, a BotElementException will be thrown.
-        /// </summary>
-        /// <param name="element">The IWebElement to click.</param>
-        /// <exception cref="BotElementException">Thrown if the referenced element data is stale.</exception>
+    /// <summary>
+    /// Attempts to click the referenced IWebElement. If the IWebElement referenced is stale, a BotElementException will be thrown.
+    /// </summary>
+    /// <param name="element">The IWebElement to click.</param>
+    /// <exception cref="BotElementException">Thrown if the referenced element data is stale.</exception>
     public static void ClickElement(IWebElement? element)
     {
         try
@@ -311,13 +313,41 @@ public class Bot
             throw new BotElementException("Referenced element data is stale. Check element state before attempting to click");
         }
     }
-    
-    
 
-    
-        /// <summary>
-        /// Goes back to the previous webpage in the browser history.
-        /// </summary>
+    public static string GetFileName(IWebElement DownloadButtonElement, string ElementAttribute)
+    {
+        try
+        {
+            string? downloadFileName = DownloadButtonElement.GetAttribute(ElementAttribute);
+            if (downloadFileName != null)
+            {
+                string downloadFileSubstring = Path.GetFileName(downloadFileName);
+                return downloadFileSubstring;
+            }
+            return "";
+        }
+        catch (StaleElementReferenceException)
+        {
+            throw new BotElementException("Referenced element data is stale. Check element state before attempting to click");
+        }
+    }
+
+    public static bool IsFileDownloaded(string DownloadFilePath)
+    {
+        if (File.Exists(DownloadFilePath))
+        {
+            return true;
+
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Goes back to the previous webpage in the browser history.
+    /// </summary>
     public void GoBack()
     {
 
