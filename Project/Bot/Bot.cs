@@ -164,6 +164,11 @@ public class Bot
         {
             throw new BotMechanismException($"The 'ByMechanism': {ByMechanism} did not match any defined ByMechanism");
         }
+        // if the element is stale due to state.  
+        catch (StaleElementReferenceException ex)
+        {
+            throw new BotElementException("Stale element reference exception", ex);
+        }
     }
 
     /// <summary>
@@ -343,6 +348,13 @@ public class Bot
         {
             return false;
         }
+    }
+
+
+    // wait until a certain element is present on the page. 
+    public void ExplicitWait(string ElementString, string ByMechanism)
+    {
+        _wait.Until(_driver => FindPageElement(ElementString, ByMechanism));
     }
 
     /// <summary>
