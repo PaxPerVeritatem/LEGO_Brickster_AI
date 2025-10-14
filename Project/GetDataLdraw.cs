@@ -3,16 +3,33 @@ namespace LEGO_Brickster_AI;
 using OpenQA.Selenium;
 public class GetDataLdraw
 {
+    private static readonly bool _startFromPage = true;
+    private const string _downloadFolderPath = @"..\..\..\LEGO_Data";
+    private readonly static string _urlPageVarient = "?page=";
+
+    private static string _url = "https://library.ldraw.org/omr/sets";
+    
+    //private static readonly  int _downloadAmount = 1465;
+
+        
+
+    private static string StartFromPage(int PageNumber, string Url)
+    {
+
+        string StartFromPageUrl = $"{Url}{_urlPageVarient}{PageNumber}";
+        return StartFromPageUrl; 
+    }
 
     //process the Ldraw website LEGO sets and download them. 
     public static void GetData()
     {
-        const string downloadFolderPath = @"..\..\..\LEGO_Data";
-        const string url = "https://library.ldraw.org/omr/sets";
-        const int downloadAmount = 1465;
-
+        if (_startFromPage)
+        {
+            _url = StartFromPage(25, _url);
+        }
+        
         int downloadCounter = 0;
-        Bot bot = new(url, downloadFolderPath);
+        Bot bot = new(_url, _downloadFolderPath);
         try
         {
             // Attempt to access webpage
@@ -67,26 +84,21 @@ public class GetDataLdraw
                         IWebElement? downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", ModelsElement);
 
                         // while there are download buttons on the page find them and press them., 
-                        while (downloadButtonElement!=null)
+                        while (bot.WaitTillExists(downloadButtonElement))
                         {
                             // i belive we can forgive here since WaitTillExists checks for null element. We will see. 
-                            string downloadFileSubstring = Bot.GetFileName(downloadButtonElement, "href");
+                            string downloadFileSubstring = Bot.GetFileName(downloadButtonElement!, "href");
 
                             string downloadFilePath = Path.Combine(bot.AbsDownloadFolderPath!, downloadFileSubstring);
                             // if the file has already been downloaded, skip it
                             if (Bot.IsFileDownloaded(downloadFilePath))
                             {
-                                // try to find the next download button
+                                // try to find the next download button. 
                                 downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", downloadButtonElement);
                             }
                             else
                             {
                                 Bot.ClickElement(downloadButtonElement);
-                                // check if the downloadbutton does  leads to 404 page error
-                                if (bot.WaitTillExists(bot.FindPageElement(".px-4.text-lg.text-gray-500.border-r.border-gray-400.tracking-wider", "css")))
-                                {
-                                    bot.GoBack();
-                                }
                                 // try to find the next download button
                                 downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", downloadButtonElement);
                             }
@@ -95,8 +107,8 @@ public class GetDataLdraw
                 }
                 catch (BotElementException ex)
                 {
-                    // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all
-                    Console.WriteLine($"Failed to return an html element\n{ex.Message}");
+                    // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
+                    Console.WriteLine($"No more download buttons on current set page:{ex.Message}");
                     bot.GoBack();
                 }
                 catch (BotMechanismException ex)
@@ -113,28 +125,30 @@ public class GetDataLdraw
             if (bot.WaitTillExists(nextButtonElement))
             {
                 Bot.ClickElement(nextButtonElement);
-                Thread.Sleep(500);
+                // wait until the main logo is present on the next page, before begining to find more elements. 
+                bot.ExplicitWait("//img[@id='main-logo']","xp"); 
             }
             bot.AttributeList = [];
-            // while there is an other page of sets to go to. 
+
+        // while there is an other page of sets to go to. 
         } while (nextButtonElement != null);
 
-        try
-        {
-
-            if (downloadAmount == downloadCounter)
-            {
-                Console.WriteLine($"{downloadAmount} have been correctly infered and downloaded");
-            }
-            else
-            {
-                throw new BotDownloadAmountException($"{downloadAmount} did not match {downloadCounter}");
-            }
-        }
-        catch (BotDownloadAmountException ex)
-        {
-            Console.WriteLine($"{ex}: Assumed amount of LEGO Sets was either not correct or something went wrong during downloading");
-        }
+        //try
+        //{
+        //
+        //    if (downloadAmount == downloadCounter)
+        //    {
+        //        Console.WriteLine($"{downloadAmount} have been correctly infered and downloaded");
+        //    }
+        //    else
+        //    {
+        //        throw new BotDownloadAmountException($"{downloadAmount} did not match {downloadCounter}");
+        //    }
+        //}
+        //catch (BotDownloadAmountException ex)
+        //{
+        //    Console.WriteLine($"{ex}: Assumed amount of LEGO Sets was either not correct or something went wrong during downloading");
+        //}
     }
 }
 
