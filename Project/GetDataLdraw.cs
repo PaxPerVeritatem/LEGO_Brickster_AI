@@ -7,18 +7,21 @@ public static class GetDataLdraw
 
     // defining whether running the bot should stop after a certain page. 
 
-    private static readonly bool _customRun = false;
+    private static readonly bool _customRun = true;
 
-    private static readonly int _startFromPage = 1;
+    private static readonly int _startFromPage = 44;
 
-    private static readonly int _setsPrPage = 25; 
-   
+    private static readonly int _setsPrPage = 25;
+
     private static readonly int _pageLimit = 1;
     private readonly static string _urlPageVarient = "?page=";
 
     private static string _url = "https://library.ldraw.org/omr/sets";
 
-    private static readonly int _expectedDownloadAmount = _setsPrPage * _pageLimit;
+    private static readonly int _expectedElementClickAmount = _setsPrPage * _pageLimit;
+
+    private static int _elementClickAmount = 0;
+
 
 
     // Can be changed to another path if desired.  
@@ -26,10 +29,9 @@ public static class GetDataLdraw
 
 
 
-    private static string IfCustomRun()
+    private static void SetupCustomRun()
     {
-        string StartFromPageUrl = $"{_url}{_urlPageVarient}{_startFromPage}";
-        return StartFromPageUrl;
+        _url = $"{_url}{_urlPageVarient}{_startFromPage}";
     }
 
     //process the Ldraw website LEGO sets and download them. 
@@ -37,10 +39,10 @@ public static class GetDataLdraw
     {
         if (_customRun)
         {
-            _url = IfCustomRun();
+            SetupCustomRun();
         }
 
-        int downloadCounter = 0;
+        
         Bot bot = new(_url, _downloadFolderPath);
         try
         {
@@ -69,14 +71,17 @@ public static class GetDataLdraw
         IWebElement? nextButtonElement;
         try
         {
-            do
+            // currently we go one page over what we should in page limit. But before we had one page less! 
+            for (int i = 0; i < _pageLimit; i++)
             {
+
                 // Attempt to get the list of LEGO set names for the current main page
                 bot.AttributeList = bot.FindPageElements("fi-ta-cell-name", "class");
                 foreach (string name in bot.AttributeList)
                 {
                     try
                     {
+
                         // Attempt to find LEGO set LinkTest element
                         IWebElement? setNameElement = bot.FindPageElement(name, "lt");
 
@@ -85,7 +90,7 @@ public static class GetDataLdraw
                         {
                             Bot.ClickElement(setNameElement);
                             // add for each LEGO set. Should finally match 'downloadAmount'
-                            downloadCounter += 1;
+                            _elementClickAmount += 1;
                         }
 
 
@@ -132,9 +137,11 @@ public static class GetDataLdraw
 
                     }
                     // should be thrown in case of stale element or 404 page error. 
+                    // this is currently a shitty fix which only works on the Ldraw page in case of Download buttons, leading to a 404 page. Addtionally, it wont allow to press download on any remaining download buttons, which may have worked for the page in question, but it should allow for correct amount sets to be processed.
                     catch (BotException ex)
                     {
                         Console.WriteLine(ex.Message);
+                        bot.GoBack();
                         bot.GoBack();
                     }
                 }
@@ -153,9 +160,11 @@ public static class GetDataLdraw
                 // reset the bot attribute list for next page of elements. 
                 bot.AttributeList = [];
 
-            // while there is an other page of sets to go to. 
-            } while (nextButtonElement != null);
+                // while there is an other page of sets to go to. 
+            }
         }
+
+
         catch (BotElementException)
         {
             Console.WriteLine($"No more next buttons. Reached last page.");
@@ -168,20 +177,20 @@ public static class GetDataLdraw
 
         try
         {
-            if (_expectedDownloadAmount == downloadCounter)
+            if (_expectedElementClickAmount == _elementClickAmount)
             {
-                Console.WriteLine($"{_expectedDownloadAmount} have been correctly infered and downloaded");
+                Console.WriteLine($"Expected {_expectedElementClickAmount}, matched clicked {_elementClickAmount} set page elements");
 
             }
             else
             {
-                throw new BotDownloadAmountException($"Expected {_expectedDownloadAmount}, but downloaded {downloadCounter}");
+                throw new BotDownloadAmountException($"Expected {_expectedElementClickAmount}, but clicked {_elementClickAmount} set page elements");
             }
         }
         catch (BotDownloadAmountException ex)
         {
-            Console.WriteLine($"Assumed amount of LEGO Sets was either not correct or something went wrong during downloading:{ex}");
+            Console.WriteLine($"Assumed amount of LEGO Sets was either not correct or something went wrong during clicking set elements:{ex}");
         }
+
     }
 }
-
