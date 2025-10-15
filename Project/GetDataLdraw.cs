@@ -7,18 +7,20 @@ public static class GetDataLdraw
 
     // defining whether running the bot should stop after a certain page. 
 
-    private static readonly bool _customRun = true;
+    private static readonly bool _customRun = false;
 
     private static readonly int _startFromPage = 44;
 
     private static readonly int _setsPrPage = 25;
 
-    private static readonly int _pageLimit = 1;
+    private static readonly int _pageLimit = 59;
+
     private readonly static string _urlPageVarient = "?page=";
 
     private static string _url = "https://library.ldraw.org/omr/sets";
 
-    private static readonly int _expectedElementClickAmount = _setsPrPage * _pageLimit;
+    // minus 10 because we only have 15 sets on the last page. 
+    private static readonly int _expectedElementClickAmount = _setsPrPage * _pageLimit - 10;
 
     private static int _elementClickAmount = 0;
 
@@ -136,8 +138,7 @@ public static class GetDataLdraw
                         Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
 
                     }
-                    // should be thrown in case of stale element or 404 page error. 
-                    // this is currently a shitty fix which only works on the Ldraw page in case of Download buttons, leading to a 404 page. Addtionally, it wont allow to press download on any remaining download buttons, which may have worked for the page in question, but it should allow for correct amount sets to be processed.
+                    // should be thrown in case of stale element or 404 page error. Shitty fix 
                     catch (BotException ex)
                     {
                         Console.WriteLine(ex.Message);
