@@ -1,31 +1,43 @@
 namespace LEGO_Brickster_AI;
 
 using OpenQA.Selenium;
-public class GetDataLdraw
+public static class GetDataLdraw
 {
-    private static readonly bool _startFromPage = false;
-    private const string _downloadFolderPath = @"..\..\..\LEGO_Data";
+    // the following static fields are can be used to setup run configurations
+
+    // defining whether running the bot should stop after a certain page. 
+
+    private static readonly bool _customRun = false;
+
+    private static readonly int _startFromPage = 1;
+
+    private static readonly int _setsPrPage = 25; 
+   
+    private static readonly int _pageLimit = 1;
     private readonly static string _urlPageVarient = "?page=";
 
     private static string _url = "https://library.ldraw.org/omr/sets";
 
-    private static readonly int _downloadAmount = 1465;
+    private static readonly int _expectedDownloadAmount = _setsPrPage * _pageLimit;
+
+
+    // Can be changed to another path if desired.  
+    private const string _downloadFolderPath = @"..\..\..\LEGO_Data";
 
 
 
-    private static string StartFromPage(int PageNumber, string Url)
+    private static string IfCustomRun()
     {
-
-        string StartFromPageUrl = $"{Url}{_urlPageVarient}{PageNumber}";
+        string StartFromPageUrl = $"{_url}{_urlPageVarient}{_startFromPage}";
         return StartFromPageUrl;
     }
 
     //process the Ldraw website LEGO sets and download them. 
     public static void GetData()
     {
-        if (_startFromPage)
+        if (_customRun)
         {
-            _url = StartFromPage(59, _url);
+            _url = IfCustomRun();
         }
 
         int downloadCounter = 0;
@@ -156,14 +168,14 @@ public class GetDataLdraw
 
         try
         {
-            if (_downloadAmount == downloadCounter)
+            if (_expectedDownloadAmount == downloadCounter)
             {
-                Console.WriteLine($"{_downloadAmount} have been correctly infered and downloaded");
+                Console.WriteLine($"{_expectedDownloadAmount} have been correctly infered and downloaded");
 
             }
             else
             {
-                throw new BotDownloadAmountException($"Expected {_downloadAmount}, but downloaded {downloadCounter}");
+                throw new BotDownloadAmountException($"Expected {_expectedDownloadAmount}, but downloaded {downloadCounter}");
             }
         }
         catch (BotDownloadAmountException ex)

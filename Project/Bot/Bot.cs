@@ -4,7 +4,6 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using System;
 using OpenQA.Selenium.Support.UI;
-using System.Text.RegularExpressions;
 
 /// <summary>
 /// A class which wraps and simplifies some functionality of the Selenium ChromeDriver class.
