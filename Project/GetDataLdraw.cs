@@ -1,55 +1,61 @@
 namespace LEGO_Brickster_AI;
 
 using OpenQA.Selenium;
-public static class GetDataLdraw
+sealed class GetDataLdraw : IGetData 
 {
     // the following static fields are can be used to setup run configurations
 
     // defining whether running the bot should stop after a certain page. 
 
-    private static readonly bool _customRun = false;
+    public static string Url {get; set;}  = "https://library.ldraw.org/omr/sets";
+    public static bool CustomRun => false;
 
-    private static readonly int _startFromPage = 44;
+    public static int StartFromPage => 44;
 
-    private static readonly int _setsPrPage = 25;
+    public static int SetsPrPage => 25;
 
-    private static readonly int _pageLimit = 59;
+    public static int PageLimit => 59;
 
-    private readonly static string _urlPageVarient = "?page=";
+    public static string UrlPageVarient => "?page=";
 
-    private static string _url = "https://library.ldraw.org/omr/sets";
+    
 
     // minus 10 because we only have 15 sets on the last page. 
-    private static readonly int _expectedElementClickAmount = _setsPrPage * _pageLimit - 10;
+    public static int ExpectedElementClickAmount => SetsPrPage * PageLimit - 10;
 
-    private static int _elementClickAmount = 0;
-
+    public static int ElementClickCounter { get; set; } = 0; 
 
 
     // Can be changed to another path if desired.  
-    private const string _downloadFolderPath = @"..\..\..\LEGO_Data";
+    public static string DownloadFolderPath => @"..\..\..\LEGO_Data";
 
 
-
-    private static void SetupCustomRun()
+    public static void AccessWebPage(Bot bot)
     {
-        _url = $"{_url}{_urlPageVarient}{_startFromPage}";
+        bot.GoToWebpage();
     }
 
-    //process the Ldraw website LEGO sets and download them. 
-    public static void GetData()
+    public static void UseCustomStartingPage()
     {
-        if (_customRun)
+        Url = $"{Url}{UrlPageVarient}{StartFromPage}";
+    }
+
+
+
+    //process the Ldraw website LEGO sets and download them. 
+    public static void ProcessData()
+    {
+        if (CustomRun)
         {
-            SetupCustomRun();
+            UseCustomStartingPage();
         }
 
-        
-        Bot bot = new(_url, _downloadFolderPath);
+        Bot bot = new(Url, DownloadFolderPath);
+
         try
         {
             // Attempt to access webpage
-            bot.GoToWebpage();
+            AccessWebPage(bot);
         }
         catch (BotUrlException ex)
         {
@@ -74,7 +80,7 @@ public static class GetDataLdraw
         try
         {
             // currently we go one page over what we should in page limit. But before we had one page less! 
-            for (int i = 0; i < _pageLimit; i++)
+            for (int i = 0; i < PageLimit; i++)
             {
 
                 // Attempt to get the list of LEGO set names for the current main page
@@ -92,7 +98,7 @@ public static class GetDataLdraw
                         {
                             Bot.ClickElement(setNameElement);
                             // add for each LEGO set. Should finally match 'downloadAmount'
-                            _elementClickAmount += 1;
+                            ElementClickCounter += 1;
                         }
 
 
@@ -176,14 +182,14 @@ public static class GetDataLdraw
         }
         try
         {
-            if (_expectedElementClickAmount == _elementClickAmount)
+            if (ExpectedElementClickAmount == ElementClickCounter)
             {
-                Console.WriteLine($"Expected {_expectedElementClickAmount}, matched clicked {_elementClickAmount} set page elements");
+                Console.WriteLine($"Expected {ExpectedElementClickAmount}, matched clicked {ElementClickCounter} set page elements");
 
             }
             else
             {
-                throw new BotDownloadAmountException($"Expected {_expectedElementClickAmount}, but clicked {_elementClickAmount} set page elements");
+                throw new BotDownloadAmountException($"Expected {ExpectedElementClickAmount}, but clicked {ElementClickCounter} set page elements");
             }
         }
         catch (BotDownloadAmountException ex)

@@ -57,7 +57,7 @@ public sealed class BotTest(ITestOutputHelper output)
     /// </summary>
     /// <param name="TestUrl">The URL of the test webpage.</param>
     /// <param name="ConfiguredBot">The configured bot instance.</param>
-    private static void AccessTestWebPage(string TestUrl, Bot ConfiguredBot)
+    private static void AccessTestWebPage(Bot ConfiguredBot,string TestUrl)
     {
         ConfiguredBot.GoToWebpage();
 
@@ -264,7 +264,7 @@ public sealed class BotTest(ITestOutputHelper output)
     public void FindElementsTest(string TestUrl, int ExpectedElementAmount, string ElementString, string ByMechanism, string IdentifierAttribute = "Text")
     {
         Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
-        AccessTestWebPage(TestUrl, configuredBot);
+        AccessTestWebPage(configuredBot,TestUrl);
         try
         {
             configuredBot.AttributeList = configuredBot.FindPageElements(ElementString, ByMechanism, IdentifierAttribute);
@@ -309,7 +309,7 @@ public sealed class BotTest(ITestOutputHelper output)
         Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
         try
         {
-            AccessTestWebPage(TestUrl, configuredBot);
+            AccessTestWebPage(configuredBot,TestUrl);
             ClickElementTest(ElementString, configuredBot, Goback);
         }
         finally
@@ -400,10 +400,10 @@ public sealed class BotTest(ITestOutputHelper output)
     [InlineData(TestUrl_1, null, "xp", null, "xp", true)]
     // Call FindPageElement() but with an ancestor element pattern and catch exception
     [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "xp", null, "xp", false, true)]
-    public void ArgumentNullExceptionTest(string TestURl, string? FirstElementString, string FirstByMechanism, string? SecondElementString, string SecondByMechanism, bool UseFindElements = false, bool UseAncestorElementPattern = false)
+    public void ArgumentNullExceptionTest(string TestUrl, string? FirstElementString, string FirstByMechanism, string? SecondElementString, string SecondByMechanism, bool UseFindElements = false, bool UseAncestorElementPattern = false)
     {
-        Bot configuredBot = new(TestURl, TestDownloadFolderPath);
-        AccessTestWebPage(TestURl, configuredBot);
+        Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
+        AccessTestWebPage(configuredBot,TestUrl);
         try
         {
             // if UseFindElements is true, we will check exceptions in FindElements() as opposed to FindElement()
@@ -427,15 +427,15 @@ public sealed class BotTest(ITestOutputHelper output)
     /// <summary>
     /// Tests whether the FindPageElement() and FindPageElements() functions throw a NoSuchElementException when the referenced element does not exist.
     /// </summary>
-    /// <param name="TestURl">The URL to test.</param>
+    /// <param name="TestUrl">The URL to test.</param>
     /// <param name="ElementString">The XPath string to use for finding the element.</param>
     /// <param name="ByMechanism">The ByMechanism to use for finding the element.</param>
     [Theory]
     [InlineData(TestUrl_1, "NO_SUCH_ELEMENT", "lt")]
-    public void NoSuchElementExceptionTest(string TestURl, string ElementString, string ByMechanism)
+    public void NoSuchElementExceptionTest(string TestUrl, string ElementString, string ByMechanism)
     {
-        Bot basicBot = new(TestURl);
-        AccessTestWebPage(TestURl, basicBot);
+        Bot basicBot = new(TestUrl);
+        AccessTestWebPage(basicBot,TestUrl);
         try
         {
             Assert.Throws<BotElementException>(() => FindPageElementException(basicBot, ElementString, ByMechanism, null, null));
@@ -464,10 +464,10 @@ public sealed class BotTest(ITestOutputHelper output)
     [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading'", "xp", null, null, true)]
     // Call FindPageElement() but with an ancestor element pattern and catch exception
     [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "xp", ".//following::a[@href='https://library.ldraw.org/omr/sets/657'", "xp", false, true)]
-    public void InvalidSelectorTest(string TestURl, string FirstElementString, string FirstByMechanism, string? SecondElementString, string? SecondByMechanism, bool UseFindElements = false, bool UseAncestorElementPattern = false)
+    public void InvalidSelectorTest(string TestUrl, string FirstElementString, string FirstByMechanism, string? SecondElementString, string? SecondByMechanism, bool UseFindElements = false, bool UseAncestorElementPattern = false)
     {
-        Bot configuredBot = new(TestURl, TestDownloadFolderPath);
-        AccessTestWebPage(TestURl, configuredBot);
+        Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
+        AccessTestWebPage(configuredBot,TestUrl);
         try
         {
             // if UseFindElements is true, we will check exceptions in FindElements() as opposed to FindElement()
@@ -504,10 +504,10 @@ public sealed class BotTest(ITestOutputHelper output)
     [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "NOT_IMPLEMENTED_BY_MECHANISM", null, null, true)]
     // Call FindPageElement() but with an ancestor element pattern and catch exception
     [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "xp", ".//following::a[@href='https://library.ldraw.org/omr/sets/657']", "NOT_IMPLEMENTED_BY_MECHANISM", false, true)]
-    public void NotImplementedExceptionTest(string TestURl, string FirstElementString, string FirstByMechanism, string? SecondElementString, string? SecondByMechanism, bool UseFindElements = false, bool UseAncestorElementPattern = false)
+    public void NotImplementedExceptionTest(string TestUrl, string FirstElementString, string FirstByMechanism, string? SecondElementString, string? SecondByMechanism, bool UseFindElements = false, bool UseAncestorElementPattern = false)
     {
-        Bot configuredBot = new(TestURl, TestDownloadFolderPath);
-        AccessTestWebPage(TestURl, configuredBot);
+        Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
+        AccessTestWebPage(configuredBot,TestUrl);
         try
         {
             // if UseFindElements is true, we will check exceptions in FindElements() as opposed to FindElement()
