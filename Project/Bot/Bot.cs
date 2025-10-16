@@ -35,14 +35,16 @@ public class Bot
 
 
 
+    
     /// <summary>
-    /// A constructor for a so called Basic and configured version of the Bot class, depending if the downloadFolderPath parameter is provided or not.
-    /// If the downloadFolderPath parameter is provided, the Bot object is configured with the provided download folder path as the default download folder.
-    /// Additionally, the bot will allow multiple downloads and prevent the browser from blocking them with a 'allow multiple downloads' prompt.
-    /// Lastly, the bot's page loading strategy is set to "Normal".
+    /// Initializes a new instance of the <see cref="Bot"/> class with the given URL and optional download folder path.
     /// </summary>
     /// <param name="url">The URL of the webpage to access.</param>
-    /// <param name="downloadFolderPath">The path to the default download folder for the bot.</param>
+    /// <param name="downloadFolderPath">The path to the default download folder for the bot. If null, the default download folder is used.</param>
+    /// <remarks>
+    /// If <paramref name="downloadFolderPath"/> is not null, the bot will use the specified download folder path.
+    /// Otherwise, the bot will use the default download folder path.
+    /// </remarks>
     public Bot(string url, string? downloadFolderPath = null)
     {
         Url = url;
@@ -54,6 +56,7 @@ public class Bot
         }
         else
         {
+            _options = InitializeBotPrefs();
             _driver = new ChromeDriver();
         }
 
@@ -74,26 +77,31 @@ public class Bot
 
 
 
+
     /// <summary>
-    /// Initializes a ChromeOptions object with preferences for a bot with a designated download folder path.
-    /// The bot will use the provided download folder path as the default download folder.
-    /// Additionally, the bot will allow multiple downloads and prevent the browser from blocking them with a 'allow multiple downloads' prompt.
-    /// Lastly, the bot's page loading strategy is set to normal.
+    /// Initializes Chrome options with preferences for the bot.
+    /// allow multiple downloads and prevent the browser from blocking them with a 'allow multiple downloads' prompt,
+    /// and set the page loading strategy to "Normal".
+    /// If the <paramref name="DownloadFolderPath"/> parameter is null, the bot will use the default download folder. 
     /// </summary>
     /// <param name="DownloadFolderPath">The path to the default download folder for the bot.</param>
-    /// <returns>A ChromeOptions object with the specified preferences.</returns>
-    /// <remarks>
-    /// Only bots with the constructor containing a downloadFolderPath call this preliminary function.
-    /// Basic bots utilize the default download folder path of the system and do not have a designated page loading strategy.
-    /// </remarks>
-    public static ChromeOptions InitializeBotPrefs(string DownloadFolderPath)
+    /// <returns>The initialized Chrome options.</returns>
+    public static ChromeOptions InitializeBotPrefs(string? DownloadFolderPath = null)
     {
         ChromeOptions options = new();
-        // add preferenced download folder to optionsPreferences.
-        options.AddUserProfilePreference("download.default_directory", DownloadFolderPath);
-        // to allow for multiple downloads and prevent the browser from blocking them 'allow multiple downloads' prombt
-        options.AddUserProfilePreference("disable-popup-blocking", "true");
-        options.PageLoadStrategy = PageLoadStrategy.Normal;
+        if (DownloadFolderPath != null)
+        {
+            // add preferenced download folder to optionsPreferences.
+            options.AddUserProfilePreference("download.default_directory", DownloadFolderPath);
+            // to allow for multiple downloads and prevent the browser from blocking them 'allow multiple downloads' prombt
+            options.AddUserProfilePreference("disable-popup-blocking", "true");
+            options.PageLoadStrategy = PageLoadStrategy.Normal;
+        }
+        else
+        {
+            options.AddUserProfilePreference("disable-popup-blocking", "true");
+            options.PageLoadStrategy = PageLoadStrategy.Normal;
+        }
         return options;
     }
 
@@ -353,8 +361,8 @@ public class Bot
     // wait until a certain element is present on the page. 
     public void ExplicitWait()
     {
-        string oldUrl = _driver.Url; 
-        _wait.Until(_driver => _driver.Url!=oldUrl);
+        string oldUrl = _driver.Url;
+        _wait.Until(_driver => _driver.Url != oldUrl);
     }
 
     /// <summary>

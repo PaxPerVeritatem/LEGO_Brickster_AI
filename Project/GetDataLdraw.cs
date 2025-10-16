@@ -174,8 +174,6 @@ public static class GetDataLdraw
         {
             bot.CloseBot();
         }
-
-
         try
         {
             if (_expectedElementClickAmount == _elementClickAmount)
@@ -192,6 +190,5 @@ public static class GetDataLdraw
         {
             Console.WriteLine($"Assumed amount of LEGO Sets was either not correct or something went wrong during clicking set elements:{ex}");
         }
-
     }
 }
