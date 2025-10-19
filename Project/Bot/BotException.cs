@@ -57,6 +57,15 @@ public class BotMechanismException : BotException
     public BotMechanismException(string message, Exception inner) : base(message, inner) { }
 }
 
+public class BotTimeOutException : BotException
+{
+    public BotTimeOutException() : base() { }
+
+    public BotTimeOutException(string message) : base(message) { }
+
+    public BotTimeOutException(string message, Exception inner) : base(message, inner) { }
+}
+
 
 
 public class BotDownloadAmountException : BotException

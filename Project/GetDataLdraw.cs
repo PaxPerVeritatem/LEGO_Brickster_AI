@@ -1,13 +1,14 @@
 namespace LEGO_Brickster_AI;
 
 using OpenQA.Selenium;
-sealed class GetDataLdraw : IGetData 
+sealed class GetDataLdraw : IGetData
 {
     // the following static fields are can be used to setup run configurations
 
     // defining whether running the bot should stop after a certain page. 
 
-    public static string Url {get; set;}  = "https://library.ldraw.org/omr/sets";
+    // must have setter to be mutable and for UseCustomStartingPage to work. 
+    public static string Url { get; set; } = "https://library.ldraw.org/omr/sets";
     public static bool CustomRun => false;
 
     public static int StartFromPage => 44;
@@ -18,18 +19,24 @@ sealed class GetDataLdraw : IGetData
 
     public static string UrlPageVarient => "?page=";
 
-    
+    public static Dictionary<string, string> NextPageElements => new() {
+        {"//button[@rel='next']", "xp" },
+        {"//button[@aria-label='Next']","xp" }
+
+        };
+
 
     // minus 10 because we only have 15 sets on the last page. 
     public static int ExpectedElementClickAmount => SetsPrPage * PageLimit - 10;
 
-    public static int ElementClickCounter { get; set; } = 0; 
+    public static int ElementClickCounter { get; set; } = 0;
 
 
     // Can be changed to another path if desired.  
     public static string DownloadFolderPath => @"..\..\..\LEGO_Data";
 
 
+    // Ldraw sets main page has no preliminary actions to escape, hence we simply acess the webpage with the url. 
     public static void AccessWebPage(Bot bot)
     {
         bot.GoToWebpage();
@@ -39,6 +46,34 @@ sealed class GetDataLdraw : IGetData
     {
         Url = $"{Url}{UrlPageVarient}{StartFromPage}";
     }
+
+
+    public static IWebElement? GetNextPageElement(Bot bot)
+    {
+        foreach (KeyValuePair<string, string> Elementtuple in NextPageElements)
+        {
+            try
+            {
+                IWebElement? nextPageElement = bot.FindPageElement(Elementtuple.Key, Elementtuple.Value);
+                if (nextPageElement != null && nextPageElement.Displayed)
+                {
+                    return nextPageElement;
+                }
+            }
+            // should never hit, but possible null is cleaner than returning some IWebElement type which is null anyways.
+
+            catch (BotElementException ex)
+            {
+                Console.WriteLine(ex);
+            }
+            catch (WebDriverTimeoutException ex)
+            {
+                throw new BotTimeOutException($"The referenced element was found but, it was not displayed on the webpage: {ex}");
+            }
+        }
+        return null;
+    }
+
 
 
 

@@ -35,7 +35,7 @@ public class Bot
 
 
 
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Bot"/> class with the given URL and optional download folder path.
     /// </summary>
@@ -298,12 +298,20 @@ public class Bot
     /// <returns>true if the element is found, false if the element is null.</returns>
     public bool WaitTillExists(IWebElement? element)
     {
-        if (element != null)
+        try
         {
-            _wait.Until(_driver => element.Displayed);
-            return true;
+            if (element != null)
+            {
+                _wait.Until(_driver => element.Displayed);
+                return true;
+            }
+            return false;
         }
-        return false;
+        // should catch in case the element is not displayed due to website responsiveness
+        catch (WebDriverTimeoutException)
+        {
+            throw new BotTimeOutException();
+        }
     }
 
 
