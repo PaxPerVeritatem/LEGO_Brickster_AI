@@ -36,15 +36,37 @@ sealed class GetDataLdraw : IGetData
     public static string DownloadFolderPath => @"..\..\..\LEGO_Data";
 
 
-    // Ldraw sets main page has no preliminary actions to escape, hence we simply acess the webpage with the url. 
-    public static void AccessWebPage(Bot bot)
-    {
-        bot.GoToWebpage();
-    }
 
     public static void UseCustomStartingPage()
     {
         Url = $"{Url}{UrlPageVarient}{StartFromPage}";
+    }
+
+
+
+    public static void AccessWebPage(Bot bot)
+    {
+        try
+        {
+            bot.GoToWebpage();
+        }
+        catch (BotUrlException ex)
+        {
+            Console.WriteLine($"Failed to load webpage: {ex.Message}");
+            bot.CloseBot();
+        }
+        catch (BotElementException ex)
+        {
+            Console.WriteLine($"Failed to return an html element\n{ex.Message}");
+            Console.WriteLine("Closeing driver");
+            bot.CloseBot();
+        }
+        catch (BotMechanismException ex)
+        {
+            Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
+            Console.WriteLine("Closeing driver");
+            bot.CloseBot();
+        }
     }
 
 
@@ -90,9 +112,8 @@ sealed class GetDataLdraw : IGetData
     }
 
 
-    public static void GotoNextPage(Bot bot, IWebElement NextButtonElement)
+    public static void GoToNextPage(Bot bot, IWebElement NextButtonElement)
     {
-
         // click next button if it is loaded. 
         if (bot.WaitTillExists(NextButtonElement))
         {
@@ -112,38 +133,18 @@ sealed class GetDataLdraw : IGetData
     //process the Ldraw website LEGO sets and download them. 
     public static void ProcessData()
     {
+
+        Bot bot = new(Url, DownloadFolderPath);
         if (CustomRun)
         {
             UseCustomStartingPage();
         }
 
-        Bot bot = new(Url, DownloadFolderPath);
-
-        try
-        {
-            // Attempt to access webpage
-            AccessWebPage(bot);
-        }
-        catch (BotUrlException ex)
-        {
-            Console.WriteLine($"Failed to load webpage: {ex.Message}");
-            bot.CloseBot();
-        }
-        catch (BotElementException ex)
-        {
-            Console.WriteLine($"Failed to return an html element\n{ex.Message}");
-            Console.WriteLine("Closeing driver");
-            bot.CloseBot();
-        }
-        catch (BotMechanismException ex)
-        {
-            Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
-            Console.WriteLine("Closeing driver");
-            bot.CloseBot();
-        }
+        AccessWebPage(bot);
 
 
-        // initialize the 'Next' button element for the main page
+
+        
         try
         {
 
@@ -152,8 +153,6 @@ sealed class GetDataLdraw : IGetData
             {
                 for (int i = 0; i < PageLimit; i++)
                 {
-
-
                     try
                     {
 
@@ -223,13 +222,11 @@ sealed class GetDataLdraw : IGetData
             }
             // Find the Next button elements which works, considering page responsiveness
             IWebElement nextButtonElement = GetNextPageElement(bot);
-            GotoNextPage(bot, nextButtonElement);
+            GoToNextPage(bot, nextButtonElement);
 
 
 
         }
-
-
         catch (BotElementException)
         {
             Console.WriteLine($"No more next buttons. Reached last page.");
