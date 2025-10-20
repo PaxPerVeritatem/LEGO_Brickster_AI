@@ -48,7 +48,24 @@ sealed class GetDataLdraw : IGetData
     }
 
 
-    public static IWebElement? GetNextPageElement(Bot bot)
+    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism)
+    {
+        // currently we go one page over what we should in page limit. But before we had one page less! 
+        for (int i = 0; i < PageLimit; i++)
+        {
+            // Attempt to get the list of LEGO set names for the current main page
+            bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism);
+        }
+    }
+
+
+    public static void DownloadPageElements(Bot bot)
+    {
+        Console.WriteLine("Im not implemented yet");
+    }
+
+
+    public static IWebElement GetNextPageElement(Bot bot)
     {
         foreach (KeyValuePair<string, string> Elementtuple in NextPageElements)
         {
@@ -60,22 +77,37 @@ sealed class GetDataLdraw : IGetData
                     return nextPageElement;
                 }
             }
-            // should never hit, but possible null is cleaner than returning some IWebElement type which is null anyways.
-
             catch (BotElementException ex)
             {
-                Console.WriteLine(ex);
+                Console.WriteLine($"{ex}: Element not found, trying next option.");
             }
             catch (WebDriverTimeoutException ex)
             {
                 throw new BotTimeOutException($"The referenced element was found but, it was not displayed on the webpage: {ex}");
             }
         }
-        return null;
+        throw new BotElementException("No valid next page element found - all options in NextPageElements dictionary were either not found or not displayed.");
     }
 
 
+    public static void GotoNextPage(Bot bot, IWebElement NextButtonElement)
+    {
 
+        // click next button if it is loaded. 
+        if (bot.WaitTillExists(NextButtonElement))
+        {
+            // get the url of the driver before clicking the next button. 
+            string oldUrl = bot.Driver.Url;
+            Bot.ClickElement(NextButtonElement);
+
+            // Bot should not proceed until the next page is fully loaded indicated by a change in the url.
+            bot.ExplicitWait(oldUrl);
+        }
+        // reset the bot attribute list for next page of elements. 
+        bot.AttributeList = [];
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------------------------//
 
     //process the Ldraw website LEGO sets and download them. 
     public static void ProcessData()
@@ -110,18 +142,18 @@ sealed class GetDataLdraw : IGetData
             bot.CloseBot();
         }
 
+
         // initialize the 'Next' button element for the main page
-        IWebElement? nextButtonElement;
         try
         {
-            // currently we go one page over what we should in page limit. But before we had one page less! 
-            for (int i = 0; i < PageLimit; i++)
-            {
 
-                // Attempt to get the list of LEGO set names for the current main page
-                bot.AttributeList = bot.FindPageElements("fi-ta-cell-name", "class");
-                foreach (string name in bot.AttributeList)
+            SetAttributeList(bot, "fi-ta-cell-name", "class");
+            foreach (string name in bot.AttributeList)
+            {
+                for (int i = 0; i < PageLimit; i++)
                 {
+
+
                     try
                     {
 
@@ -168,6 +200,7 @@ sealed class GetDataLdraw : IGetData
                             }
                         }
                     }
+
                     catch (BotElementException ex)
                     {
                         // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
@@ -187,23 +220,13 @@ sealed class GetDataLdraw : IGetData
                         bot.GoBack();
                     }
                 }
-
-                // look for the next page button 
-                nextButtonElement = bot.FindPageElement("//button[@aria-label='Next']", "xp");
-
-                // click next button if it is loaded. 
-                if (bot.WaitTillExists(nextButtonElement))
-                {
-                    Bot.ClickElement(nextButtonElement);
-
-                    // Bot should not proceed until the next page to loaded after clicking the 'Next' page button
-                    bot.ExplicitWait();
-                }
-                // reset the bot attribute list for next page of elements. 
-                bot.AttributeList = [];
-
-                // while there is an other page of sets to go to. 
             }
+            // Find the Next button elements which works, considering page responsiveness
+            IWebElement nextButtonElement = GetNextPageElement(bot);
+            GotoNextPage(bot, nextButtonElement);
+
+
+
         }
 
 
