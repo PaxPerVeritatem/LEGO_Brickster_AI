@@ -5,6 +5,9 @@ namespace LEGO_Brickster_AI;
 // static abstract interface
 interface IGetData
 {
+    /// <summary>
+    /// The mutable string defining the main website url
+    /// </summary>
     public static abstract string Url { get; set; }
 
     static abstract bool CustomRun { get; }
@@ -37,7 +40,7 @@ interface IGetData
     /// bot may fail to locate a certain NextPage element and throw a WebDriverTimeoutException, which should be handled appropricately, 
     /// allowing for the remaing buttons to be found in the case of webpage responsiveness issues. 
     /// </summary>
-    static abstract Dictionary<string,string> NextPageElements { get;}
+    static abstract Dictionary<string, string> NextPageElements { get; }
 
     /// <summary>
     /// A simple reference counter for asserting correct amount of elements have been clicked, when finally compared to <param name = "ExpectedElementClickAmount">
@@ -62,8 +65,37 @@ interface IGetData
     /// </summary>
     public static abstract void UseCustomStartingPage();
 
-    // function to access the main webpage, and perform any preliminary Bot actions to escape any pop-ups, that may occur. 
+    /// <summary>
+    /// function to access the main webpage, and perform any preliminary Bot actions to escape any pop-ups, that may occur. 
+    /// </summary>
+    /// <param name="bot"></param>
     public static abstract void AccessWebPage(Bot bot);
+
+
+
+    /// <summary>
+    ///  Find all the element on the current page which fits the <paramref name="CommonElementString"/> with the 
+    /// <paramref name="CommonByMechanism"/> and the optional <paramref name="IdentifierAttribute"/> and add them to the Bot.AttributeList. 
+    /// Be aware that depending on the specific element the defined <paramref name="IdentifierAttribute"/> needs to be part of all the elements in question. 
+    /// by default <paramref name="IdentifierAttribute"/> is set to 'Text' in bot.FindPageElements(). 
+    /// </summary>
+    /// <param name="bot"></param>
+    /// <param name="CommonElementString"></param>
+    /// <param name="CommonByMechanism"></param>
+    public static abstract void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism);
+
+
+
+    /// <summary>
+    ///  function to locate a series of elements 
+    /// </summary>
+    /// <param name="bot"></param>
+    public static abstract void DownloadPageElements(Bot bot);
+
+
+
+
+
 
     /// <summary>
     /// function to iterate over the NextPageElements<string,string> maps key value pairs. For each key value pair it calls 
@@ -74,7 +106,76 @@ interface IGetData
     public static abstract IWebElement? GetNextPageElement(Bot bot);
 
 
-    // The main entry point for the interface, used to initiate the process. 
+
+    /// <summary>
+    /// Should perform the necessary bot actions to navigate to the next page by clicking the chosen 
+    /// <c>NextButtonElement</c> from the <c>NextPageElements</c> dictionary.  
+    /// </summary>
+    /// <param name="bot">The bot instance to perform navigation.</param>
+    /// <remarks>
+    /// <para><strong>Implementation Recommendation: The following is an implementation recommendation, but 
+    /// users may define their own GotoNextPage() from scratch if they wish.</strong></para>
+    /// <list type="number">
+    /// <item>
+    /// <description>
+    /// <strong>Wait for NextButtonElement to exist:</strong> Use <c>bot.WaitTillExists(NextButtonElement)</c> 
+    /// before using <c>Bot.ClickElement(NextButtonElement)</c> to ensure the NextButtonElement is present in the DOM.
+    /// </description>
+    /// </item>
+    /// <item>
+    /// <br/>
+    /// <description>
+    /// <strong>Capture current Driver url:</strong> Get the bot's current url via <c>bot.Driver.Url</c> before clicking 
+    /// the NextButtonElement. This will be used to detect when navigation completes. <strong> Take not bot.Driver.Url is a dynamic property of the
+    ///  Selenium webdriver, and different from the Bot.Url property</strong><br/>
+    /// </description>
+    /// </item>
+    /// <br/>
+    /// <item>
+    /// <description>
+    /// <strong>Click the NextButtonElement:</strong> Use <c>Bot.ClickElement(nextButtonElement)</c> to trigger navigation.
+    /// </description>
+    /// </item>
+    /// <br/>
+    /// <item>
+    /// <description>
+    /// <strong>Wait for page transition:</strong> Use <c>bot.ExplicitWait(oldUrl)</c> after clicking to ensure the page has 
+    /// fully navigated before proceeding.
+    /// </description>
+    /// </item>
+    /// <br/>
+    /// <item>
+    /// <description>
+    /// <strong>Reset AttributeList:</strong> Set <c>bot.AttributeList = []</c> at the end 
+    /// to clear previous page's elements. Failure to do this will cause next call to SetAttributeList() 
+    /// to add new elements, without deleting the previous ones. This can enduce staleElement exceptions or recursive iteration of the 
+    /// same page elements. 
+    /// </description>
+    /// </item>
+    /// <br/>
+    /// <br/>
+    /// </list>
+    /// <para><strong>Example Implementation:</strong></para>
+    /// <code>
+    /// IWebElement nextButtonElement = GetNextPageElement(bot);
+    /// 
+    /// if (bot.WaitTillExists(nextButtonElement))
+    /// {
+    ///     string oldUrl = bot.Driver.Url;
+    ///     Bot.ClickElement(nextButtonElement);
+    ///     bot.ExplicitWait(oldUrl);
+    /// }
+    /// bot.AttributeList = [];
+    /// </code>
+    /// </remarks>
+    public static abstract void GotoNextPage(Bot bot, IWebElement NextButtonElement);
+
+
+
+    /// <summary>
+    /// Serves as the main entry point for the interface, used to initiate the process. 
+    /// All of the other interface functions should, at some point, be called within ProcessData. 
+    /// </summary>
     public static abstract void ProcessData();
 
 }

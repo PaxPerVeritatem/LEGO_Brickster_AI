@@ -27,7 +27,6 @@ public class Bot
         set => _attributeList = value;
     }
 
-
     public string Url { get; set; }
 
     private readonly string? _absDownloadFolderPath;
@@ -60,7 +59,7 @@ public class Bot
             _driver = new ChromeDriver();
         }
 
-        _wait = new(_driver, TimeSpan.FromSeconds(2));
+        _wait = new(_driver, TimeSpan.FromSeconds(5));
     }
 
 
@@ -287,32 +286,6 @@ public class Bot
     }
 
 
-    /// <summary>
-    /// Waits until the referenced IWebElement exists on the webpage.
-    /// If the IWebElement referenced is null, the function will return false.
-    /// Note that if the driver is instanceiated without a generous PageLoadStrategy, 
-    /// some combinations of actions may lead to the blot clicking elements which are not yet loaded on the page 
-    /// or the bot go though its actions to fast and leads to attempting no longer valid actions.
-    /// </summary>
-    /// <param name="element">The IWebElement to wait for.</param>
-    /// <returns>true if the element is found, false if the element is null.</returns>
-    public bool WaitTillExists(IWebElement? element)
-    {
-        try
-        {
-            if (element != null)
-            {
-                _wait.Until(_driver => element.Displayed);
-                return true;
-            }
-            return false;
-        }
-        // should catch in case the element is not displayed due to website responsiveness
-        catch (WebDriverTimeoutException)
-        {
-            throw new BotTimeOutException();
-        }
-    }
 
 
 
@@ -365,12 +338,47 @@ public class Bot
         }
     }
 
-
-    // wait until a certain element is present on the page. 
-    public void ExplicitWait()
+    /// <summary>
+    /// Waits until the referenced IWebElement exists on the webpage.
+    /// If the IWebElement referenced is null, the function will return false.
+    /// Note that if the driver is instanceiated without a generous PageLoadStrategy, 
+    /// some combinations of actions may lead to the blot clicking elements which are not yet loaded on the page 
+    /// or the bot go though its actions to fast and leads to attempting no longer valid actions.
+    /// </summary>
+    /// <param name="element">The IWebElement to wait for.</param>
+    /// <returns>true if the element is found, false if the element is null.</returns>
+    public bool WaitTillExists(IWebElement? element)
     {
-        string oldUrl = _driver.Url;
-        _wait.Until(_driver => _driver.Url != oldUrl);
+        try
+        {
+            if (element != null)
+            {
+                _wait.Until(_driver => element.Displayed);
+                return true;
+            }
+            return false;
+        }
+        // should catch in case the element is not displayed due to website responsiveness
+        catch (WebDriverTimeoutException)
+        {
+            throw new BotTimeOutException();
+        }
+    }
+
+   
+        /// some combinations of actions may lead to the bot clicking elements which are not yet loaded on the page 
+        /// or the bot go though its actions too fast and leads to attempting no longer valid actions.
+    public void ExplicitWait(string oldurl)
+    {
+        try
+        {
+            _wait.Until(_driver => _driver.Url != oldurl);
+        }
+        // should catch in case the element is not displayed due to website responsiveness
+        catch (WebDriverTimeoutException)
+        {
+            throw new BotTimeOutException();
+        }
     }
 
     /// <summary>
