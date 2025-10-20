@@ -62,11 +62,16 @@ interface IGetData
     /// <summary>
     /// Allows to define a custom starting page for a custom run, using the initial <param name = "url">
     /// with the <param name = "UrlPageVarient"> and param name = "_startFromPage"> to define the url of the custom run page. 
+    /// Can be called initially before <strong> AccessWebPage() </strong> is called within <strong> ProcessData()</strong>
     /// </summary>
     public static abstract void UseCustomStartingPage();
 
+
+
+
     /// <summary>
-    /// function to access the main webpage, and perform any preliminary Bot actions to escape any pop-ups, that may occur. 
+    /// This function should access the main webpage via <c> bot.GoToWebPage(Url)</c> and perform any necessary bot actions to escape popups,
+    ///  which may hinder access to the elements of the main page.  
     /// </summary>
     /// <param name="bot"></param>
     public static abstract void AccessWebPage(Bot bot);
@@ -87,7 +92,7 @@ interface IGetData
 
 
     /// <summary>
-    ///  function to locate a series of elements 
+    ///  function to perform all the bot actions nessesary to download all elements currently in the Bot.AttributeList
     /// </summary>
     /// <param name="bot"></param>
     public static abstract void DownloadPageElements(Bot bot);
@@ -98,12 +103,14 @@ interface IGetData
 
 
     /// <summary>
-    /// function to iterate over the NextPageElements<string,string> maps key value pairs. For each key value pair it calls 
-    /// bot.FindElement() to locate a button on the webpage which should function as a next button. The predetermined amount of tuples in the 
-    /// map should be manually defined by in the NextPageElements map.  
+    /// Function to iterate over the NextPageElements&lt;string,string&gt; map's key-value pairs. 
+    /// For each key-value pair it calls <c>bot.FindElement()</c> to locate a button on the webpage 
+    /// which should function as a next button. The predetermined amount of tuples in the map should 
+    /// be manually defined in the NextPageElements map.
     /// </summary>
-    /// <param name="bot"></param>
-    public static abstract IWebElement? GetNextPageElement(Bot bot);
+    /// <param name="bot">The bot instance used to find and interact with page elements.</param>
+    public static abstract IWebElement GetNextPageElement(Bot bot);
+
 
 
 
@@ -113,27 +120,28 @@ interface IGetData
     /// </summary>
     /// <param name="bot">The bot instance to perform navigation.</param>
     /// <remarks>
-    /// <para><strong>Implementation Recommendation: The following is an implementation recommendation, but 
-    /// users may define their own GotoNextPage() from scratch if they wish.</strong></para>
+    /// <para>Implementation Recommendation: The following is an implementation recommendation, but 
+    /// users may define their own GotoNextPage() from scratch if they wish.</para>
     /// <list type="number">
     /// <item>
     /// <description>
     /// <strong>Wait for NextButtonElement to exist:</strong> Use <c>bot.WaitTillExists(NextButtonElement)</c> 
-    /// before using <c>Bot.ClickElement(NextButtonElement)</c> to ensure the NextButtonElement is present in the DOM.
+    /// before using <c>bot.ClickElement(NextButtonElement)</c> to ensure the NextButtonElement is present in the DOM.
     /// </description>
+    /// 
     /// </item>
-    /// <item>
     /// <br/>
+    /// <item>
     /// <description>
     /// <strong>Capture current Driver url:</strong> Get the bot's current url via <c>bot.Driver.Url</c> before clicking 
-    /// the NextButtonElement. This will be used to detect when navigation completes. <strong> Take not bot.Driver.Url is a dynamic property of the
-    ///  Selenium webdriver, and different from the Bot.Url property</strong><br/>
+    /// the NextButtonElement. This will be used to detect when navigation completes. Take note, <c>bot.Driver.Url</c> is a dynamic property of the
+    /// <c>Selenium webdriver</c>, and different from the <c>Bot.Url</c> property.
     /// </description>
     /// </item>
     /// <br/>
     /// <item>
     /// <description>
-    /// <strong>Click the NextButtonElement:</strong> Use <c>Bot.ClickElement(nextButtonElement)</c> to trigger navigation.
+    /// <strong>Click the NextButtonElement:</strong> Use <c>bot.ClickElement(nextButtonElement)</c> to trigger navigation.
     /// </description>
     /// </item>
     /// <br/>
@@ -148,12 +156,11 @@ interface IGetData
     /// <description>
     /// <strong>Reset AttributeList:</strong> Set <c>bot.AttributeList = []</c> at the end 
     /// to clear previous page's elements. Failure to do this will cause next call to SetAttributeList() 
-    /// to add new elements, without deleting the previous ones. This can enduce staleElement exceptions or recursive iteration of the 
-    /// same page elements. 
+    /// to add new elements without deleting the previous ones. This can induce staleElement exceptions or recursive iteration of the 
+    /// same page elements.
     /// </description>
     /// </item>
-    /// <br/>
-    /// <br/>
+    /// <br/><br/>
     /// </list>
     /// <para><strong>Example Implementation:</strong></para>
     /// <code>
@@ -162,13 +169,15 @@ interface IGetData
     /// if (bot.WaitTillExists(nextButtonElement))
     /// {
     ///     string oldUrl = bot.Driver.Url;
-    ///     Bot.ClickElement(nextButtonElement);
+    ///     bot.ClickElement(nextButtonElement);
     ///     bot.ExplicitWait(oldUrl);
     /// }
     /// bot.AttributeList = [];
     /// </code>
     /// </remarks>
-    public static abstract void GotoNextPage(Bot bot, IWebElement NextButtonElement);
+    public static abstract void GoToNextPage(Bot bot, IWebElement NextButtonElement);
+
+
 
 
 
