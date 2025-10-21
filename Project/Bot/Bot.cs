@@ -151,12 +151,12 @@ public class Bot
         //ElementString was null
         catch (ArgumentNullException)
         {
-            throw new BotElementException("ElementString argument is null.");
+            throw new BotFindElementException("ElementString argument is null.");
         }
         // No element was found by FindElement() with the designated 'ByMechanism'
         catch (NoSuchElementException)
         {
-            throw new BotElementException($"No element called '{ElementString}' was found by FindElement() with by mechanism '{ByMechanism}'.");
+            throw new BotFindElementException($"No element called '{ElementString}' was found by FindElement() with by mechanism '{ByMechanism}'.");
 
         }
         // Thrown when the ElementString is syntactically invalid for the valid chosen ByMechanism, eg missing a [] in xp. 
@@ -173,7 +173,7 @@ public class Bot
         // if the element is stale due to page state.  
         catch (StaleElementReferenceException ex)
         {
-            throw new BotException($"The element {ElementString} was stale due to page state:{ex}");
+            throw new BotStaleElementException($"The element {ElementString} was stale due to page state:{ex}");
         }
     }
 
@@ -231,7 +231,7 @@ public class Bot
         //ElementString was null
         catch (ArgumentNullException)
         {
-            throw new BotElementException("ElementString argument is null.");
+            throw new BotFindElementException("ElementString argument is null.");
         }
         // The 'ElementString' paramater did not match to the designated 'ByMechanism'
         catch (InvalidSelectorException)
@@ -302,7 +302,7 @@ public class Bot
         }
         catch (StaleElementReferenceException)
         {
-            throw new BotElementException("Referenced element data is stale. Check element state before attempting to click");
+            throw new BotStaleElementException("Referenced element data is stale. Check element state before attempting to click");
         }
     }
 
@@ -320,7 +320,7 @@ public class Bot
         }
         catch (StaleElementReferenceException)
         {
-            throw new BotElementException("Referenced element data is stale. Check element state before attempting to click");
+            throw new BotStaleElementException("Referenced element data is stale. Check element state before attempting to click");
         }
     }
 

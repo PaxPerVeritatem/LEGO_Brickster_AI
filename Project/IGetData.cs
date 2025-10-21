@@ -5,6 +5,7 @@ namespace LEGO_Brickster_AI;
 // static abstract interface
 interface IGetData
 {
+
     /// <summary>
     /// The mutable string defining the main website url
     /// </summary>
@@ -67,6 +68,12 @@ interface IGetData
     /// 
     static abstract int ExpectedElementClickDeviation { get; }
 
+
+
+  // --------------------------------------------------------------------------------------------------------------------------------------------//
+  // Functions
+
+
     /// <summary>
     /// Allows to define a custom starting page for a custom run, using the initial <param name = "url">
     /// with the <param name = "UrlPageVarient"> and param name = "_startFromPage"> to define the url of the custom run page. 
@@ -98,14 +105,6 @@ interface IGetData
     public static abstract void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string? IdentifierAttribute = null);
 
 
-
-
-
-
-
-
-
-
     /// <summary>
     /// Function to iterate over the NextPageElements&lt;string,string&gt; map's key-value pairs. 
     /// For each key-value pair it calls <c>bot.FindElement()</c> to locate a button on the webpage 
@@ -114,8 +113,6 @@ interface IGetData
     /// </summary>
     /// <param name="bot">The bot instance used to find and interact with page elements.</param>
     public static abstract IWebElement GetNextPageElement(Bot bot);
-
-
 
 
     /// <summary>
@@ -199,8 +196,8 @@ interface IGetData
 
 
     /// <summary>
-    /// Serves as the main entry point for the interface, used to initiate the process. 
-    /// All of the other interface functions should, at some point, be called within ProcessData. 
+    /// Should serve as the control point used to initiate the data download process. 
+    /// All other interface functions should, at some point, be called within <c>ProcessData()</c>. 
     /// </summary>
     public static abstract void ProcessData();
 
