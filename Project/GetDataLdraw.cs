@@ -9,13 +9,15 @@ sealed class GetDataLdraw : IGetData
 
     // must have setter to be mutable and for UseCustomStartingPage to work. 
     public static string Url { get; set; } = "https://library.ldraw.org/omr/sets";
-    public static bool CustomRun => false;
+    public static bool CustomRun => true;
 
-    public static int StartFromPage => 44;
+    public static int StartFromPage => 2;
 
-    public static int SetsPrPage => 25;
+    public static int ExpectedSetsPrPage => 25;
 
-    public static int PageLimit => 59;
+    public static int MaxPage => 59;
+
+    public static int PageLimit => 1;
 
     public static string UrlPageVarient => "?page=";
 
@@ -25,9 +27,10 @@ sealed class GetDataLdraw : IGetData
 
         };
 
+    public static int ExpectedElementClickDeviation => 10;
 
-    // minus 11 because we only have 15 sets on the last page and 1 set leads to 404 error page . 
-    public static int ExpectedElementClickAmount => SetsPrPage * PageLimit - 11;
+
+    public static int ExpectedElementClickAmount { get; set; } = ExpectedSetsPrPage * PageLimit - ExpectedElementClickDeviation;
 
     public static int ElementClickCounter { get; set; } = 0;
 
@@ -40,6 +43,10 @@ sealed class GetDataLdraw : IGetData
     public static void UseCustomStartingPage()
     {
         Url = $"{Url}{UrlPageVarient}{StartFromPage}";
+        if (PageLimit != MaxPage)
+        {
+            ExpectedElementClickAmount += ExpectedElementClickDeviation;
+        }
     }
 
 
@@ -70,25 +77,21 @@ sealed class GetDataLdraw : IGetData
     }
 
 
-    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism)
+    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string? IdentifierAttribute = null)
     {
-        // currently we go one page over what we should in page limit. But before we had one page less! 
-        for (int i = 0; i < PageLimit; i++)
-        {
-            // Attempt to get the list of LEGO set names for the current main page
-            bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism);
-        }
+        // Attempt to get the list of LEGO set names for the current main page
+        bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism);
     }
 
 
-    public static void DownloadPageElements(Bot bot, string ElementString, string ByMechanism)
+    public static void DownloadPageElements(Bot bot, string ByMechanism)
     {
-        for (int i = 0; i < PageLimit; i++)
+        foreach (string IdentifierAttribute in bot.AttributeList)
         {
             try
             {
                 // Attempt to find LEGO set LinkTest element
-                IWebElement? setNameElement = bot.FindPageElement(ElementString, ByMechanism);
+                IWebElement? setNameElement = bot.FindPageElement(IdentifierAttribute, ByMechanism);
 
                 // if current LinkText is not null call Click()
                 if (bot.WaitTillExists(setNameElement))
@@ -129,7 +132,6 @@ sealed class GetDataLdraw : IGetData
                     }
                 }
             }
-
             catch (BotElementException ex)
             {
                 // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
@@ -150,6 +152,9 @@ sealed class GetDataLdraw : IGetData
             }
         }
     }
+
+
+
 
 
     public static IWebElement GetNextPageElement(Bot bot)
@@ -200,17 +205,17 @@ sealed class GetDataLdraw : IGetData
             if (ExpectedElementClickAmount == ElementClickCounter)
             {
                 Console.WriteLine($"Expected {ExpectedElementClickAmount}, matched clicked {ElementClickCounter} set page elements");
-                return true; 
+                return true;
             }
             else
-            { 
+            {
                 throw new BotDownloadAmountException($"Expected {ExpectedElementClickAmount}, but clicked {ElementClickCounter} set page elements");
             }
         }
         catch (BotDownloadAmountException ex)
         {
             Console.WriteLine($"Assumed amount of LEGO Sets was either not correct or something went wrong during clicking set elements:{ex}");
-            return false; 
+            return false;
         }
     }
 
@@ -219,26 +224,27 @@ sealed class GetDataLdraw : IGetData
     //process the Ldraw website LEGO sets and download them. 
     public static void ProcessData()
     {
-
-        Bot bot = new(Url, DownloadFolderPath);
+        // initial check if run us custom or standard run
         if (CustomRun)
         {
             UseCustomStartingPage();
         }
+        Bot bot = new(Url, DownloadFolderPath);
 
         AccessWebPage(bot);
         try
         {
-            SetAttributeList(bot, "fi-ta-cell-name", "class");
-
-            foreach (string name in bot.AttributeList)
+            for (int i = 0; i < PageLimit; i++)
             {
-                DownloadPageElements(bot, name, "lt");
-            }
-            // Find the Next button elements which works, considering page responsiveness
-            IWebElement nextButtonElement = GetNextPageElement(bot);
-            GoToNextPage(bot, nextButtonElement);
+                SetAttributeList(bot, "fi-ta-cell-name", "class");
 
+                DownloadPageElements(bot, "lt");
+
+                // Find the Next button elements which works, considering page responsiveness
+                IWebElement nextButtonElement = GetNextPageElement(bot);
+                GoToNextPage(bot, nextButtonElement);
+            }
+            AssertDownloadAmount();
         }
         catch (BotElementException)
         {

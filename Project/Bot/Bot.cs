@@ -190,7 +190,6 @@ public class Bot
     /// <exception cref="BotMechanismException">Thrown when the ElementString did not match to the designated ByMechanism or the ByMechanism did not match any defined ByMechanism.</exception>
     public IList<string> FindPageElements(string ElementString, string ByMechanism, string IdentifierAttribute = "Text")
     {
-
         try
         {
             // will return empty collection if not elements are found, hence does not throw NoSuchElementException

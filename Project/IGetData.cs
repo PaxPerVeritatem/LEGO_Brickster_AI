@@ -19,8 +19,10 @@ interface IGetData
     /// <summary>
     ///  int defining the number of sets of data pr page. Usage of this field depends on the structure of the website on question. 
     /// </summary>
-    static abstract int SetsPrPage { get; }
+    static abstract int ExpectedSetsPrPage { get; }
 
+
+    static abstract int MaxPage { get; }
 
     /// <summary>
     /// The PageLimit defines the absolute amount of pages, where SetAttributeList() is called for each page, to add the 
@@ -57,8 +59,13 @@ interface IGetData
     /// <summary>
     /// int defining the expected amount of elements to be clicked, inferred from <param name = "SetsPrPage"> and <param name = "PageLimit">
     /// </summary>
-    static abstract int ExpectedElementClickAmount { get; }
+    static abstract int ExpectedElementClickAmount { get; set; }
 
+
+    ///
+    /// user defined deviation of the ExpectedElementClickAmount. Should be implemented by the user, after testing whether there some pages which have a different amount of sets.
+    /// 
+    static abstract int ExpectedElementClickDeviation { get; }
 
     /// <summary>
     /// Allows to define a custom starting page for a custom run, using the initial <param name = "url">
@@ -88,7 +95,7 @@ interface IGetData
     /// <param name="bot"></param>
     /// <param name="CommonElementString"></param>
     /// <param name="CommonByMechanism"></param>
-    public static abstract void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism);
+    public static abstract void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string? IdentifierAttribute = null);
 
 
 
@@ -180,11 +187,11 @@ interface IGetData
     ///  function to perform all the bot actions nessesary to download all elements currently in the Bot.AttributeList
     /// </summary>
     /// <param name="bot"></param>
-    public static abstract void DownloadPageElements(Bot bot, string ElementString, string ByMechanism);
+    public static abstract void DownloadPageElements(Bot bot, string ByMechanism);
 
 
     /// <summary>
-    ///  Function to assert that the expected number of downloaded elements matches the actual amount of downloaded elements. 
+    ///  Function to assert that the expected number of clicked set elements matches the actual amount of clicked set elements. 
     /// </summary>
     /// <returns></returns>
     public static abstract bool AssertDownloadAmount();
