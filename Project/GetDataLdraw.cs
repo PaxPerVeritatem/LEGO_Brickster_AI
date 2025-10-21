@@ -3,43 +3,37 @@ namespace LEGO_Brickster_AI;
 using OpenQA.Selenium;
 sealed class GetDataLdraw : IGetData
 {
-    // the following static fields are can be used to setup run configurations
-
-    // defining whether running the bot should stop after a certain page. 
-
-    // must have setter to be mutable and for UseCustomStartingPage to work. 
     public static string Url { get; set; } = "https://library.ldraw.org/omr/sets";
-    
+
     // Global run Properties
     public static int MaxPage => 59;
 
-    public static int PageLimit => MaxPage;
+    public static int PageLimit => 1;
 
     public static int ExpectedSetsPrPage => 25;
-    
-    // Custom run Properties 
-    public static bool CustomRun => false;
 
-    public static int StartFromPage => 1;
+    public static int ExpectedElementClickDeviation => 10;
+
+    public static int ExpectedElementClickAmount { get; set; } = ExpectedSetsPrPage * PageLimit - ExpectedElementClickDeviation;
+
+    public static int ElementClickCounter { get; set; } = 0;
+
+    public static string DownloadFolderPath => @"..\..\..\LEGO_Data";
+
+
+    // Custom run Properties 
+    public static bool CustomRun => true;
+
+    public static int StartFromPage => 12;
 
     public static string UrlPageVarient => "?page=";
 
     public static Dictionary<string, string> NextPageElements => new() {
         {"//button[@rel='next']", "xp" },
         {"//button[@aria-label='Next']","xp" }
-
         };
 
-    public static int ExpectedElementClickDeviation => 10;
 
-
-    public static int ExpectedElementClickAmount { get; set; } = ExpectedSetsPrPage * PageLimit - ExpectedElementClickDeviation;
-
-    public static int ElementClickCounter { get; set; } = 0;
-
-
-    // Can be changed to another path if desired.  
-    public static string DownloadFolderPath => @"..\..\..\LEGO_Data";
 
 
 
@@ -65,7 +59,7 @@ sealed class GetDataLdraw : IGetData
             Console.WriteLine($"Failed to load webpage: {ex.Message}");
             bot.CloseBot();
         }
-        catch (BotElementException ex)
+        catch (BotFindElementException ex)
         {
             Console.WriteLine($"Failed to return an html element\n{ex.Message}");
             Console.WriteLine("Closeing driver");
@@ -135,7 +129,7 @@ sealed class GetDataLdraw : IGetData
                     }
                 }
             }
-            catch (BotElementException ex)
+            catch (BotFindElementException ex)
             {
                 // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
                 Console.WriteLine($"No more download buttons on current set page:{ex.Message}");
@@ -146,19 +140,14 @@ sealed class GetDataLdraw : IGetData
                 Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
 
             }
-            // should be thrown in case of stale element or 404 page error. Shitty fix 
-            catch (BotException ex)
+            // should be thrown in case of stale element or 404 page error.
+            catch (BotStaleElementException)
             {
-                Console.WriteLine(ex.Message);
                 bot.GoBack();
                 bot.GoBack();
             }
         }
     }
-
-
-
-
 
     public static IWebElement GetNextPageElement(Bot bot)
     {
@@ -172,35 +161,46 @@ sealed class GetDataLdraw : IGetData
                     return nextPageElement;
                 }
             }
-            catch (BotElementException ex)
+            catch (BotFindElementException ex)
             {
-                Console.WriteLine($"{ex}: Element not found, trying next option.");
+                throw new BotFindElementException($"{ex}: Element not found, trying next option.");
             }
-            catch (WebDriverTimeoutException ex)
+            catch (BotTimeOutException ex)
             {
                 throw new BotTimeOutException($"The referenced element was found but, it was not displayed on the webpage: {ex}");
             }
         }
-        throw new BotElementException("No valid next page element found - all options in NextPageElements dictionary were either not found or not displayed.");
+        throw new BotStaleElementException("The referenced element is no longer displayed on the webpage");
     }
 
 
     public static void GoToNextPage(Bot bot, IWebElement NextButtonElement)
     {
-        // click next button if it is loaded. 
-        if (bot.WaitTillExists(NextButtonElement))
+        try
         {
-            // get the url of the driver before clicking the next button. 
-            string oldUrl = bot.Driver.Url;
-            Bot.ClickElement(NextButtonElement);
+            // click next button if it is loaded. 
+            if (bot.WaitTillExists(NextButtonElement))
+            {
+                // get the url of the driver before clicking the next button. 
+                string oldUrl = bot.Driver.Url;
+                Bot.ClickElement(NextButtonElement);
 
-            // Bot should not proceed until the next page is fully loaded indicated by a change in the url.
-            bot.ExplicitWait(oldUrl);
+                // Bot should not proceed until the next page is fully loaded indicated by a change in the url.
+                bot.ExplicitWait(oldUrl);
+            }
+            // reset the bot attribute list for next page of elements. 
+            bot.AttributeList = [];
         }
-        // reset the bot attribute list for next page of elements. 
-        bot.AttributeList = [];
-    }
+        catch(BotStaleElementException ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        catch (BotTimeOutException ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
 
+    }
     public static bool AssertDownloadAmount()
     {
         try
@@ -227,7 +227,7 @@ sealed class GetDataLdraw : IGetData
     //process the Ldraw website LEGO sets and download them. 
     public static void ProcessData()
     {
-        // initial check if run us custom or standard run
+        // initial check if run is custom or not
         if (CustomRun)
         {
             UseCustomStartingPage();
@@ -247,15 +247,14 @@ sealed class GetDataLdraw : IGetData
                 IWebElement nextButtonElement = GetNextPageElement(bot);
                 GoToNextPage(bot, nextButtonElement);
             }
-            
         }
-        catch (BotElementException)
+        catch (StaleElementReferenceException)
         {
             Console.WriteLine($"No more next buttons. Reached last page.");
-            AssertDownloadAmount();
         }
         finally
         {
+            AssertDownloadAmount(); 
             bot.CloseBot();
         }
     }

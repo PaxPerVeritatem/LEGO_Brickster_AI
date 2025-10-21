@@ -375,7 +375,7 @@ public sealed class BotTest(ITestOutputHelper output)
         try
         {
             basic_bot.GoToWebpage();
-            Assert.Throws<BotElementException>(() => Bot.ClickElement(element));
+            Assert.Throws<BotFindElementException>(() => Bot.ClickElement(element));
         }
         finally
         {
@@ -409,11 +409,11 @@ public sealed class BotTest(ITestOutputHelper output)
             // if UseFindElements is true, we will check exceptions in FindElements() as opposed to FindElement()
             if (UseFindElements)
             {
-                Assert.Throws<BotElementException>(() => FindPageElementsException(configuredBot, FirstElementString, FirstByMechanism));
+                Assert.Throws<BotFindElementException>(() => FindPageElementsException(configuredBot, FirstElementString, FirstByMechanism));
             }
             else
             {
-                Assert.Throws<BotElementException>(() => FindPageElementException(configuredBot, FirstElementString, FirstByMechanism, SecondElementString, SecondByMechanism, UseAncestorElementPattern));
+                Assert.Throws<BotFindElementException>(() => FindPageElementException(configuredBot, FirstElementString, FirstByMechanism, SecondElementString, SecondByMechanism, UseAncestorElementPattern));
             }
         }
         finally
@@ -438,7 +438,7 @@ public sealed class BotTest(ITestOutputHelper output)
         AccessTestWebPage(basicBot,TestUrl);
         try
         {
-            Assert.Throws<BotElementException>(() => FindPageElementException(basicBot, ElementString, ByMechanism, null, null));
+            Assert.Throws<BotFindElementException>(() => FindPageElementException(basicBot, ElementString, ByMechanism, null, null));
         }
         finally
         {

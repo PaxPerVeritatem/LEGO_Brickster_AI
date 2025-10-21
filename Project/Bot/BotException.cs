@@ -39,13 +39,13 @@ public class BotUrlException : BotException
 /// <summary>
 /// Exception thrown when a bot fails to navigate to a webpage due to an invalid 'By' lolocator mechanism (Link Text, XPath etc).
 /// </summary>
-public class BotElementException : BotException
+public class BotFindElementException : BotException
 {
-    public BotElementException() : base() { }
+    public BotFindElementException() : base() { }
 
-    public BotElementException(string message) : base(message) { }
+    public BotFindElementException(string message) : base(message) { }
 
-    public BotElementException(string message, Exception inner) : base(message, inner) { }
+    public BotFindElementException(string message, Exception inner) : base(message, inner) { }
 }
 
 public class BotMechanismException : BotException
@@ -64,6 +64,15 @@ public class BotTimeOutException : BotException
     public BotTimeOutException(string message) : base(message) { }
 
     public BotTimeOutException(string message, Exception inner) : base(message, inner) { }
+}
+
+public class BotStaleElementException : BotException
+{
+    public BotStaleElementException() : base() { }
+
+    public BotStaleElementException(string message) : base(message) { }
+
+    public BotStaleElementException(string message, Exception inner) : base(message, inner) { }
 }
 
 
