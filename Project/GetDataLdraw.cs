@@ -26,8 +26,8 @@ sealed class GetDataLdraw : IGetData
         };
 
 
-    // minus 10 because we only have 15 sets on the last page. 
-    public static int ExpectedElementClickAmount => SetsPrPage * PageLimit - 10;
+    // minus 11 because we only have 15 sets on the last page and 1 set leads to 404 error page . 
+    public static int ExpectedElementClickAmount => SetsPrPage * PageLimit - 11;
 
     public static int ElementClickCounter { get; set; } = 0;
 
@@ -81,9 +81,74 @@ sealed class GetDataLdraw : IGetData
     }
 
 
-    public static void DownloadPageElements(Bot bot)
+    public static void DownloadPageElements(Bot bot, string ElementString, string ByMechanism)
     {
-        Console.WriteLine("Im not implemented yet");
+        for (int i = 0; i < PageLimit; i++)
+        {
+            try
+            {
+                // Attempt to find LEGO set LinkTest element
+                IWebElement? setNameElement = bot.FindPageElement(ElementString, ByMechanism);
+
+                // if current LinkText is not null call Click()
+                if (bot.WaitTillExists(setNameElement))
+                {
+                    Bot.ClickElement(setNameElement);
+                    // add for each LEGO set. Should finally match 'downloadAmount'
+                    ElementClickCounter += 1;
+                }
+
+                // Attempt to find 'Models' element on LEGO set page
+                IWebElement? ModelsElement = bot.FindPageElement("//div[contains(text(),'Model')]", "xp");
+
+                // wait until ModelElement has rendered on page
+                if (bot.WaitTillExists(ModelsElement))
+                {
+                    // if the ModelElement is not null, attempt to find the first download button element
+                    IWebElement? downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", ModelsElement);
+
+                    // while there are download buttons on the page find them and press them., 
+                    while (bot.WaitTillExists(downloadButtonElement))
+                    {
+                        // i belive we can forgive here since WaitTillExists checks for null element.
+                        string downloadFileSubstring = Bot.GetFileName(downloadButtonElement!, "href");
+
+                        string downloadFilePath = Path.Combine(bot.AbsDownloadFolderPath!, downloadFileSubstring);
+                        // if the file has already been downloaded, skip it
+                        if (Bot.IsFileDownloaded(downloadFilePath))
+                        {
+                            // try to find the next download button. 
+                            downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", downloadButtonElement);
+                        }
+                        else
+                        {
+                            Bot.ClickElement(downloadButtonElement);
+                            // try to find the next download button
+                            downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", downloadButtonElement);
+                        }
+                    }
+                }
+            }
+
+            catch (BotElementException ex)
+            {
+                // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
+                Console.WriteLine($"No more download buttons on current set page:{ex.Message}");
+                bot.GoBack();
+            }
+            catch (BotMechanismException ex)
+            {
+                Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
+
+            }
+            // should be thrown in case of stale element or 404 page error. Shitty fix 
+            catch (BotException ex)
+            {
+                Console.WriteLine(ex.Message);
+                bot.GoBack();
+                bot.GoBack();
+            }
+        }
     }
 
 
@@ -128,6 +193,27 @@ sealed class GetDataLdraw : IGetData
         bot.AttributeList = [];
     }
 
+    public static bool AssertDownloadAmount()
+    {
+        try
+        {
+            if (ExpectedElementClickAmount == ElementClickCounter)
+            {
+                Console.WriteLine($"Expected {ExpectedElementClickAmount}, matched clicked {ElementClickCounter} set page elements");
+                return true; 
+            }
+            else
+            { 
+                throw new BotDownloadAmountException($"Expected {ExpectedElementClickAmount}, but clicked {ElementClickCounter} set page elements");
+            }
+        }
+        catch (BotDownloadAmountException ex)
+        {
+            Console.WriteLine($"Assumed amount of LEGO Sets was either not correct or something went wrong during clicking set elements:{ex}");
+            return false; 
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------------------------------------------------------//
 
     //process the Ldraw website LEGO sets and download them. 
@@ -141,90 +227,17 @@ sealed class GetDataLdraw : IGetData
         }
 
         AccessWebPage(bot);
-
-
-
-        
         try
         {
-
             SetAttributeList(bot, "fi-ta-cell-name", "class");
+
             foreach (string name in bot.AttributeList)
             {
-                for (int i = 0; i < PageLimit; i++)
-                {
-                    try
-                    {
-
-                        // Attempt to find LEGO set LinkTest element
-                        IWebElement? setNameElement = bot.FindPageElement(name, "lt");
-
-                        // if current LinkText is not null call Click()
-                        if (bot.WaitTillExists(setNameElement))
-                        {
-                            Bot.ClickElement(setNameElement);
-                            // add for each LEGO set. Should finally match 'downloadAmount'
-                            ElementClickCounter += 1;
-                        }
-
-
-                        // Attempt to find 'Models' element on LEGO set page
-                        IWebElement? ModelsElement = bot.FindPageElement("//div[contains(text(),'Model')]", "xp");
-
-                        // wait until ModelElement has rendered on page
-                        if (bot.WaitTillExists(ModelsElement))
-                        {
-                            // if the ModelElement is not null, attempt to find the first download button element
-                            IWebElement? downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", ModelsElement);
-
-                            // while there are download buttons on the page find them and press them., 
-                            while (bot.WaitTillExists(downloadButtonElement))
-                            {
-                                // i belive we can forgive here since WaitTillExists checks for null element.
-                                string downloadFileSubstring = Bot.GetFileName(downloadButtonElement!, "href");
-
-                                string downloadFilePath = Path.Combine(bot.AbsDownloadFolderPath!, downloadFileSubstring);
-                                // if the file has already been downloaded, skip it
-                                if (Bot.IsFileDownloaded(downloadFilePath))
-                                {
-                                    // try to find the next download button. 
-                                    downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", downloadButtonElement);
-                                }
-                                else
-                                {
-                                    Bot.ClickElement(downloadButtonElement);
-                                    // try to find the next download button
-                                    downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", downloadButtonElement);
-                                }
-                            }
-                        }
-                    }
-
-                    catch (BotElementException ex)
-                    {
-                        // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
-                        Console.WriteLine($"No more download buttons on current set page:{ex.Message}");
-                        bot.GoBack();
-                    }
-                    catch (BotMechanismException ex)
-                    {
-                        Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
-
-                    }
-                    // should be thrown in case of stale element or 404 page error. Shitty fix 
-                    catch (BotException ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                        bot.GoBack();
-                        bot.GoBack();
-                    }
-                }
+                DownloadPageElements(bot, name, "lt");
             }
             // Find the Next button elements which works, considering page responsiveness
             IWebElement nextButtonElement = GetNextPageElement(bot);
             GoToNextPage(bot, nextButtonElement);
-
-
 
         }
         catch (BotElementException)
@@ -234,22 +247,6 @@ sealed class GetDataLdraw : IGetData
         finally
         {
             bot.CloseBot();
-        }
-        try
-        {
-            if (ExpectedElementClickAmount == ElementClickCounter)
-            {
-                Console.WriteLine($"Expected {ExpectedElementClickAmount}, matched clicked {ElementClickCounter} set page elements");
-
-            }
-            else
-            {
-                throw new BotDownloadAmountException($"Expected {ExpectedElementClickAmount}, but clicked {ElementClickCounter} set page elements");
-            }
-        }
-        catch (BotDownloadAmountException ex)
-        {
-            Console.WriteLine($"Assumed amount of LEGO Sets was either not correct or something went wrong during clicking set elements:{ex}");
         }
     }
 }
