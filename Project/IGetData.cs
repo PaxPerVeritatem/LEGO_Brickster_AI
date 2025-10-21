@@ -23,7 +23,8 @@ interface IGetData
 
 
     /// <summary>
-    /// int defining the last page of a custom run to scape data from (intended to be used inclusively) 
+    /// The PageLimit defines the absolute amount of pages, where SetAttributeList() is called for each page, to add the 
+    /// IdentifierAttribute for all CommonElementStrings to the bot.AttributeList 
     /// </summary>
     static abstract int PageLimit { get; }
 
@@ -91,11 +92,7 @@ interface IGetData
 
 
 
-    /// <summary>
-    ///  function to perform all the bot actions nessesary to download all elements currently in the Bot.AttributeList
-    /// </summary>
-    /// <param name="bot"></param>
-    public static abstract void DownloadPageElements(Bot bot);
+
 
 
 
@@ -178,6 +175,19 @@ interface IGetData
     public static abstract void GoToNextPage(Bot bot, IWebElement NextButtonElement);
 
 
+
+    /// <summary>
+    ///  function to perform all the bot actions nessesary to download all elements currently in the Bot.AttributeList
+    /// </summary>
+    /// <param name="bot"></param>
+    public static abstract void DownloadPageElements(Bot bot, string ElementString, string ByMechanism);
+
+
+    /// <summary>
+    ///  Function to assert that the expected number of downloaded elements matches the actual amount of downloaded elements. 
+    /// </summary>
+    /// <returns></returns>
+    public static abstract bool AssertDownloadAmount();
 
 
 
