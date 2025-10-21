@@ -9,15 +9,18 @@ sealed class GetDataLdraw : IGetData
 
     // must have setter to be mutable and for UseCustomStartingPage to work. 
     public static string Url { get; set; } = "https://library.ldraw.org/omr/sets";
-    public static bool CustomRun => true;
-
-    public static int StartFromPage => 2;
-
-    public static int ExpectedSetsPrPage => 25;
-
+    
+    // Global run Properties
     public static int MaxPage => 59;
 
-    public static int PageLimit => 1;
+    public static int PageLimit => MaxPage;
+
+    public static int ExpectedSetsPrPage => 25;
+    
+    // Custom run Properties 
+    public static bool CustomRun => false;
+
+    public static int StartFromPage => 1;
 
     public static string UrlPageVarient => "?page=";
 
@@ -43,7 +46,7 @@ sealed class GetDataLdraw : IGetData
     public static void UseCustomStartingPage()
     {
         Url = $"{Url}{UrlPageVarient}{StartFromPage}";
-        if (PageLimit != MaxPage)
+        if (StartFromPage != MaxPage)
         {
             ExpectedElementClickAmount += ExpectedElementClickDeviation;
         }
@@ -244,11 +247,12 @@ sealed class GetDataLdraw : IGetData
                 IWebElement nextButtonElement = GetNextPageElement(bot);
                 GoToNextPage(bot, nextButtonElement);
             }
-            AssertDownloadAmount();
+            
         }
         catch (BotElementException)
         {
             Console.WriteLine($"No more next buttons. Reached last page.");
+            AssertDownloadAmount();
         }
         finally
         {
