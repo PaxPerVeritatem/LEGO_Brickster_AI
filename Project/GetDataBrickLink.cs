@@ -103,10 +103,11 @@ sealed class GetDataBrickLink : IGetData
     }
 
 
-    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string? IdentifierAttribute = null)
+    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute)
     {
         // Attempt to get the list of LEGO set names for the current main page
-        bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism);
+        bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism, IdentifierAttribute);
+
     }
 
 
@@ -119,7 +120,7 @@ sealed class GetDataBrickLink : IGetData
                 // Attempt to find LEGO set LinkTest element
                 IWebElement? setNameElement = bot.FindPageElement(IdentifierAttribute, ByMechanism);
 
-                // if current LinkText is not null call Click()
+                // if current LinkText is not null click the set 
                 if (bot.WaitTillExists(setNameElement))
                 {
                     Bot.ClickElement(setNameElement);
@@ -127,41 +128,34 @@ sealed class GetDataBrickLink : IGetData
                     ElementClickCounter += 1;
                 }
 
-                // Attempt to find 'Models' element on LEGO set page
-                IWebElement? ModelsElement = bot.FindPageElement("//div[contains(text(),'Model')]", "xp");
+                // Attempt to find 'Download Studio file' button element on LEGO set page
+                IWebElement? downloadButtonElement = bot.FindPageElement("//button[contains(text(),'Download Studio file')]", "xp");
 
-                // wait until ModelElement has rendered on page
-                if (bot.WaitTillExists(ModelsElement))
+                if (bot.WaitTillExists(downloadButtonElement))
                 {
-                    // if the ModelElement is not null, attempt to find the first download button element
-                    IWebElement? downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", ModelsElement);
+                    // i belive we can forgive here since WaitTillExists checks for null element.
+                    string downloadFileSubstring = Bot.GetFileName(downloadButtonElement!, "Text");
 
-                    // while there are download buttons on the page find them and press them., 
-                    while (bot.WaitTillExists(downloadButtonElement))
+                    string downloadFilePath = Path.Combine(bot.AbsDownloadFolderPath!, downloadFileSubstring);
+
+                    if (Bot.IsFileDownloaded(downloadFilePath))
                     {
-                        // i belive we can forgive here since WaitTillExists checks for null element.
-                        string downloadFileSubstring = Bot.GetFileName(downloadButtonElement!, "href");
-
-                        string downloadFilePath = Path.Combine(bot.AbsDownloadFolderPath!, downloadFileSubstring);
                         // if the file has already been downloaded, skip it
-                        if (Bot.IsFileDownloaded(downloadFilePath))
-                        {
-                            // try to find the next download button. 
-                            downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", downloadButtonElement);
-                        }
-                        else
-                        {
-                            Bot.ClickElement(downloadButtonElement);
-                            // try to find the next download button
-                            downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", downloadButtonElement);
-                        }
+                        continue;
+                    }
+                    else
+                    {
+                        Bot.ClickElement(downloadButtonElement);
+                        // try to find the next download button
+                        downloadButtonElement = bot.FindPageElement(".//button[contains(text(),'Download Studio file')]", "xp", downloadButtonElement);
                     }
                 }
             }
+
             catch (BotFindElementException ex)
             {
                 // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
-                Console.WriteLine($"No more download buttons on current set page:{ex.Message}");
+                Console.WriteLine(ex.Message);
                 bot.GoBack();
             }
             catch (BotMechanismException ex)
@@ -267,13 +261,9 @@ sealed class GetDataBrickLink : IGetData
             AccessWebPage(bot);
             for (int i = 0; i < PageLimit; i++)
             {
-                SetAttributeList(bot, "//article[contains(@class,'card')]//a[@class='moc-card__name']", "xp");
-                Console.WriteLine(bot.AttributeList.Count); 
-                foreach (string setName in bot.AttributeList)
-            {
-                Console.WriteLine(setName);
-            }
-                //DownloadPageElements(bot, "lt");
+                SetAttributeList(bot, "//article[contains(@class,'card')]//a[@class='moc-card__name']", "xp", "href");
+            
+                DownloadPageElements(bot, "lt");
 
                 //     // Find the Next button elements which works, considering page responsiveness
                 //     IWebElement nextButtonElement = GetNextPageElement(bot);
@@ -287,7 +277,7 @@ sealed class GetDataBrickLink : IGetData
         }
         finally
         {
-            //AssertDownloadAmount();
+            AssertDownloadAmount();
             bot.CloseBot();
         }
     }

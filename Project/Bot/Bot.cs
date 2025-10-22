@@ -311,6 +311,7 @@ public class Bot
         try
         {
             string? downloadFileName = DownloadButtonElement.GetAttribute(ElementAttribute);
+            Console.WriteLine(downloadFileName);
             if (downloadFileName != null)
             {
                 string downloadFileSubstring = Path.GetFileName(downloadFileName);
@@ -364,9 +365,9 @@ public class Bot
         }
     }
 
-   
-        /// some combinations of actions may lead to the bot clicking elements which are not yet loaded on the page 
-        /// or the bot go though its actions too fast and leads to attempting no longer valid actions.
+
+    /// some combinations of actions may lead to the bot clicking elements which are not yet loaded on the page 
+    /// or the bot go though its actions too fast and leads to attempting no longer valid actions.
     public void ExplicitWait(string oldurl)
     {
         try
