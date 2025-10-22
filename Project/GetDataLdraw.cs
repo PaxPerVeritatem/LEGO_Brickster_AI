@@ -18,13 +18,13 @@ sealed class GetDataLdraw : IGetData
 
     public static int ElementClickCounter { get; set; } = 0;
 
-    public static string DownloadFolderPath => @"..\..\..\LEGO_Data";
+    public static string DownloadFolderPath => @"..\..\..\LEGO_Data\Ldraw_Data";
 
 
     // Custom run Properties 
-    public static bool CustomRun => true;
+    public static bool CustomRun => false;
 
-    public static int StartFromPage => 12;
+    public static int StartFromPage => 1;
 
     public static string UrlPageVarient => "?page=";
 
@@ -233,10 +233,10 @@ sealed class GetDataLdraw : IGetData
             UseCustomStartingPage();
         }
         Bot bot = new(Url, DownloadFolderPath);
-
-        AccessWebPage(bot);
+        
         try
         {
+            AccessWebPage(bot);
             for (int i = 0; i < PageLimit; i++)
             {
                 SetAttributeList(bot, "fi-ta-cell-name", "class");
