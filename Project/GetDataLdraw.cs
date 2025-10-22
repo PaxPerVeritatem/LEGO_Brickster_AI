@@ -65,7 +65,7 @@ sealed class GetDataLdraw : IGetData
     }
 
 
-    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string? IdentifierAttribute = null)
+    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string? IdentifierAttribute=null)
     {
         // Attempt to get the list of LEGO set names for the current main page
         bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism);

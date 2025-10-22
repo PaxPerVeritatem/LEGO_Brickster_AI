@@ -102,7 +102,7 @@ interface IGetData
     /// <param name="bot"></param>
     /// <param name="CommonElementString"></param>
     /// <param name="CommonByMechanism"></param>
-    public static abstract void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string? IdentifierAttribute = null);
+    public static abstract void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute);
 
 
     /// <summary>
