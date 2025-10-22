@@ -4,16 +4,18 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Interactions;
 sealed class GetDataBrickLink : IGetData
 {
-    public static string Url { get; set; } = "https://library.ldraw.org/omr/sets";
+    public static string Url { get; set; } = "https://www.bricklink.com/v3/studio/design.page?idModel";
+
+
 
     // Global run Properties
     public static int MaxPage => 59;
 
     public static int PageLimit => 1;
 
-    public static int ExpectedSetsPrPage => 25;
+    public static int ExpectedSetsPrPage => 50;
 
-    public static int ExpectedElementClickDeviation => 10;
+    public static int ExpectedElementClickDeviation => 0;
 
     public static int ExpectedElementClickAmount { get; set; } = ExpectedSetsPrPage * PageLimit - ExpectedElementClickDeviation;
 
@@ -23,11 +25,11 @@ sealed class GetDataBrickLink : IGetData
 
 
     // Custom run Properties 
-    public static bool CustomRun => false;
+    public static bool CustomRun => true;
 
     public static int StartFromPage => 1;
 
-    public static string UrlPageVarient => "?page=";
+    public static string UrlPageVarient => "";
 
     public static Dictionary<string, string> NextPageElements => new() {
         {"//button[@rel='next']", "xp" },
@@ -55,41 +57,48 @@ sealed class GetDataBrickLink : IGetData
         {
             bot.GoToWebpage();
             Actions actionsBuilder = new(bot.Driver);
-                // find and click the ageGateElement
-                IWebElement? ageGateElement = bot.FindPageElement("//input[@class='blp-age-gate__input-field']", "xp");
-                if (bot.WaitTillExists(ageGateElement))
-                {
-                    Bot.ClickElement(ageGateElement);
-                    actionsBuilder.SendKeys("1");
-                    actionsBuilder.SendKeys("9");
-                    actionsBuilder.SendKeys("9");
-                    actionsBuilder.SendKeys("4");
-                    actionsBuilder.Perform();
-                    actionsBuilder.Reset();
-                }
-                // find and press cookie button 
-                IWebElement? cookieButton = bot.FindPageElement("//div[@class='cookie-notice__content']//button[contains(text(), 'Just necessary')]", "xp");
-                if (bot.WaitTillExists(cookieButton))
-                {
-                    Bot.ClickElement(cookieButton);
-                }
+            // find and click the ageGateElement
+            IWebElement? ageGateElement = bot.FindPageElement("//input[@class='blp-age-gate__input-field']", "xp");
+            if (bot.WaitTillExists(ageGateElement))
+            {
+                Bot.ClickElement(ageGateElement);
+                actionsBuilder.SendKeys("1");
+                actionsBuilder.SendKeys("9");
+                actionsBuilder.SendKeys("9");
+                actionsBuilder.SendKeys("4");
+                actionsBuilder.Perform();
+                actionsBuilder.Reset();
+            }
+            // find and press cookie button 
+            IWebElement? cookieButton = bot.FindPageElement("//div[@class='cookie-notice__content']//button[contains(text(), 'Just necessary')]", "xp");
+            if (bot.WaitTillExists(cookieButton))
+            {
+                Bot.ClickElement(cookieButton);
+            }
         }
         catch (BotUrlException ex)
         {
             Console.WriteLine($"Failed to load webpage: {ex.Message}");
-            bot.CloseBot();
+        }
+        catch (BotDriverException ex)
+        {
+            Console.WriteLine(ex.Message);
         }
         catch (BotFindElementException ex)
         {
             Console.WriteLine($"Failed to return an html element\n{ex.Message}");
-            Console.WriteLine("Closeing driver");
-            bot.CloseBot();
         }
         catch (BotMechanismException ex)
         {
             Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
-            Console.WriteLine("Closeing driver");
-            bot.CloseBot();
+        }
+        catch (BotTimeOutException ex)
+        {
+            Console.WriteLine($"Bot waited _wait time before timing out waiting for an element to appear:{ex.Message}");
+        }
+        catch (BotStaleElementException ex)
+        {
+            Console.WriteLine($"{ex.Message}: Element was probably found but page responsiveness or reload caused staleness");
         }
     }
 
@@ -183,11 +192,11 @@ sealed class GetDataBrickLink : IGetData
             }
             catch (BotFindElementException ex)
             {
-                throw new BotFindElementException($"{ex}: Element not found, trying next option.");
+                throw new BotFindElementException($"{ex.Message}: Element not found, trying next option.");
             }
             catch (BotTimeOutException ex)
             {
-                throw new BotTimeOutException($"The referenced element was found but, it was not displayed on the webpage: {ex}");
+                throw new BotTimeOutException($"The referenced element was found but, it was not displayed on the webpage: {ex.Message}");
             }
         }
         throw new BotStaleElementException("The referenced element is no longer displayed on the webpage");
@@ -211,7 +220,7 @@ sealed class GetDataBrickLink : IGetData
             // reset the bot attribute list for next page of elements. 
             bot.AttributeList = [];
         }
-        catch(BotStaleElementException ex)
+        catch (BotStaleElementException ex)
         {
             Console.WriteLine(ex.Message);
         }
@@ -237,7 +246,7 @@ sealed class GetDataBrickLink : IGetData
         }
         catch (BotDownloadAmountException ex)
         {
-            Console.WriteLine($"Assumed amount of LEGO Sets was either not correct or something went wrong during clicking set elements:{ex}");
+            Console.WriteLine($"Assumed amount of LEGO Sets was either not correct or something went wrong during clicking set elements:{ex.Message}");
             return false;
         }
     }
@@ -258,13 +267,18 @@ sealed class GetDataBrickLink : IGetData
             AccessWebPage(bot);
             for (int i = 0; i < PageLimit; i++)
             {
-                SetAttributeList(bot, "fi-ta-cell-name", "class");
+                SetAttributeList(bot, "//article[contains(@class,'card')]//a[@class='moc-card__name']", "xp");
+                Console.WriteLine(bot.AttributeList.Count); 
+                foreach (string setName in bot.AttributeList)
+            {
+                Console.WriteLine(setName);
+            }
+                //DownloadPageElements(bot, "lt");
 
-                DownloadPageElements(bot, "lt");
-
-                // Find the Next button elements which works, considering page responsiveness
-                IWebElement nextButtonElement = GetNextPageElement(bot);
-                GoToNextPage(bot, nextButtonElement);
+                //     // Find the Next button elements which works, considering page responsiveness
+                //     IWebElement nextButtonElement = GetNextPageElement(bot);
+                //     GoToNextPage(bot, nextButtonElement);
+                // }
             }
         }
         catch (StaleElementReferenceException)
@@ -273,7 +287,7 @@ sealed class GetDataBrickLink : IGetData
         }
         finally
         {
-            AssertDownloadAmount(); 
+            //AssertDownloadAmount();
             bot.CloseBot();
         }
     }

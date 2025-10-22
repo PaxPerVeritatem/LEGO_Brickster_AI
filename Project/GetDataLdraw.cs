@@ -57,19 +57,10 @@ sealed class GetDataLdraw : IGetData
         catch (BotUrlException ex)
         {
             Console.WriteLine($"Failed to load webpage: {ex.Message}");
-            bot.CloseBot();
         }
-        catch (BotFindElementException ex)
+        catch(BotDriverException ex )
         {
-            Console.WriteLine($"Failed to return an html element\n{ex.Message}");
-            Console.WriteLine("Closeing driver");
-            bot.CloseBot();
-        }
-        catch (BotMechanismException ex)
-        {
-            Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
-            Console.WriteLine("Closeing driver");
-            bot.CloseBot();
+            Console.WriteLine(ex.Message); 
         }
     }
 
@@ -163,11 +154,11 @@ sealed class GetDataLdraw : IGetData
             }
             catch (BotFindElementException ex)
             {
-                throw new BotFindElementException($"{ex}: Element not found, trying next option.");
+                throw new BotFindElementException($"{ex.Message}: Element not found, trying next option.");
             }
             catch (BotTimeOutException ex)
             {
-                throw new BotTimeOutException($"The referenced element was found but, it was not displayed on the webpage: {ex}");
+                throw new BotTimeOutException($"The referenced element was found but, it was not displayed on the webpage: {ex.Message}");
             }
         }
         throw new BotStaleElementException("The referenced element is no longer displayed on the webpage");
@@ -191,7 +182,7 @@ sealed class GetDataLdraw : IGetData
             // reset the bot attribute list for next page of elements. 
             bot.AttributeList = [];
         }
-        catch(BotStaleElementException ex)
+        catch (BotStaleElementException ex)
         {
             Console.WriteLine(ex.Message);
         }
@@ -217,7 +208,7 @@ sealed class GetDataLdraw : IGetData
         }
         catch (BotDownloadAmountException ex)
         {
-            Console.WriteLine($"Assumed amount of LEGO Sets was either not correct or something went wrong during clicking set elements:{ex}");
+            Console.WriteLine($"Assumed amount of LEGO Sets was either not correct or something went wrong during clicking set elements:{ex.Message}");
             return false;
         }
     }
@@ -233,7 +224,7 @@ sealed class GetDataLdraw : IGetData
             UseCustomStartingPage();
         }
         Bot bot = new(Url, DownloadFolderPath);
-        
+
         try
         {
             AccessWebPage(bot);
@@ -254,7 +245,7 @@ sealed class GetDataLdraw : IGetData
         }
         finally
         {
-            AssertDownloadAmount(); 
+            AssertDownloadAmount();
             bot.CloseBot();
         }
     }
