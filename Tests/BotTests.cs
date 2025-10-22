@@ -72,8 +72,7 @@ public sealed class BotTest(ITestOutputHelper output)
                 break;
 
             case TestUrl_3:
-                ChromeDriver testdriver = ConfiguredBot.Driver;
-                Actions actionsBuilder = new(testdriver);
+                Actions actionsBuilder = new(ConfiguredBot.Driver);
                 // find and click the ageGateElement
                 IWebElement? ageGateElement = ConfiguredBot.FindPageElement("//input[@class='blp-age-gate__input-field']", "xp");
                 if (ConfiguredBot.WaitTillExists(ageGateElement))
