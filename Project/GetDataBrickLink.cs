@@ -5,7 +5,10 @@ using OpenQA.Selenium.Interactions;
 using DotNetEnv;
 sealed class GetDataBrickLink : IGetData
 {
-    public static string Url { get; set; } = "https://identity.lego.com/en-US/login?returnUrl=%2Fconnect%2Fauthorize%2Fcallback%3Fui_locales%3Den-US%26prompt%3Dselect_account%26adultexperience%3Dtrue%26scope%3Dopenid%2520profile%2520email%2520offline_access%2520dob%26redirect_uri%3Dhttps%253A%252F%252Fauth.preview.v2.bricklink.com%252Fauth-callback%26code_challenge%3Dgoo4VvQKvk-q5cmuvb2CMgwBIhSlnEHLL5Z2zKAcAak%26code_challenge_method%3DS256%26state%3Dhttps%253A%252F%252Fv2.bricklink.com%26client_id%3D7e5d539d-deda-4d1f-aac4-c313acf69290%26response_type%3Dcode%26suppressed_prompt%3Dselect_account";
+    public static string Url { get; set; } = "https://identity.lego.com/en-US/login";
+    public static string DownloadFolderPath => @"..\..\..\LEGO_Data\BrickLink_Data";
+
+    public static string UserProfilePath => @"..\..\..\DriverProfile";
 
 
 
@@ -22,7 +25,7 @@ sealed class GetDataBrickLink : IGetData
 
     public static int ElementClickCounter { get; set; } = 0;
 
-    public static string DownloadFolderPath => @"..\..\..\LEGO_Data\BrickLink_Data";
+
 
 
     // Custom run Properties 
@@ -44,7 +47,7 @@ sealed class GetDataBrickLink : IGetData
     }
 
 
-    public static void AccessWebPage(Bot bot, Dictionary<string, string>? ElementCandidatesDict=null)
+    public static void AccessWebPage(Bot bot, Dictionary<string, string>? ElementCandidatesDict = null)
     {
         try
         {
@@ -334,7 +337,7 @@ sealed class GetDataBrickLink : IGetData
         {
             UseCustomStartingPage();
         }
-        Bot bot = new(Url, DownloadFolderPath);
+        Bot bot = new(Url, DownloadFolderPath,UserProfilePath);
 
         // dict for the two Sigin button cases. 
         Dictionary<string, string> LoginCandiateDict = new() {
@@ -375,17 +378,16 @@ sealed class GetDataBrickLink : IGetData
         {
             UseCustomStartingPage();
         }
-        Bot bot = new(Url, DownloadFolderPath);
-
+        Bot bot = new(Url, DownloadFolderPath,UserProfilePath);
         // dict for the two Sigin button cases. 
-        Dictionary<string, string> LoginCandiateDict = new() {
+        Dictionary<string, string> LoginButtonsCandiateDict = new() {
             {"//button[@id = 'js-trigger-sign-in']", "xp"},
             {"//button[@id = 'js-trigger-more']","xp"}
         };
         try
         {
 
-            TestAccessWebPage(bot, LoginCandiateDict);
+            TestAccessWebPage(bot, LoginButtonsCandiateDict);
         }
         finally
         {
@@ -402,10 +404,12 @@ sealed class GetDataBrickLink : IGetData
             bot.GoToMainPage();
             Actions actionBuilder = new(bot.Driver);
 
+            // wait for the login page to load. 
+            string oldUrl = bot.Driver.Url;
+            bot.ExplicitWait(oldUrl);
             //find the Username / email input element
-            Thread.Sleep(1000);
             IWebElement? UsernameField = bot.FindPageElement("//input[@id='username']", "xp");
-            
+
             if (bot.WaitTillExists(UsernameField))
             {
                 actionBuilder.MoveToElement(UsernameField);

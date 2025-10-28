@@ -17,14 +17,11 @@ public class Bot
     private readonly UndetectedChromeDriver _driver;
     public UndetectedChromeDriver Driver => _driver;
 
-    // defines the default path for the drivers chrome driver executable. 
-    private static readonly string _driverPath = @"C:\Users\admin\.cache\selenium\chromedriver\win64\141.0.7390.122\ChromeDriver.exe";
-
-    // defines the default path for the drivers chrome user profile. 
-    private readonly string _userProfilePath = @"C:\Users\admin\OneDrive\Skrivebord\LEGO_Brickster_AI\Project\DriverProfile"; 
-
     private readonly ChromeOptions? _options;
     public ChromeOptions? Options => _options;
+
+
+    private readonly Dictionary<string, object> prefs;
 
     private readonly WebDriverWait _wait;
 
@@ -37,56 +34,48 @@ public class Bot
 
     public string Url { get; set; }
 
+    // get a string array of the all the chrome version folders. 
+    private static readonly string[] _driverPathFolders = Directory.GetDirectories(
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".cache",
+            "selenium",
+            "chromedriver",
+            "win64")
+    );
+
+
+    // The last index value should be the latest version of chrome
+    private readonly string _driverPath = Path.Combine(_driverPathFolders[^1], "chromedriver.exe");
+    
+
+
     private readonly string? _absDownloadFolderPath;
     public string? AbsDownloadFolderPath => _absDownloadFolderPath;
 
 
 
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Bot"/> class with the given URL and optional download folder path.
-    /// </summary>
-    /// <param name="url">The URL of the webpage to access.</param>
-    /// <param name="downloadFolderPath">The path to the default download folder for the bot. If null, the default download folder is used.</param>
-    /// <remarks>
-    /// If <paramref name="downloadFolderPath"/> is not null, the bot will use the specified download folder path.
-    /// Otherwise, the bot will use the default download folder path.
-    /// </remarks>
-    public Bot(string url, string? downloadFolderPath = null, Dictionary<string, object>? prefs = null)
+    public Bot(string url, string downloadFolderPath, string userProfilePath)
     {
-        
         Url = url;
-        if (downloadFolderPath != null)
+
+        // get the absolute path to the download folder from the relative provided download folder path
+        _absDownloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, downloadFolderPath));
+
+        // initialize prefs as dict with the default download folder as key and the absolute download folder path as value
+        prefs = new Dictionary<string, object>
         {
-            _absDownloadFolderPath = GetAbsoluteDownloadFolderPath(downloadFolderPath);
-            prefs = new Dictionary<string, object>
-            {
-                ["download.default_directory"] = _absDownloadFolderPath
-            };
-            _options = InitializeBotPrefs(_absDownloadFolderPath);
-            _driver = UndetectedChromeDriver.Create(options:_options, userDataDir:_userProfilePath, driverExecutablePath: _driverPath, prefs: prefs);
-        }
-        else
-        {
-            _options = InitializeBotPrefs();
-            _driver = UndetectedChromeDriver.Create(_options, driverExecutablePath: _driverPath);
-        }
+            ["download.default_directory"] = _absDownloadFolderPath
+        };
+        // initialize ChromeOptions
+        _options = InitializeBotOptions(_absDownloadFolderPath);
+
+        // construct driver with all arguments
+        _driver = UndetectedChromeDriver.Create(options: _options, userDataDir: userProfilePath, driverExecutablePath: _driverPath, prefs: prefs);
+
+        // create new WebDriverWait for driver with a timeout of 5 seconds
         _wait = new(_driver, TimeSpan.FromSeconds(5));
     }
-
-
-    /// <summary>
-    /// Returns the absolute path to the download folder by combining the provided relative download folder path with the application's base directory.
-    /// </summary>
-    /// <param name="DownloadFolderPath">The relative path to the download folder.</param>
-    /// <returns>The absolute path to the download folder.</returns>
-    public static string GetAbsoluteDownloadFolderPath(string DownloadFolderPath)
-    {
-        string absDownloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, DownloadFolderPath));
-        return absDownloadFolderPath;
-    }
-
-
 
 
     /// <summary>
@@ -97,7 +86,7 @@ public class Bot
     /// </summary>
     /// <param name="DownloadFolderPath">The path to the default download folder for the bot.</param>
     /// <returns>The initialized Chrome options.</returns>
-    public static ChromeOptions InitializeBotPrefs(string? DownloadFolderPath = null)
+    public static ChromeOptions InitializeBotOptions(string? DownloadFolderPath = null)
     {
         ChromeOptions options = new();
         if (DownloadFolderPath != null)
@@ -105,7 +94,7 @@ public class Bot
             // to allow for multiple downloads and prevent the browser from blocking them 'allow multiple downloads' prombt
             options.AddUserProfilePreference("disable-popup-blocking", "true");
             options.AddArgument("profile-directory=Default");
-            
+
             options.PageLoadStrategy = PageLoadStrategy.Normal;
 
         }
@@ -169,7 +158,7 @@ public class Bot
         // No element was found by FindElement() with the designated 'ByMechanism'
         catch (NoSuchElementException)
         {
-                                        throw new BotFindElementException($"No element called '{ElementString}' was found by FindElement() with by mechanism '{ByMechanism}'.");
+            throw new BotFindElementException($"No element called '{ElementString}' was found by FindElement() with by mechanism '{ByMechanism}'.");
 
         }
         // Thrown when the ElementString is syntactically invalid for the valid chosen ByMechanism, eg missing a [] in xp. 
@@ -377,9 +366,9 @@ public class Bot
         }
     }
 
-   
-        /// some combinations of actions may lead to the bot clicking elements which are not yet loaded on the page 
-        /// or the bot go though its actions too fast and leads to attempting no longer valid actions.
+
+    /// some combinations of actions may lead to the bot clicking elements which are not yet loaded on the page 
+    /// or the bot go though its actions too fast and leads to attempting no longer valid actions.
     public void ExplicitWait(string oldurl)
     {
         try

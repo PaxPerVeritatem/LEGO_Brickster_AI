@@ -3,12 +3,20 @@ namespace LEGO_Brickster_AI;
 using OpenQA.Selenium;
 sealed class GetDataLdraw : IGetData
 {
+
+    // Bot Properties
     public static string Url { get; set; } = "https://library.ldraw.org/omr/sets";
+
+
+    public static string DownloadFolderPath => @"..\..\..\LEGO_Data\Ldraw_Data";
+
+
+    public static string UserProfilePath => @"C:\Users\Daniel\Desktop\LEGO_Brickster_AI\Project\DriverProfile";
 
     // Global run Properties
     public static int MaxPage => 59;
 
-    public static int PageLimit => MaxPage;
+    public static int PageLimit => 1;
 
     public static int ExpectedSetsPrPage => 25;
 
@@ -18,13 +26,12 @@ sealed class GetDataLdraw : IGetData
 
     public static int ElementClickCounter { get; set; } = 0;
 
-    public static string DownloadFolderPath => @"..\..\..\LEGO_Data";
 
 
     // Custom run Properties 
     public static bool CustomRun => true;
 
-    public static int StartFromPage => 44;
+    public static int StartFromPage => 1;
 
     public static string UrlPageVarient => "?page=";
 
@@ -228,7 +235,7 @@ sealed class GetDataLdraw : IGetData
         {
             UseCustomStartingPage();
         }
-        Bot bot = new(Url, DownloadFolderPath);
+        Bot bot = new(Url, DownloadFolderPath,UserProfilePath);
 
 
         try
