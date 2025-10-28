@@ -11,6 +11,20 @@ interface IGetData
   /// </summary>
   public static abstract string Url { get; set; }
 
+
+  /// <summary>
+  ///The absolute path to the download folder, should be definied with enough '..' to reach the desired download folder path, from the application's .dll file directory.
+  /// </summary>
+  static abstract string DownloadFolderPath { get; }
+
+
+  static abstract string UserProfilePath { get; }
+  /// <summary>
+  ///  The absolute path to the user profile folder, should be definied with enough '..' to reach the desired user profile folder path, from the application's .dll file directory.
+  /// </summary>
+
+
+
   static abstract bool CustomRun { get; }
   /// <summary>
   /// int defining the int value of the page. Can be utilized if the website have several pages of individual data 
@@ -23,10 +37,10 @@ interface IGetData
   static abstract int ExpectedSetsPrPage { get; }
 
 
-/// <summary>
-/// The maximum number of pages which can be reached on the webpage, relative to the amount of pages of sets to download.
-/// 
-/// </summary>
+  /// <summary>
+  /// The maximum number of pages which can be reached on the webpage, relative to the amount of pages of sets to download.
+  /// 
+  /// </summary>
   static abstract int MaxPage { get; }
 
   /// <summary>
@@ -50,11 +64,6 @@ interface IGetData
   static abstract int ElementClickCounter { get; set; }
 
 
-
-  /// <summary>
-  ///  The absolute path to the download folder, when the Bot class is initialized with a download folder path. Should be definied with enough .. to reach the the desired download folder path, from the application's .dll file directory.
-  /// </summary>
-  static abstract string DownloadFolderPath { get; }
 
   /// <summary>
   /// int defining the expected amount of elements to be clicked, inferred from <param name = "SetsPrPage"> and <param name = "PageLimit">
@@ -89,7 +98,7 @@ interface IGetData
   /// some preliminary actions are based on certain page functionality which is present is several elements.  
   /// </summary>
   /// <param name="bot"></param>
-  public static abstract void AccessWebPage(Bot bot,Dictionary<string, string>? ElementCandidatesDict);
+  public static abstract void AccessWebPage(Bot bot, Dictionary<string, string>? ElementCandidatesDict);
 
 
 
