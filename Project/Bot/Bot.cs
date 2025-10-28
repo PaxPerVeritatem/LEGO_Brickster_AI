@@ -2,6 +2,7 @@ namespace LEGO_Brickster_AI;
 
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using SeleniumUndetectedChromeDriver;
 using System;
 using OpenQA.Selenium.Support.UI;
 
@@ -12,8 +13,15 @@ using OpenQA.Selenium.Support.UI;
 /// </summary>
 public class Bot
 {
-    private readonly ChromeDriver _driver;
-    public ChromeDriver Driver => _driver;
+
+    private readonly UndetectedChromeDriver _driver;
+    public UndetectedChromeDriver Driver => _driver;
+
+    // defines the default path for the drivers chrome driver executable. 
+    private static readonly string _driverPath = @"C:\Users\admin\.cache\selenium\chromedriver\win64\141.0.7390.122\ChromeDriver.exe";
+
+    // defines the default path for the drivers chrome user profile. 
+    private readonly string _userProfilePath = @"C:\Users\admin\OneDrive\Skrivebord\LEGO_Brickster_AI\Project\DriverProfile"; 
 
     private readonly ChromeOptions? _options;
     public ChromeOptions? Options => _options;
@@ -44,21 +52,25 @@ public class Bot
     /// If <paramref name="downloadFolderPath"/> is not null, the bot will use the specified download folder path.
     /// Otherwise, the bot will use the default download folder path.
     /// </remarks>
-    public Bot(string url, string? downloadFolderPath = null)
+    public Bot(string url, string? downloadFolderPath = null, Dictionary<string, object>? prefs = null)
     {
+        
         Url = url;
         if (downloadFolderPath != null)
         {
             _absDownloadFolderPath = GetAbsoluteDownloadFolderPath(downloadFolderPath);
+            prefs = new Dictionary<string, object>
+            {
+                ["download.default_directory"] = _absDownloadFolderPath
+            };
             _options = InitializeBotPrefs(_absDownloadFolderPath);
-            _driver = new ChromeDriver(_options);
+            _driver = UndetectedChromeDriver.Create(options:_options, userDataDir:_userProfilePath, driverExecutablePath: _driverPath, prefs: prefs);
         }
         else
         {
             _options = InitializeBotPrefs();
-            _driver = new ChromeDriver();
+            _driver = UndetectedChromeDriver.Create(_options, driverExecutablePath: _driverPath);
         }
-
         _wait = new(_driver, TimeSpan.FromSeconds(5));
     }
 
@@ -90,11 +102,12 @@ public class Bot
         ChromeOptions options = new();
         if (DownloadFolderPath != null)
         {
-            // add preferenced download folder to optionsPreferences.
-            options.AddUserProfilePreference("download.default_directory", DownloadFolderPath);
             // to allow for multiple downloads and prevent the browser from blocking them 'allow multiple downloads' prombt
             options.AddUserProfilePreference("disable-popup-blocking", "true");
+            options.AddArgument("profile-directory=Default");
+            
             options.PageLoadStrategy = PageLoadStrategy.Normal;
+
         }
         else
         {
@@ -156,7 +169,7 @@ public class Bot
         // No element was found by FindElement() with the designated 'ByMechanism'
         catch (NoSuchElementException)
         {
-            throw new BotFindElementException($"No element called '{ElementString}' was found by FindElement() with by mechanism '{ByMechanism}'.");
+                                        throw new BotFindElementException($"No element called '{ElementString}' was found by FindElement() with by mechanism '{ByMechanism}'.");
 
         }
         // Thrown when the ElementString is syntactically invalid for the valid chosen ByMechanism, eg missing a [] in xp. 
@@ -255,11 +268,11 @@ public class Bot
     /// </summary>
     /// <exception cref="BotUrlException">Thrown when the URL is null or invalid.</exception>
     /// <exception cref="BotDriverException">Thrown when the webdriver failed to access the website due to the browser already being closed or the webdriver already being closed.</exception>
-    public void GoToWebpage()
+    public void GoToMainPage()
     {
         try
         {
-            _driver.Navigate().GoToUrl(Url);
+            _driver.GoToUrl(Url);
         }
         //if URL is null
         catch (ArgumentNullException ex)
