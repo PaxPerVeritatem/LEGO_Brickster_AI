@@ -8,7 +8,7 @@ sealed class GetDataLdraw : IGetData
     // Global run Properties
     public static int MaxPage => 59;
 
-    public static int PageLimit => 1;
+    public static int PageLimit => MaxPage;
 
     public static int ExpectedSetsPrPage => 25;
 
@@ -24,14 +24,11 @@ sealed class GetDataLdraw : IGetData
     // Custom run Properties 
     public static bool CustomRun => true;
 
-    public static int StartFromPage => 12;
+    public static int StartFromPage => 44;
 
     public static string UrlPageVarient => "?page=";
 
-    public static Dictionary<string, string> NextPageElements => new() {
-        {"//button[@rel='next']", "xp" },
-        {"//button[@aria-label='Next']","xp" }
-        };
+
 
 
 
@@ -48,28 +45,20 @@ sealed class GetDataLdraw : IGetData
 
 
 
-    public static void AccessWebPage(Bot bot)
+    public static void AccessWebPage(Bot bot, Dictionary<string, string>? CandidateElementDict)
     {
         try
         {
-            bot.GoToWebpage();
+            bot.GoToMainPage();
         }
         catch (BotUrlException ex)
         {
             Console.WriteLine($"Failed to load webpage: {ex.Message}");
             bot.CloseBot();
         }
-        catch (BotFindElementException ex)
+        catch (BotDriverException ex)
         {
-            Console.WriteLine($"Failed to return an html element\n{ex.Message}");
-            Console.WriteLine("Closeing driver");
-            bot.CloseBot();
-        }
-        catch (BotMechanismException ex)
-        {
-            Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
-            Console.WriteLine("Closeing driver");
-            bot.CloseBot();
+            Console.WriteLine(ex.Message);
         }
     }
 
@@ -149,13 +138,13 @@ sealed class GetDataLdraw : IGetData
         }
     }
 
-    public static IWebElement GetNextPageElement(Bot bot)
+    public static IWebElement FindDisplayedElement(Bot bot, Dictionary<string, string> CandidatElementDict)
     {
-        foreach (KeyValuePair<string, string> Elementtuple in NextPageElements)
+        foreach (KeyValuePair<string, string> Candidate in CandidatElementDict)
         {
             try
             {
-                IWebElement? nextPageElement = bot.FindPageElement(Elementtuple.Key, Elementtuple.Value);
+                IWebElement? nextPageElement = bot.FindPageElement(Candidate.Key, Candidate.Value);
                 if (nextPageElement != null && nextPageElement.Displayed)
                 {
                     return nextPageElement;
@@ -227,6 +216,13 @@ sealed class GetDataLdraw : IGetData
     //process the Ldraw website LEGO sets and download them. 
     public static void ProcessData()
     {
+        Dictionary<string, string> NextPageCandiates = new()
+        {
+            { "//button[@rel='next']", "xp" },
+            { "//button[@aria-label='Next']","xp" }
+        };
+
+
         // initial check if run is custom or not
         if (CustomRun)
         {
@@ -234,9 +230,11 @@ sealed class GetDataLdraw : IGetData
         }
         Bot bot = new(Url, DownloadFolderPath);
 
-        AccessWebPage(bot);
+
         try
         {
+            // no dict needed here.
+            AccessWebPage(bot, null);
             for (int i = 0; i < PageLimit; i++)
             {
                 SetAttributeList(bot, "fi-ta-cell-name", "class");
@@ -244,7 +242,7 @@ sealed class GetDataLdraw : IGetData
                 DownloadPageElements(bot, "lt");
 
                 // Find the Next button elements which works, considering page responsiveness
-                IWebElement nextButtonElement = GetNextPageElement(bot);
+                IWebElement nextButtonElement = FindDisplayedElement(bot, NextPageCandiates);
                 GoToNextPage(bot, nextButtonElement);
             }
         }

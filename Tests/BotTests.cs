@@ -375,7 +375,7 @@ public sealed class BotTest(ITestOutputHelper output)
         try
         {
             basic_bot.GoToWebpage();
-            Assert.Throws<BotFindElementException>(() => Bot.ClickElement(element));
+            Assert.Throws<BotStaleElementException>(() => Bot.ClickElement(element));
         }
         finally
         {
