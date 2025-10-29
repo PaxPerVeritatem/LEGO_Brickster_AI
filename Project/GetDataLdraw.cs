@@ -11,8 +11,6 @@ sealed class GetDataLdraw : IGetData
     public static string DownloadFolderPath => @"..\..\..\LEGO_Data\Ldraw_Data";
 
 
-    public static string UserProfilePath => @"C:\Users\Daniel\Desktop\LEGO_Brickster_AI\Project\DriverProfile";
-
     // Global run Properties
     public static int MaxPage => 59;
 
@@ -235,7 +233,7 @@ sealed class GetDataLdraw : IGetData
         {
             UseCustomStartingPage();
         }
-        Bot bot = new(Url, DownloadFolderPath,UserProfilePath);
+        Bot bot = new(Url, DownloadFolderPath);
 
 
         try
