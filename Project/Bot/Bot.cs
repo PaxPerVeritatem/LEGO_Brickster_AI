@@ -5,6 +5,8 @@ using OpenQA.Selenium.Chrome;
 using SeleniumUndetectedChromeDriver;
 using System;
 using OpenQA.Selenium.Support.UI;
+using System.Security.AccessControl;
+
 
 /// <summary>
 /// A class which wraps and simplifies some functionality of the Selenium ChromeDriver class.
@@ -17,11 +19,17 @@ public class Bot
     private readonly UndetectedChromeDriver _driver;
     public UndetectedChromeDriver Driver => _driver;
 
-    private readonly ChromeOptions? _options;
-    public ChromeOptions? Options => _options;
+    private readonly ChromeOptions _options;
+    public ChromeOptions Options => _options;
 
 
-    private readonly Dictionary<string, object> prefs;
+    private readonly string _userProfileDir;
+    private string _preferencesFilePath;
+
+
+    private Dictionary<string, object>? prefs;
+
+
 
     private readonly WebDriverWait _wait;
 
@@ -44,39 +52,48 @@ public class Bot
             "win64")
     );
 
-
     // The last index value should be the latest version of chrome
     private readonly string _driverPath = Path.Combine(_driverPathFolders[^1], "chromedriver.exe");
-    
-
 
     private readonly string? _absDownloadFolderPath;
     public string? AbsDownloadFolderPath => _absDownloadFolderPath;
 
 
-
-    public Bot(string url, string downloadFolderPath, string userProfilePath)
+    public Bot(string url, string downloadFolderPath)
     {
         Url = url;
 
         // get the absolute path to the download folder from the relative provided download folder path
         _absDownloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, downloadFolderPath));
+        _userProfileDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, @"..\..\..\DriverProfile"));
 
-        // initialize prefs as dict with the default download folder as key and the absolute download folder path as value
-        prefs = new Dictionary<string, object>
-        {
-            ["download.default_directory"] = _absDownloadFolderPath
-        };
+        _preferencesFilePath = $@"{_userProfileDir}\Default\Preferences";
+
+
+
         // initialize ChromeOptions
-        _options = InitializeBotOptions(_absDownloadFolderPath);
+        _options = InitializeBotOptions();
+
+        prefs = new()
+        {
+            ["download.default_directory"] = _absDownloadFolderPath,
+            ["profile.default_content_setting_values"] = new Dictionary<string, object>
+            {
+                ["multiple_downloads"] = 1,
+                ["automatic_downloads"] = 1
+            }
+        };
 
         // construct driver with all arguments
-        _driver = UndetectedChromeDriver.Create(options: _options, userDataDir: userProfilePath, driverExecutablePath: _driverPath, prefs: prefs);
+        _driver = UndetectedChromeDriver.Create(
+            options: _options,
+            userDataDir: _userProfileDir,
+            driverExecutablePath: _driverPath,
+            prefs: prefs);
 
         // create new WebDriverWait for driver with a timeout of 5 seconds
         _wait = new(_driver, TimeSpan.FromSeconds(5));
     }
-
 
     /// <summary>
     /// Initializes Chrome options with preferences for the bot.
@@ -86,23 +103,12 @@ public class Bot
     /// </summary>
     /// <param name="DownloadFolderPath">The path to the default download folder for the bot.</param>
     /// <returns>The initialized Chrome options.</returns>
-    public static ChromeOptions InitializeBotOptions(string? DownloadFolderPath = null)
+    public static ChromeOptions InitializeBotOptions()
     {
-        ChromeOptions options = new();
-        if (DownloadFolderPath != null)
+        ChromeOptions options = new()
         {
-            // to allow for multiple downloads and prevent the browser from blocking them 'allow multiple downloads' prombt
-            options.AddUserProfilePreference("disable-popup-blocking", "true");
-            options.AddArgument("profile-directory=Default");
-
-            options.PageLoadStrategy = PageLoadStrategy.Normal;
-
-        }
-        else
-        {
-            options.AddUserProfilePreference("disable-popup-blocking", "true");
-            options.PageLoadStrategy = PageLoadStrategy.Normal;
-        }
+            PageLoadStrategy = PageLoadStrategy.Normal
+        };
         return options;
     }
 
@@ -391,28 +397,17 @@ public class Bot
         _driver.Navigate().Back();
     }
 
-    /// <summary>
-    /// Only closes the browser instance of the Bot.
-    /// </summary>
-    public void CloseBotBrowser()
-    {
-        _driver.Close();
-    }
-
-
-    /// <summary>
-    /// Only stops the webdriver instance of the Bot .
-    /// </summary>
-    public void CloseBotDriver()
-    {
-        _driver.Dispose();
-    }
 
     /// <summary>
     ///  Closes and stops both the browser and the webdriver instance of the Bot. 
     /// </summary>
     public void CloseBot()
     {
-        _driver.Quit();
+        _driver.Close();
+        Thread.Sleep(500);
+        _driver.Dispose();
+        File.Delete(_preferencesFilePath);
+
+
     }
 }

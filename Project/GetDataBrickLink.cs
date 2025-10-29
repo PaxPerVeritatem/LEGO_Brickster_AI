@@ -8,9 +8,6 @@ sealed class GetDataBrickLink : IGetData
     public static string Url { get; set; } = "https://identity.lego.com/en-US/login";
     public static string DownloadFolderPath => @"..\..\..\LEGO_Data\BrickLink_Data";
 
-    public static string UserProfilePath => @"..\..\..\DriverProfile";
-
-
 
     // Global run Properties
     public static int MaxPage => 59;
@@ -337,7 +334,7 @@ sealed class GetDataBrickLink : IGetData
         {
             UseCustomStartingPage();
         }
-        Bot bot = new(Url, DownloadFolderPath,UserProfilePath);
+        Bot bot = new(Url, DownloadFolderPath);
 
         // dict for the two Sigin button cases. 
         Dictionary<string, string> LoginCandiateDict = new() {
@@ -378,7 +375,7 @@ sealed class GetDataBrickLink : IGetData
         {
             UseCustomStartingPage();
         }
-        Bot bot = new(Url, DownloadFolderPath,UserProfilePath);
+        Bot bot = new(Url, DownloadFolderPath);
         // dict for the two Sigin button cases. 
         Dictionary<string, string> LoginButtonsCandiateDict = new() {
             {"//button[@id = 'js-trigger-sign-in']", "xp"},
@@ -407,6 +404,14 @@ sealed class GetDataBrickLink : IGetData
             // wait for the login page to load. 
             string oldUrl = bot.Driver.Url;
             bot.ExplicitWait(oldUrl);
+
+            // needs to be fixed
+            actionBuilder.SendKeys("1");
+            actionBuilder.SendKeys("9");
+            actionBuilder.SendKeys("9");
+            actionBuilder.SendKeys("4");
+            actionBuilder.Perform();
+            actionBuilder.Reset();
             //find the Username / email input element
             IWebElement? UsernameField = bot.FindPageElement("//input[@id='username']", "xp");
 

@@ -18,12 +18,6 @@ interface IGetData
   static abstract string DownloadFolderPath { get; }
 
 
-  static abstract string UserProfilePath { get; }
-  /// <summary>
-  ///  The absolute path to the user profile folder, should be definied with enough '..' to reach the desired user profile folder path, from the application's .dll file directory.
-  /// </summary>
-
-
 
   static abstract bool CustomRun { get; }
   /// <summary>
