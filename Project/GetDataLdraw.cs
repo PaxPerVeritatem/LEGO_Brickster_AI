@@ -50,11 +50,11 @@ sealed class GetDataLdraw : IGetData
 
 
 
-    public static void AccessWebPage(Bot bot, Dictionary<string, string>? CandidateElementDict)
+    public static void AccessMainPage(Bot bot, Dictionary<string, string>? CandidateElementDict)
     {
         try
         {
-            bot.GoToMainPage();
+            bot.GoToWebPage();
         }
         catch (BotUrlException ex)
         {
@@ -239,7 +239,7 @@ sealed class GetDataLdraw : IGetData
         try
         {
             // no dict needed here.
-            AccessWebPage(bot, null);
+            AccessMainPage(bot, null);
             for (int i = 0; i < PageLimit; i++)
             {
                 SetAttributeList(bot, "fi-ta-cell-name", "class");
