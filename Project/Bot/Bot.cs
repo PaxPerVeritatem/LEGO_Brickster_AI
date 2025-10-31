@@ -22,9 +22,8 @@ public class Bot
     private readonly ChromeOptions _options;
     public ChromeOptions Options => _options;
 
-
-    private readonly string _userProfileDir;
-    private string _preferencesFilePath;
+    private static readonly string _userProfileDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, @"..\..\..\DriverProfile"));
+    private static readonly string _preferencesFilePath = $@"{_userProfileDir}\Default\Preferences";
 
 
     private Dictionary<string, object>? prefs;
@@ -33,8 +32,8 @@ public class Bot
 
     private readonly WebDriverWait _wait;
 
-    private IList<string> _attributeList = [];
-    public IList<string> AttributeList
+    private List<string> _attributeList = [];
+    public List<string> AttributeList
     {
         get => _attributeList;
         set => _attributeList = value;
@@ -52,8 +51,9 @@ public class Bot
             "win64")
     );
 
-    // The last index value should be the latest version of chrome
+    // The last index value should be the path to the latest version folder of chromedriver.exe
     private readonly string _driverPath = Path.Combine(_driverPathFolders[^1], "chromedriver.exe");
+
 
     private readonly string? _absDownloadFolderPath;
     public string? AbsDownloadFolderPath => _absDownloadFolderPath;
@@ -65,11 +65,6 @@ public class Bot
 
         // get the absolute path to the download folder from the relative provided download folder path
         _absDownloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, downloadFolderPath));
-        _userProfileDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, @"..\..\..\DriverProfile"));
-
-        _preferencesFilePath = $@"{_userProfileDir}\Default\Preferences";
-
-
 
         // initialize ChromeOptions
         _options = InitializeBotOptions();
@@ -196,7 +191,7 @@ public class Bot
     /// <returns>A list of strings representing the elements found.</returns>
     /// <exception cref="BotElementException">Thrown when the ElementString argument is null.</exception>
     /// <exception cref="BotMechanismException">Thrown when the ElementString did not match to the designated ByMechanism or the ByMechanism did not match any defined ByMechanism.</exception>
-    public IList<string> FindPageElements(string ElementString, string ByMechanism, string IdentifierAttribute = "Text")
+    public List<string> FindPageElements(string ElementString, string ByMechanism, string IdentifierAttribute = "Text")
     {
         try
         {
@@ -358,9 +353,8 @@ public class Bot
     {
         try
         {
-            if (element != null)
+            if (element != null && _wait.Until(_driver => element.Displayed))
             {
-                _wait.Until(_driver => element.Displayed);
                 return true;
             }
             return false;
@@ -372,10 +366,11 @@ public class Bot
         }
     }
 
+    //public void ExplicitWaitPageLoad()
 
     /// some combinations of actions may lead to the bot clicking elements which are not yet loaded on the page 
     /// or the bot go though its actions too fast and leads to attempting no longer valid actions.
-    public void ExplicitWait(string oldurl)
+    public void ExplicitWaitURL(string oldurl)
     {
         try
         {
