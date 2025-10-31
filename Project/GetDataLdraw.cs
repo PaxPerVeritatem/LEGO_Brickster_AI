@@ -101,7 +101,7 @@ sealed class GetDataLdraw : IGetData
                     // if the ModelElement is not null, attempt to find the first download button element
                     IWebElement? downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", ModelsElement);
 
-                    // while there are download buttons on the page find them and press them., 
+                    // while there are download buttons on the page find them and press them.,  
                     while (bot.WaitTillExists(downloadButtonElement))
                     {
                         // i belive we can forgive here since WaitTillExists checks for null element.
@@ -180,7 +180,7 @@ sealed class GetDataLdraw : IGetData
                 Bot.ClickElement(NextButtonElement);
 
                 // Bot should not proceed until the next page is fully loaded indicated by a change in the url.
-                bot.ExplicitWait(oldUrl);
+                bot.ExplicitWaitURL(oldUrl);
             }
             // reset the bot attribute list for next page of elements. 
             bot.AttributeList = [];
