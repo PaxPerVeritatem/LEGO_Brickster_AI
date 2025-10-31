@@ -42,117 +42,137 @@ sealed class GetDataBrickLink : IGetData
             ExpectedElementClickAmount += ExpectedElementClickDeviation;
         }
     }
-    public static void TestAccessWebPage(Bot bot, Dictionary<string, string> ElementCandidatesDict)
-    {
-        try
-        {
-
-            // //find the Username / email input element
-            // IWebElement? UsernameField = bot.FindPageElement("//input[@id='username']", "xp");
-
-            // if (bot.WaitTillExists(UsernameField))
-            // {
-            //     actionBuilder.MoveToElement(UsernameField);
-            //     actionBuilder.Click();
-            //     actionBuilder.Perform();
-            // }
-
-            // //find and click continue button
-            // IWebElement? ContinueButton = bot.FindPageElement("//button[@type='submit']", "xp");
-            // if (bot.WaitTillExists(ContinueButton))
-            // {
-            //     actionBuilder.MoveToElement(ContinueButton);
-
-            //     actionBuilder.Click();
-            //     actionBuilder.Perform();
-            // }
-            // Thread.Sleep(1000);
-            // //find and click signin button
-            // IWebElement? SignInButton = bot.FindPageElement("//button[@type='submit']", "xp");
-            // if (bot.WaitTillExists(ContinueButton))
-            // {
-            //     actionBuilder.MoveToElement(SignInButton);
-            //     actionBuilder.Click();
-            //     actionBuilder.Perform();
-            // }
-            // Thread.Sleep(5000);
-        }
-        catch (BotUrlException ex)
-        {
-            Console.WriteLine($"Failed to load webpage: {ex.Message}");
-        }
-        catch (BotDriverException ex)
-        {
-            Console.WriteLine(ex.Message);
-        }
-        catch (BotFindElementException ex)
-        {
-            Console.WriteLine($"Failed to return an html element\n{ex.Message}");
-        }
-        catch (BotMechanismException ex)
-        {
-            Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
-        }
-        catch (BotTimeOutException ex)
-        {
-            Console.WriteLine($"Bot waited _wait time before timing out waiting for an element to appear:{ex.Message}");
-        }
-        catch (BotStaleElementException ex)
-        {
-            Console.WriteLine($"{ex.Message}: Element was probably found but page responsiveness or reload caused staleness");
-        }
-    }
 
 
-    public static void AccessWebPage(Bot bot, Dictionary<string, string>? ElementCandidatesDict = null)
+    public static void AccessMainPage(Bot bot, Dictionary<string, string>? ElementCandidatesDict = null)
     {
         // load the .env file for the Username/email. 
         Env.TraversePath().Load();
-        bot.GoToMainPage();
-        NavigateAgeGatePage(bot);
-        static void NavigateAgeGatePage(Bot bot)
+
+        bot.GoToWebPage();
+
+        // create Actions builder to be shared across all helper functions
+        Actions actionBuilder = new(bot.Driver);
+
+        /*The ageGatePage may or may not load depending on the chrome preferences.
+        Regardless, NavigateAgeGatePage should it throw an BotElementException with a debug string and  we would just proceed to the Login page. */
+        NavigateAgeGatePage(bot, actionBuilder);
+        NavigateLoginPage(bot, actionBuilder);
+
+
+        // Helper functions
+        // --------------------------------------------------------------------//
+        static void NavigateAgeGatePage(Bot bot, Actions actionBuilder)
         {
             try
             {
-                Actions actionBuilder = new(bot.Driver);
+                // hack solution for now
                 Thread.Sleep(2000);
                 IWebElement? AgeFieldElement = bot.FindPageElement("//div[@class='BrickInput_year__lpu74y2']", "xp");
                 if (bot.WaitTillExists(AgeFieldElement))
                 {
                     Bot.ClickElement(AgeFieldElement);
-                    actionBuilder.SendKeys("1");
-                    actionBuilder.SendKeys("9");
-                    actionBuilder.SendKeys("9");
-                    actionBuilder.SendKeys("4");
+                    actionBuilder.SendKeys("1994");
                     actionBuilder.Perform();
                     actionBuilder.Reset();
                 }
-
-
                 IWebElement? ContinueButtonElement = bot.FindPageElement(".//following::button[@data-testid='confirmAgeButton']", "xp");
                 Bot.ClickElement(ContinueButtonElement);
-
             }
             catch (BotFindElementException ex)
             {
 
+                Console.WriteLine("Age gate page did not load. Proceeding to Login page");
+            }
+            catch (BotTimeOutException ex)
+            {
                 Console.WriteLine(ex.Message);
             }
         }
 
-        static void NavigateLoginPage()
+        static void NavigateLoginPage(Bot bot, Actions actionBuilder)
         {
+
             try
             {
+                //find the Username/email input element
+                IWebElement? usernameField = bot.FindPageElement("//input[@id='username']", "xp");
+                if (bot.WaitTillExists(usernameField))
+                {
+                    Bot.ClickElement(usernameField);
 
+                    /* Get the username/email from the .env file and enter it into the
+                    usernameField*/
+                    string? envEmail = Environment.GetEnvironmentVariable("Email");
+                    if (envEmail != null)
+                    {
+                        foreach (char letter in envEmail)
+                        {
+                            actionBuilder
+                            .SendKeys(letter.ToString())
+                            .Perform();
+                        }
+                    }
+                    //find and click continue button
+                    IWebElement? ContinueButton = bot.FindPageElement("//button[@type='submit']", "xp");
+                    if (bot.WaitTillExists(ContinueButton))
+                    {
+                        Bot.ClickElement(ContinueButton);
+                    }
+                    Thread.Sleep(1000);
+                    /* Get the Password from the .env file and enter it into the
+                    passwordField */
+                    /* Get the username/email from the .env file and enter it into the
+                   usernameField*/
+                    string? envPassword = Environment.GetEnvironmentVariable("Password");
+                    if (envPassword != null)
+                    {
+                        foreach (char letter in envPassword)
+                        {
+                            actionBuilder
+                            .SendKeys(letter.ToString())
+                            .Perform();
+                        }
+                    }
+                }
+                //find and click signin button
+                IWebElement? SignInButton = bot.FindPageElement("//button[@type='submit']", "xp");
+                if (bot.WaitTillExists(SignInButton))
+                {
+                    Bot.ClickElement(SignInButton);
+
+                }
+                Thread.Sleep(5000);
             }
-            catch (System.Exception)
+            catch (BotUrlException ex)
             {
-
-                throw;
+                Console.WriteLine($"Failed to load webpage: {ex.Message}");
             }
+            catch (BotDriverException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            catch (BotFindElementException ex)
+            {
+                Console.WriteLine($"Failed to return an html element\n{ex.Message}");
+            }
+            catch (BotMechanismException ex)
+            {
+                Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
+            }
+            catch (BotTimeOutException ex)
+            {
+                Console.WriteLine($"Bot waited _wait time before timing out waiting for an element to appear:{ex.Message}");
+            }
+            catch (BotStaleElementException ex)
+            {
+                Console.WriteLine($"{ex.Message}: Element was probably found but page responsiveness or reload caused staleness");
+            }
+
+
+
         }
-        static void NavigateMainPage()
+        static void NavigateToMainPage(Bot bot, Actions actionBuilder)
         {
 
         }
@@ -161,7 +181,7 @@ sealed class GetDataBrickLink : IGetData
 
 
 
-            Actions actionBuilder = new(bot.Driver);
+            actionBuilder = new(bot.Driver);
             // find and click the ageGateElement
             IWebElement? ageGateElement = bot.FindPageElement("//input[@class='blp-age-gate__input-field']", "xp");
             if (bot.WaitTillExists(ageGateElement))
@@ -228,30 +248,17 @@ sealed class GetDataBrickLink : IGetData
             }
 
             // find the Username/email input element
-            IWebElement? UsernameField = bot.FindPageElement("//input[@id='username']", "xp");
-            if (bot.WaitTillExists(UsernameField))
+            IWebElement? usernameField = bot.FindPageElement("//input[@id='username']", "xp");
+            if (bot.WaitTillExists(usernameField))
             {
-                actionBuilder.MoveToElement(UsernameField);
+                actionBuilder.MoveToElement(usernameField);
                 Thread.Sleep(2000);
                 actionBuilder.Click();
                 actionBuilder.Perform();
 
             }
 
-            /* Get the username/email from the .env file and enter it into the
-               Username/email input element */
-            string? envEmail = Environment.GetEnvironmentVariable("Email");
-            if (envEmail != null)
-            {
-                foreach (char letter in envEmail)
-                {
-                    actionBuilder
 
-                        .SendKeys(letter.ToString())
-                        .Perform();
-                    Thread.Sleep(250);
-                }
-            }
             // find and click continue button
             IWebElement? ContinueButton = bot.FindPageElement("//button[@type='submit']", "xp");
             if (bot.WaitTillExists(ContinueButton))
@@ -453,7 +460,7 @@ sealed class GetDataBrickLink : IGetData
         try
         {
 
-            AccessWebPage(bot, LoginCandiateDict);
+            AccessMainPage(bot, LoginCandiateDict);
             // for (int i = 0; i < PageLimit; i++)
             // {
             //     SetAttributeList(bot, "//article[contains(@class,'card')]//a[@class='moc-card__name']", "xp", "href");

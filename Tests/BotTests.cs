@@ -56,7 +56,7 @@ public sealed class BotTest(ITestOutputHelper output)
     /// <param name="bot">The configured bot instance.</param>
     private static void AccessTestWebPage(Bot bot, string TestUrl)
     {
-        bot.GoToMainPage();
+        bot.GoToWebPage();
 
         //parse Testurl to make preliminary actions on specific test webpage. 
         switch (TestUrl)
@@ -134,10 +134,10 @@ public sealed class BotTest(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// Tests that GoToMainPage() correctly navigates to a webpage and that the Bot.Driver.Url is updated accordingly.
+    /// Tests that GoToWebPage() correctly navigates to a webpage and that the Bot.Driver.Url is updated accordingly.
     /// </summary>
     /// <remarks>
-    /// Asserts that the Bot.Driver.Url is equal to TestUrl_1 after calling GoToMainPage().
+    /// Asserts that the Bot.Driver.Url is equal to TestUrl_1 after calling GoToWebPage().
     /// </remarks>
     [Fact]
     public void GoToMainPageTest()
@@ -145,7 +145,7 @@ public sealed class BotTest(ITestOutputHelper output)
         Bot bot = new(TestUrl_1, TestDownloadFolderPath);
         try
         {
-            bot.GoToMainPage();
+            bot.GoToWebPage();
             Assert.Equal(TestUrl_1, bot.Driver.Url);
             bot.CloseBot();
         }
@@ -174,7 +174,7 @@ public sealed class BotTest(ITestOutputHelper output)
     public void FindElementTest(string ElementString, string ByMechanism)
     {
         Bot bot = new(TestUrl_1, TestDownloadFolderPath);
-        bot.GoToMainPage();
+        bot.GoToWebPage();
         try
         {
             IWebElement? pageElement = bot.FindPageElement(ElementString, ByMechanism);
@@ -217,7 +217,7 @@ public sealed class BotTest(ITestOutputHelper output)
         }
         try
         {
-            bot.GoToMainPage();
+            bot.GoToWebPage();
 
             // AncestorElement
             IWebElement? AncestorElement = bot.FindPageElement(AncestorElementString, AncestorByMechanism);
@@ -346,7 +346,7 @@ public sealed class BotTest(ITestOutputHelper output)
     public void WaitTillExistsFalseTest()
     {
         Bot bot = new(TestUrl_1, TestDownloadFolderPath);
-        bot.GoToMainPage();
+        bot.GoToWebPage();
         try
         {
             IWebElement? element = null;
@@ -366,12 +366,12 @@ public sealed class BotTest(ITestOutputHelper output)
     public void ClickElementExceptionTest(string elementString)
     {
         Bot bot = new(TestUrl_1, TestDownloadFolderPath);
-        bot.GoToMainPage();
+        bot.GoToWebPage();
         IWebElement? element = bot.FindPageElement(elementString, "xp");
         Assert.NotNull(element);
         try
         {
-            bot.GoToMainPage();
+            bot.GoToWebPage();
             Assert.Throws<BotStaleElementException>(() => Bot.ClickElement(element));
         }
         finally
@@ -524,7 +524,7 @@ public sealed class BotTest(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// Tests whether the GoToMainPage() method throws a BotUrlException when an invalid URL is provided to the constructor.
+    /// Tests whether the GoToWebPage() method throws a BotUrlException when an invalid URL is provided to the constructor.
     /// </summary>
     /// <param name="InvalidUrl">The invalid URL to test.</param>
     [Theory]
@@ -534,7 +534,7 @@ public sealed class BotTest(ITestOutputHelper output)
         Bot bot = new(InvalidUrl, TestDownloadFolderPath);
         try
         {
-            Assert.Throws<BotUrlException>(bot.GoToMainPage);
+            Assert.Throws<BotUrlException>(bot.GoToWebPage);
         }
         finally
         {
@@ -543,7 +543,7 @@ public sealed class BotTest(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// Tests whether the GoToMainPage() method throws a BotUrlException when a null URL is provided to the constructor.
+    /// Tests whether the GoToWebPage() method throws a BotUrlException when a null URL is provided to the constructor.
     /// </summary>
     /// <param name="NullUrl">The null URL to test.</param>
     [Theory]
@@ -554,7 +554,7 @@ public sealed class BotTest(ITestOutputHelper output)
         Bot bot = new(NullUrl!, TestDownloadFolderPath);
         try
         {
-            Assert.Throws<BotUrlException>(bot.GoToMainPage);
+            Assert.Throws<BotUrlException>(bot.GoToWebPage);
         }
         finally
         {

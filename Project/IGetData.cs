@@ -2,7 +2,8 @@ using OpenQA.Selenium;
 
 namespace LEGO_Brickster_AI;
 
-// static abstract interface
+// static abstract interface for... (TO DO)
+//Note: If the target website requires authentication, users should manually login once. The bot will persist the session via cookies for subsequent runs."
 interface IGetData
 {
 
@@ -89,10 +90,12 @@ interface IGetData
   /// <summary>
   /// This function should access the main webpage via <c> bot.GoToMainPage(Url)</c> and perform any necessary bot actions to escape popups,
   ///  which may hinder access to the elements of the main page. An optional <c>ElementCandidatesDict&lt;string,string</c>&gt; can be passed in case,
-  /// some preliminary actions are based on certain page functionality which is present is several elements.  
+  /// some preliminary actions are based on certain page functionality which is present is several elements. Addtionally, depending on, if there are several
+  /// prelimiary pages before reaching the actual main page, i would recommend implementing some staic inline helper functions within AccessMainpage,
+  ///  for each preliminary page, which then can handle their own set of preliminary actions.   
   /// </summary>
   /// <param name="bot"></param>
-  public static abstract void AccessWebPage(Bot bot, Dictionary<string, string>? ElementCandidatesDict);
+  public static abstract void AccessMainPage(Bot bot, Dictionary<string, string>? ElementCandidatesDict);
 
 
 

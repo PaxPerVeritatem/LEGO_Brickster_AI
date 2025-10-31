@@ -74,8 +74,12 @@ public class Bot
             ["download.default_directory"] = _absDownloadFolderPath,
             ["profile.default_content_setting_values"] = new Dictionary<string, object>
             {
+                // allow multiple downloads at once. 
                 ["multiple_downloads"] = 1,
-                ["automatic_downloads"] = 1
+                // avoid manual download confirmations 
+                ["automatic_downloads"] = 1,
+                // allow cookies for chrome.
+                ["profile.cookie_controls_mode"] = 0
             }
         };
 
@@ -258,7 +262,7 @@ public class Bot
     /// </summary>
     /// <exception cref="BotUrlException">Thrown when the URL is null or invalid.</exception>
     /// <exception cref="BotDriverException">Thrown when the webdriver failed to access the website due to the browser already being closed or the webdriver already being closed.</exception>
-    public void GoToMainPage()
+    public void GoToWebPage()
     {
         try
         {
