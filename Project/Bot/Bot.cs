@@ -55,8 +55,8 @@ public class Bot
     private readonly string _driverPath = Path.Combine(_driverPathFolders[^1], "chromedriver.exe");
 
 
-    private readonly string? _absDownloadFolderPath;
-    public string? AbsDownloadFolderPath => _absDownloadFolderPath;
+    private readonly string _absDownloadFolderPath;
+    public string AbsDownloadFolderPath => _absDownloadFolderPath;
 
 
     public Bot(string url, string downloadFolderPath)
@@ -313,27 +313,12 @@ public class Bot
         }
     }
 
-    public static string GetFileName(IWebElement DownloadButtonElement, string ElementAttribute)
-    {
-        try
-        {
-            string? downloadFileName = DownloadButtonElement.GetAttribute(ElementAttribute);
-            if (downloadFileName != null)
-            {
-                string downloadFileSubstring = Path.GetFileName(downloadFileName);
-                return downloadFileSubstring;
-            }
-            return "";
-        }
-        catch (StaleElementReferenceException)
-        {
-            throw new BotStaleElementException("Referenced element data is stale. Check element state before attempting to click");
-        }
-    }
 
-    public static bool IsFileDownloaded(string DownloadFilePath)
-    {
-        if (File.Exists(DownloadFilePath))
+
+    public bool IsFileDownloaded(string DownloadedFilename)
+    {   
+        string downloadFilePath = Path.Combine(AbsDownloadFolderPath, DownloadedFilename);
+        if (File.Exists(downloadFilePath))
         {
             return true;
 
@@ -343,6 +328,7 @@ public class Bot
             return false;
         }
     }
+
 
     /// <summary>
     /// Waits until the referenced IWebElement exists on the webpage.
@@ -403,7 +389,6 @@ public class Bot
     public void CloseBot()
     {
         _driver.Close();
-        Thread.Sleep(500);
         _driver.Dispose();
         File.Delete(_preferencesFilePath);
 
