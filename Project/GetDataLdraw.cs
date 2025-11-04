@@ -74,6 +74,23 @@ sealed class GetDataLdraw : IGetData
         bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism);
     }
 
+    public static string GetFullFileName(string FileName)
+    {
+        try
+        {
+            if (FileName != null)
+            {
+                string downloadFileSubstring = Path.GetFileName(FileName);
+                return downloadFileSubstring;
+            }
+            return "";
+        }
+        catch (StaleElementReferenceException)
+        {
+            throw new BotStaleElementException("Referenced element data is stale. Check element state before attempting to click");
+        }
+    }
+
 
     public static void DownloadPageElements(Bot bot, string ByMechanism)
     {
@@ -105,11 +122,13 @@ sealed class GetDataLdraw : IGetData
                     while (bot.WaitTillExists(downloadButtonElement))
                     {
                         // i belive we can forgive here since WaitTillExists checks for null element.
-                        string downloadFileSubstring = Bot.GetFileName(downloadButtonElement!, "href");
+                        string? FileName = downloadButtonElement.GetAttribute("hef");
 
-                        string downloadFilePath = Path.Combine(bot.AbsDownloadFolderPath!, downloadFileSubstring);
+                        string FullFileName = GetFullFileName(FileName);
+
+
                         // if the file has already been downloaded, skip it
-                        if (Bot.IsFileDownloaded(downloadFilePath))
+                        if (bot.IsFileDownloaded(FullFileName))
                         {
                             // try to find the next download button. 
                             downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", downloadButtonElement);
@@ -185,7 +204,7 @@ sealed class GetDataLdraw : IGetData
             // reset the bot attribute list for next page of elements. 
             bot.AttributeList = [];
         }
-        catch(BotStaleElementException ex)
+        catch (BotStaleElementException ex)
         {
             Console.WriteLine(ex.Message);
         }
@@ -257,7 +276,7 @@ sealed class GetDataLdraw : IGetData
         }
         finally
         {
-            AssertDownloadAmount(); 
+            AssertDownloadAmount();
             bot.CloseBot();
         }
     }

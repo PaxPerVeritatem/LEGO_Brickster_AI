@@ -95,7 +95,7 @@ interface IGetData
   ///  for each preliminary page, which then can handle their own set of preliminary actions.   
   /// </summary>
   /// <param name="bot"></param>
-  public static abstract void AccessMainPage(Bot bot, Dictionary<string, string>? ElementCandidatesDict);
+  public static abstract void AccessMainPage(Bot bot, Dictionary<string, string> ElementCandidatesDict);
 
 
 
@@ -204,6 +204,12 @@ interface IGetData
   /// </summary>
   /// <param name="bot"></param>
   public static abstract void DownloadPageElements(Bot bot, string ByMechanism);
+
+
+
+  public static abstract string GetFullFileName(string FileName);
+
+
 
 
   /// <summary>
