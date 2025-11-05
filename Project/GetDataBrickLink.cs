@@ -34,7 +34,7 @@ sealed class GetDataBrickLink : IGetData
 
 
 
-    public static void UseCustomStartingPage()
+    public static void ConfigureCustomRun()
     {
         Url = $"{Url}{UrlPageVarient}{StartFromPage}";
         if (StartFromPage != MaxPage)
@@ -111,6 +111,15 @@ sealed class GetDataBrickLink : IGetData
         bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism);
     }
 
+
+    /// <summary>
+    /// For this implementation of GetFullFileName, the fileExtension is harcoded to '.io', since all 
+    /// BrickLink files will be of this type. The only thing needed to be done is to get each Identifierattribute, 
+    /// ,which will the set name for each set, and append '.io' to it. Finally return the full file name for comparison to 
+    /// a potentially downloaded file.   
+    /// </summary>
+    /// <param name="FileName"></param>
+    /// <returns></returns>
     public static string GetFullFileName(string FileName)
     {
         string fileExtension = ".io";
@@ -142,7 +151,7 @@ sealed class GetDataBrickLink : IGetData
 
                 if (bot.WaitTillExists(downloadButtonElement))
                 {
-
+                    //Use IdentifierAttribute as filename, since it matches the name of the downloaded file. 
                     string fullFileName = GetFullFileName(IdentifierAttribute);
 
                     if (bot.IsFileDownloaded(fullFileName))
@@ -263,7 +272,7 @@ sealed class GetDataBrickLink : IGetData
         // initial check if run is custom or not
         if (CustomRun)
         {
-            UseCustomStartingPage();
+            ConfigureCustomRun();
         }
         Bot bot = new(Url, DownloadFolderPath);
 

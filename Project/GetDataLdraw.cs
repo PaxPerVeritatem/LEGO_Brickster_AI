@@ -14,7 +14,7 @@ sealed class GetDataLdraw : IGetData
     // Global run Properties
     public static int MaxPage => 59;
 
-    public static int PageLimit => 1;
+    public static int PageLimit => MaxPage;
 
     public static int ExpectedSetsPrPage => 25;
 
@@ -27,7 +27,7 @@ sealed class GetDataLdraw : IGetData
 
 
     // Custom run Properties 
-    public static bool CustomRun => true;
+    public static bool CustomRun => false;
 
     public static int StartFromPage => 1;
 
@@ -35,11 +35,7 @@ sealed class GetDataLdraw : IGetData
 
 
 
-
-
-
-
-    public static void UseCustomStartingPage()
+    public static void ConfigureCustomRun()
     {
         Url = $"{Url}{UrlPageVarient}{StartFromPage}";
         if (StartFromPage != MaxPage)
@@ -74,6 +70,13 @@ sealed class GetDataLdraw : IGetData
         bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism);
     }
 
+    /// <summary>
+    /// We extract the last part of the download butttons href string, which is always <c>Filename></c>.mpd. 
+    /// We can then use this to check if the file has already been downloaded. 
+    /// </summary>
+    /// <param name="FileName"></param>
+    /// <returns></returns>
+    /// <exception cref="BotStaleElementException"></exception>
     public static string GetFullFileName(string FileName)
     {
         try
@@ -121,13 +124,14 @@ sealed class GetDataLdraw : IGetData
                     // while there are download buttons on the page find them and press them.,  
                     while (bot.WaitTillExists(downloadButtonElement))
                     {
-                        // i belive we can forgive here since WaitTillExists checks for null element.
-                        string? FileName = downloadButtonElement.GetAttribute("hef");
+                        // i belive we can null forgive here since WaitTillExists checks for null element.
+                        string? FileName = downloadButtonElement!.GetAttribute("href");
+                        
+                        // again, if we know FileName is never null in this case, then we can null forgive FullFileName for the current file.
+                        string FullFileName = GetFullFileName(FileName!);
 
-                        string FullFileName = GetFullFileName(FileName);
 
-
-                        // if the file has already been downloaded, skip it
+                        // if the file has already been downloaded,
                         if (bot.IsFileDownloaded(FullFileName))
                         {
                             // try to find the next download button. 
@@ -135,6 +139,7 @@ sealed class GetDataLdraw : IGetData
                         }
                         else
                         {
+                            // press download button
                             Bot.ClickElement(downloadButtonElement);
                             // try to find the next download button
                             downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", downloadButtonElement);
@@ -250,7 +255,7 @@ sealed class GetDataLdraw : IGetData
         // initial check if run is custom or not
         if (CustomRun)
         {
-            UseCustomStartingPage();
+            ConfigureCustomRun();
         }
         Bot bot = new(Url, DownloadFolderPath);
 

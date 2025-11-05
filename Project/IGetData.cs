@@ -2,10 +2,16 @@ using OpenQA.Selenium;
 
 namespace LEGO_Brickster_AI;
 
-// static abstract interface for... (TO DO)
-//Note: If the target website requires authentication, users should manually login once. The bot will persist the session via cookies for subsequent runs."
+/// <summary>
+/// Static abstract interface for... (TO DO). Note: If the target website requires login and/or authentication, 
+/// users should manually login once. The bot will then persist save credentials via cookies. This allows for simpler implementation 
+/// of interface methods such as AccessMainPage(). 
+/// </summary>
+
 interface IGetData
 {
+  // Bot Properties
+
 
   /// <summary>
   /// The mutable string defining the main website url
@@ -14,29 +20,22 @@ interface IGetData
 
 
   /// <summary>
-  ///The absolute path to the download folder, should be definied with enough '..' to reach the desired download folder path, from the application's .dll file directory.
+  /// The absolute path to the download folder, should be definied with enough '..' to reach 
+  /// the desired download folder path, from the application's .dll file directory.
   /// </summary>
   static abstract string DownloadFolderPath { get; }
 
+  
+  // --------------------------------------------------------------------------------------------------------------------------------------------//
 
-
-  static abstract bool CustomRun { get; }
-  /// <summary>
-  /// int defining the int value of the page. Can be utilized if the website have several pages of individual data 
-  /// </summary>
-  static abstract int StartFromPage { get; }
+  // Global Properties
 
   /// <summary>
-  ///  int defining the number of sets of data pr page. Usage of this field depends on the structure of the website on question. 
-  /// </summary>
-  static abstract int ExpectedSetsPrPage { get; }
-
-
-  /// <summary>
-  /// The maximum number of pages which can be reached on the webpage, relative to the amount of pages of sets to download.
-  /// 
+  /// The maximum number of pages which can be reached on the webpage, relative to
+  /// the amount of pages of sets to download.
   /// </summary>
   static abstract int MaxPage { get; }
+
 
   /// <summary>
   /// The PageLimit defines the absolute amount of pages, where SetAttributeList() is called for each page, to add the 
@@ -46,68 +45,94 @@ interface IGetData
   static abstract int PageLimit { get; }
 
 
+
   /// <summary>
-  /// a substring serving as an extension the main website url extension, which can be combined with <param name = "StartFromPage"> to begin a run from a certain subpage.  
+  /// Int defining the number of expected sets of data pr page. A 'set' is defined as an element which has either one or 
+  /// multiple downloadable files associated with it.
+  /// </summary>
+  static abstract int ExpectedSetsPrPage { get; }
+
+
+  /// <summary>
+  /// User defined deviation of the ExpectedElementClickAmount. Should be implemented after testing 
+  /// whether there some pages which have a different amount of downloadable sets.
+  /// </summary>
+  static abstract int ExpectedElementClickDeviation { get; }
+
+
+  /// <summary>
+  /// A simple reference counter for asserting correct amount of elements have been clicked, 
+  /// inferred from <c>ExpectedElementClickAmount </c>
+  ///  /// </summary>
+  static abstract int ElementClickCounter { get; set; }
+
+ 
+  // --------------------------------------------------------------------------------------------------------------------------------------------//
+
+
+  // Custom run Properties 
+
+  /// <summary>
+  /// Bool defining whether a custom run should be performed.
+  /// </summary>
+  static abstract bool CustomRun { get; }
+
+
+
+  /// <summary>
+  /// Int defining the starting page to begin a run from. 
+  /// </summary>
+  /// 
+  static abstract int StartFromPage { get; }
+
+
+  /// <summary>
+  /// A substring serving as an extension the main website url extension, 
+  /// which can be combined with <param name = "StartFromPage"> to begin a run from a certain subpage.  
   /// </summary>
   static abstract string UrlPageVarient { get; }
 
 
-
-
   /// <summary>
-  /// A simple reference counter for asserting correct amount of elements have been clicked, when finally compared to <param name = "ExpectedElementClickAmount">
-  static abstract int ElementClickCounter { get; set; }
-
-
-
-  /// <summary>
-  /// int defining the expected amount of elements to be clicked, inferred from <param name = "SetsPrPage"> and <param name = "PageLimit">
+  /// Int defining the expected amount of elements to be clicked, 
+  /// inferred from <param name = "SetsPrPage"> and <param name = "PageLimit">
   /// </summary>
   static abstract int ExpectedElementClickAmount { get; set; }
 
 
-  ///
-  /// user defined deviation of the ExpectedElementClickAmount. Should be implemented after testing whether there some pages which have a different amount of downloadable sets.
-  /// 
-  static abstract int ExpectedElementClickDeviation { get; }
-
-
-
   // --------------------------------------------------------------------------------------------------------------------------------------------//
+
   // Functions
 
 
   /// <summary>
-  /// Define a custom starting page for a custom run, using the <param name = "url">
-  /// with the <param name = "UrlPageVarient"> and <param name = "_startFromPage"> to define 
-  /// the url of initial page to begin the custom run. Should be called initially before 
+  /// Function which should be called if CustomRun = true. Should be used to configure custom run parameters, 
+  /// such as <c>Url</c> and <c> ExpectedElementClickAmount</c> via the custom run Properties.
   /// <c> AccessWebPage()</c>  within <c> ProcessData()</c>
   /// </summary>
-  public static abstract void UseCustomStartingPage();
+  public static abstract void ConfigureCustomRun();
 
 
 
   /// <summary>
-  /// This function should access the main webpage via <c> bot.GoToMainPage(Url)</c> and perform any necessary bot actions to escape popups,
+  ///  This function should access the main webpage via <c> bot.GoToMainPage(Url)</c> and perform any necessary bot actions,
   ///  which may hinder access to the elements of the main page. An optional <c>ElementCandidatesDict&lt;string,string</c>&gt; can be passed in case,
-  /// some preliminary actions are based on certain page functionality which is present is several elements. Addtionally, depending on, if there are several
-  /// prelimiary pages before reaching the actual main page, i would recommend implementing some staic inline helper functions within AccessMainpage,
-  ///  for each preliminary page, which then can handle their own set of preliminary actions.   
+  ///  some preliminary actions are based on certain page functionality which is present in several displayed elements. Addtionally,
+  ///  depending on if there are several prelimiary pages before reaching the actual main page, i would recommend implementing
+  ///  some staic inline helper functions within AccessMainpage, for each preliminary page, which then can handle their
+  ///  own set of preliminary actions. Alternatively, if certain actions are only needed on the initial page visit, then 
+  ///  and utilizeing the saved cookies for the chrome driver. This can vastely simply the implementation of AccessMainPage(). 
   /// </summary>
-  /// <param name="bot"></param>
   public static abstract void AccessMainPage(Bot bot, Dictionary<string, string> ElementCandidatesDict);
 
 
 
   /// <summary>
-  ///  Find all the element on the current page which fits the <paramref name="CommonElementString"/> with the 
-  /// <paramref name="CommonByMechanism"/> and the optional <paramref name="IdentifierAttribute"/> and add them to the Bot.AttributeList. 
+  /// Find all the element on the current page which fits the <paramref name="CommonElementString"/> with the 
+  /// <paramref name="CommonByMechanism"/> and the optional <paramref name="IdentifierAttribute"/> and add them to the bot AttributeList. 
   /// Be aware that depending on the specific element the defined <paramref name="IdentifierAttribute"/> needs to be part of all the elements in question. 
   /// by default <paramref name="IdentifierAttribute"/> is set to 'Text' in bot.FindPageElements(). 
   /// </summary>
-  /// <param name="bot"></param>
-  /// <param name="CommonElementString"></param>
-  /// <param name="CommonByMechanism"></param>
   public static abstract void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute);
 
 
@@ -116,12 +141,10 @@ interface IGetData
   /// This is especially useful in <c>AccessWebPage()</c>. Function iterates over the <c>ElementCandidatesDict&lt;string,string</c>&gt;
   ///  map's key-value pairs. For each key-value pair it calls <c>bot.FindElement()</c>
   ///  to locate a button on the webpage which should be a valid currently displayed element.
-  /// </summary>
-  /// <param name="bot">The bot instance used to find and interact with page elements.</param>
-  /// 
+  /// </summary> 
+  
+  
   public abstract static IWebElement FindDisplayedElement(Bot bot, Dictionary<string, string> ElementCandidatesDict);
-
-
   /// <summary>
   /// Should perform the necessary bot actions to navigate to the next desired page by clicking the 
   /// <c>NextButtonElement</c>. If several elements on the current page leads to the next desired page,
@@ -164,8 +187,8 @@ interface IGetData
   /// <br/>
   /// <item>
   /// <description>
-  /// <strong>Reset AttributeList:</strong> Set <c>bot.AttributeList = []</c> at the end 
-  /// to clear previous page's elements. Failure to do this will cause next call to SetAttributeList() 
+  /// <strong>Reset AttributeList:</strong> <c>bot.AttributeList</c> should ALWAYS be reset at the end of the 
+  /// function in order to clear previous page's elements. Failure to do this will cause next call to SetAttributeList() 
   /// to add new elements without deleting the previous ones. This can induce staleElement exceptions or recursive iteration of the 
   /// same page elements.
   /// </description>
@@ -200,13 +223,18 @@ interface IGetData
 
 
   /// <summary>
-  ///  function to perform all the nessesary bot actions to download all elements currently in the <c>Bot.AttributeList</c>
+  ///  Function to define and perform all the nessesary bot actions to download
+  ///  all elements currently in the <c>Bot.AttributeList</c>
   /// </summary>
-  /// <param name="bot"></param>
   public static abstract void DownloadPageElements(Bot bot, string ByMechanism);
 
 
 
+  /// <summary>
+  ///  Function that should return the full file name for comparison to a potentially downloaded file, utilizeing the provided 
+  /// <c>FileName</c>, depending on how the names of the files to be downloaded are extracted. 
+  /// </summary>
+  /// <param name="FileName"></param>
   public static abstract string GetFullFileName(string FileName);
 
 
@@ -215,7 +243,6 @@ interface IGetData
   /// <summary>
   ///  Function to assert that the expected number of clicked set elements matches the actual amount of clicked set elements. 
   /// </summary>
-  /// <returns></returns>
   public static abstract bool AssertDownloadAmount();
 
 
