@@ -5,7 +5,7 @@ using OpenQA.Selenium.Interactions;
 using DotNetEnv;
 sealed class GetDataBrickLink : IGetData
 {
-    public static string Url { get; set; } = "https://www.bricklink.com/v3/studio/design.page";
+    public static string Url { get; set; } = "https://www.bricklink.com/v3/studio/design.page?tab=Staff-Picks";
     public static string DownloadFolderPath => @"..\..\..\LEGO_Data\BrickLink_Data";
 
 
@@ -115,26 +115,26 @@ sealed class GetDataBrickLink : IGetData
     /// <summary>
     /// For this implementation of GetFullFileName, the fileExtension is harcoded to '.io', since all 
     /// BrickLink files will be of this type. The only thing needed to be done is to get each Identifierattribute, 
-    /// ,which will the set name for each set, and append '.io' to it. Finally return the full file name for comparison to 
-    /// a potentially downloaded file.   
+    /// ,which will the set name for each LEGO set, and append '.io' to it. Finally return the full file name for comparison to 
+    /// a potentially downloaded the file.   
     /// </summary>
     /// <param name="FileName"></param>
     /// <returns></returns>
     public static string GetFullFileName(string FileName)
     {
         string fileExtension = ".io";
-        string? fullFileName = FileName + fileExtension;
+        string fullFileName = FileName + fileExtension;
         return fullFileName;
     }
 
     public static void DownloadPageElements(Bot bot, string ByMechanism)
     {
-        // we need to specifically find the "Back To Studio Gallery" button on each set page, in order to return to the main page at the same page location. 
-        IWebElement? BackToMainPageButton;  
+        // we need to specifically find the "Back To Studio Gallery" button on each set page, in order to return to the main page. 
         foreach (string IdentifierAttribute in bot.AttributeList)
         {
             try
             {
+
                 // Attempt to find LEGO set LinkTest element
                 IWebElement? setNameElement = bot.FindPageElement(IdentifierAttribute, ByMechanism);
 
@@ -142,29 +142,34 @@ sealed class GetDataBrickLink : IGetData
                 if (bot.WaitTillExists(setNameElement))
                 {
                     Bot.ClickElement(setNameElement);
-
+                    Thread.Sleep(1000);
                     // add for each LEGO set. Should finally match 'downloadAmount'
                     ElementClickCounter += 1;
                 }
-                // Attempt to find 'Download Studio file' button element on LEGO set page
-                IWebElement? downloadButtonElement = bot.FindPageElement("//button[contains(text(),'Download Studio file')]", "xp");
 
-                if (bot.WaitTillExists(downloadButtonElement))
+                // The main div containing set info on each set page
+                IWebElement? Modeldiv = bot.FindPageElement("//div[@class='studio-model__meta-block studio-model__meta-block--main']", "xp");
+                // wait until ModelElement has rendered on page
+                if (bot.WaitTillExists(Modeldiv))
                 {
+                    // find The download button element on each set page
+                    IWebElement? downloadButtonElement = bot.FindPageElement("//button[contains(text(),'Download Studio file')]", "xp");
+
                     //Use IdentifierAttribute as filename, since it matches the name of the downloaded file. 
                     string fullFileName = GetFullFileName(IdentifierAttribute);
-
-                    if (bot.IsFileDownloaded(fullFileName))
+                    //WORK AROUND: WE NEED TO INFER FILE NAME IN A DIFFERENT MANNER SINCE FILE NAME IS NOT ALWASYS THE SAME AS SET NAME.
+                    // if the downloadbutton is there but the file is already downloaded, go back to main page.
+                    if (bot.WaitTillExists(downloadButtonElement) && bot.IsFileDownloaded(fullFileName))
                     {
-
-                        BackToMainPageButton = bot.FindPageElement("//div[contains(text(),'Back to Studio Gallery')]", "xp");
-                        Bot.ClickElement(BackToMainPageButton);
+                        bot.GoToWebPage();
+                        Thread.Sleep(1000);
                     }
                     else
                     {
                         Bot.ClickElement(downloadButtonElement);
-                        // try to find the next download button
-                        downloadButtonElement = bot.FindPageElement(".//button[contains(text(),'Download Studio file')]", "xp", downloadButtonElement);
+                        bot.GetAndRenameFile(fullFileName);
+                        bot.GoToWebPage();
+                        Thread.Sleep(1000);
                     }
                 }
             }
@@ -172,8 +177,8 @@ sealed class GetDataBrickLink : IGetData
             {
                 // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
                 Console.WriteLine($"No more download buttons on current set page:{ex.Message}");
-                BackToMainPageButton= bot.FindPageElement("//div[contains(text(),'Back to Studio Gallery')]", "xp");
-                Bot.ClickElement(BackToMainPageButton);
+                bot.GoToWebPage();
+                Thread.Sleep(1000);
             }
 
             // should be thrown in case of stale element or 404 page error.
@@ -181,8 +186,8 @@ sealed class GetDataBrickLink : IGetData
             {
                 // first go back to set page, and then press main page button on the set page in question. 
                 bot.GoBack();
-                BackToMainPageButton= bot.FindPageElement("//div[contains(text(),'Back to Studio Gallery')]", "xp");
-                Bot.ClickElement(BackToMainPageButton);
+                bot.GoToWebPage();
+                Thread.Sleep(1000);
             }
         }
     }
@@ -269,13 +274,18 @@ sealed class GetDataBrickLink : IGetData
     //process the Ldraw website LEGO sets and download them. 
     public static void ProcessData()
     {
+
         // initial check if run is custom or not
         if (CustomRun)
         {
             ConfigureCustomRun();
         }
-        Bot bot = new(Url, DownloadFolderPath);
+        // clean up any existing preferences file from previous bot runs.
+        Bot.CleanupPreferencesFile();
 
+
+        Bot bot = new(Url, DownloadFolderPath);
+        
         try
         {
             AccessMainPage(bot);
@@ -299,6 +309,7 @@ sealed class GetDataBrickLink : IGetData
         finally
         {
             AssertDownloadAmount();
+            Bot.CleanupPreferencesFile();
             bot.CloseBot();
         }
     }
