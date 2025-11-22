@@ -126,7 +126,7 @@ sealed class GetDataLdraw : IGetData
                     {
                         // i belive we can null forgive here since WaitTillExists checks for null element.
                         string? FileName = downloadButtonElement!.GetAttribute("href");
-                        
+
                         // again, if we know FileName is never null in this case, then we can null forgive FullFileName for the current file.
                         string FullFileName = GetFullFileName(FileName!);
 
@@ -251,15 +251,17 @@ sealed class GetDataLdraw : IGetData
             { "//button[@aria-label='Next']","xp" }
         };
 
-
         // initial check if run is custom or not
         if (CustomRun)
         {
             ConfigureCustomRun();
         }
+
+        // clean up any existing preferences file from previous bot runs.
+        Bot.CleanupPreferencesFile();
+
+
         Bot bot = new(Url, DownloadFolderPath);
-
-
         try
         {
             // no dict needed here.
@@ -282,6 +284,7 @@ sealed class GetDataLdraw : IGetData
         finally
         {
             AssertDownloadAmount();
+            Bot.CleanupPreferencesFile();
             bot.CloseBot();
         }
     }

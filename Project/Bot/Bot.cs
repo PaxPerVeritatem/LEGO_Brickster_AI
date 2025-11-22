@@ -5,7 +5,6 @@ using OpenQA.Selenium.Chrome;
 using SeleniumUndetectedChromeDriver;
 using System;
 using OpenQA.Selenium.Support.UI;
-using System.Security.AccessControl;
 
 
 /// <summary>
@@ -15,7 +14,6 @@ using System.Security.AccessControl;
 /// </summary>
 public class Bot
 {
-
     private readonly UndetectedChromeDriver _driver;
     public UndetectedChromeDriver Driver => _driver;
 
@@ -29,7 +27,6 @@ public class Bot
     private Dictionary<string, object>? prefs;
 
 
-
     private readonly WebDriverWait _wait;
 
     private List<string> _attributeList = [];
@@ -40,6 +37,8 @@ public class Bot
     }
 
     public string Url { get; set; }
+
+
 
     // get a string array of the all the chrome version folders. 
     private static readonly string[] _driverPathFolders = Directory.GetDirectories(
@@ -314,14 +313,17 @@ public class Bot
     }
 
 
-
-    public bool IsFileDownloaded(string DownloadedFilename)
-    {   
-        string downloadFilePath = Path.Combine(AbsDownloadFolderPath, DownloadedFilename);
+    /// <summary>
+    /// Checks if a file with the inferred filename exists in the bot's download folder.
+    /// In some cases the actual filename may differ from the inferred filename,
+    /// if ActualFileName is argument is provided, then it will make sure that the InferredFilename matches actual provided ActualFileName.
+    /// </summary>
+    public bool IsFileDownloaded(string InferredFilename)
+    {
+        string downloadFilePath = Path.Combine(AbsDownloadFolderPath, InferredFilename);
         if (File.Exists(downloadFilePath))
         {
             return true;
-
         }
         else
         {
@@ -329,6 +331,18 @@ public class Bot
         }
     }
 
+    public void GetAndRenameFile(string NewFileName)
+    {
+        //Get filelist 
+        string currentFileName = Directory.GetFiles(AbsDownloadFolderPath)
+            .OrderByDescending(File.GetLastWriteTime)
+            .ToArray()[0];
+
+        // Rename file
+        string currentFilePath = Path.Combine(AbsDownloadFolderPath, currentFileName);
+        FileInfo fileInfo = new(currentFileName);
+        fileInfo.MoveTo(Path.Combine(AbsDownloadFolderPath, NewFileName));
+    }
 
     /// <summary>
     /// Waits until the referenced IWebElement exists on the webpage.
@@ -355,8 +369,6 @@ public class Bot
             throw new BotTimeOutException();
         }
     }
-
-    //public void ExplicitWaitPageLoad()
 
     /// some combinations of actions may lead to the bot clicking elements which are not yet loaded on the page 
     /// or the bot go though its actions too fast and leads to attempting no longer valid actions.
@@ -388,10 +400,27 @@ public class Bot
     /// </summary>
     public void CloseBot()
     {
-        _driver.Close();
-        _driver.Dispose();
-        File.Delete(_preferencesFilePath);
+        _driver.Quit();
+    }
 
-
+    /// <summary>
+    ///  Cleans up the preferences file used by the bot to store download preferences.
+    ///  Should be called before bot creation and after bot closure to ensure no stale preferences interfere with future bot runs.
+    /// </summary>
+    public static void CleanupPreferencesFile()
+    {
+        try
+        {
+            if (File.Exists(_preferencesFilePath))
+            {
+                File.Delete(_preferencesFilePath);
+                Console.WriteLine("Preferences file cleaned up");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Silently fail - we're exiting anyway
+            Console.WriteLine($"Cleanup warning: {ex.Message}");
+        }
     }
 }
