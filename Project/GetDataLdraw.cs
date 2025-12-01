@@ -14,7 +14,7 @@ sealed class GetDataLdraw : IGetData
     // Global run Properties
     public static int MaxPage => 59;
 
-    public static int PageLimit => MaxPage;
+    public static int PageLimit => 1;
 
     public static int ExpectedSetsPrPage => 25;
 
@@ -27,7 +27,7 @@ sealed class GetDataLdraw : IGetData
 
 
     // Custom run Properties 
-    public static bool CustomRun => false;
+    public static bool CustomRun => true;
 
     public static int StartFromPage => 1;
 
