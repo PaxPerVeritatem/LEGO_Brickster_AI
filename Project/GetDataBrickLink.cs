@@ -10,9 +10,9 @@ sealed class GetDataBrickLink : IGetData
 
 
     // Global run Properties
-    public static int MaxPage => 59;
+    public static int MaxPage => 2;
 
-    public static int PageLimit => 1;
+    public static int PageLimit => MaxPage;
 
     public static int ExpectedSetsPrPage => 50;
 
@@ -21,8 +21,6 @@ sealed class GetDataBrickLink : IGetData
     public static int ExpectedElementClickAmount { get; set; } = ExpectedSetsPrPage * PageLimit - ExpectedElementClickDeviation;
 
     public static int ElementClickCounter { get; set; } = 0;
-
-
 
 
     // Custom run Properties 
@@ -64,17 +62,8 @@ sealed class GetDataBrickLink : IGetData
             {
                 Bot.ClickElement(ageGateElement);
                 actionBuilder.SendKeys("1");
-                Thread.Sleep(1000);
-                actionBuilder.Perform();
-
                 actionBuilder.SendKeys("9");
-                Thread.Sleep(1000);
-                actionBuilder.Perform();
-
                 actionBuilder.SendKeys("9");
-                Thread.Sleep(1000);
-                actionBuilder.Perform();
-
                 actionBuilder.SendKeys("4");
                 actionBuilder.Perform();
 
@@ -105,10 +94,10 @@ sealed class GetDataBrickLink : IGetData
 
 
 
-    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string? IdentifierAttribute)
+    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement AncestorElement)
     {
         // Attempt to get the list of LEGO set names for the current main page
-        bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism);
+        bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism, IdentifierAttribute, AncestorElement);
     }
 
 
@@ -129,15 +118,13 @@ sealed class GetDataBrickLink : IGetData
 
     public static void DownloadPageElements(Bot bot, string ByMechanism)
     {
-        // we need to specifically find the "Back To Studio Gallery" button on each set page, in order to return to the main page. 
         foreach (string IdentifierAttribute in bot.AttributeList)
         {
             try
             {
-
                 // Attempt to find LEGO set LinkTest element
                 IWebElement? setNameElement = bot.FindPageElement(IdentifierAttribute, ByMechanism);
-
+              
                 // if current LinkText is not null click the set 
                 if (bot.WaitTillExists(setNameElement))
                 {
@@ -157,14 +144,14 @@ sealed class GetDataBrickLink : IGetData
 
                     //Use IdentifierAttribute as filename, since it matches the name of the downloaded file. 
                     string fullFileName = GetFullFileName(IdentifierAttribute);
-                    //WORK AROUND: WE NEED TO INFER FILE NAME IN A DIFFERENT MANNER SINCE FILE NAME IS NOT ALWASYS THE SAME AS SET NAME.
+                    
                     // if the downloadbutton is there but the file is already downloaded, go back to main page.
-                    if (bot.WaitTillExists(downloadButtonElement) && bot.IsFileDownloaded(fullFileName))
+                    if (bot.IsFileDownloaded(fullFileName))
                     {
                         bot.GoToWebPage();
                         Thread.Sleep(1000);
                     }
-                    else
+                    else if (bot.WaitTillExists(downloadButtonElement))
                     {
                         Bot.ClickElement(downloadButtonElement);
                         bot.GetAndRenameFile(fullFileName);
@@ -178,7 +165,7 @@ sealed class GetDataBrickLink : IGetData
                 // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
                 Console.WriteLine($"No more download buttons on current set page:{ex.Message}");
                 bot.GoToWebPage();
-                Thread.Sleep(1000);
+                // Thread.Sleep(1000);
             }
 
             // should be thrown in case of stale element or 404 page error.
@@ -187,7 +174,7 @@ sealed class GetDataBrickLink : IGetData
                 // first go back to set page, and then press main page button on the set page in question. 
                 bot.GoBack();
                 bot.GoToWebPage();
-                Thread.Sleep(1000);
+                // Thread.Sleep(1000);
             }
         }
     }
@@ -228,12 +215,7 @@ sealed class GetDataBrickLink : IGetData
             // click next button if it is loaded. 
             if (bot.WaitTillExists(NextButtonElement))
             {
-                // get the url of the driver before clicking the next button. 
-                string oldUrl = bot.Driver.Url;
                 Bot.ClickElement(NextButtonElement);
-
-                // Bot should not proceed until the next page is fully loaded indicated by a change in the url.
-                bot.ExplicitWaitURL(oldUrl);
             }
             // reset the bot attribute list for next page of elements. 
             bot.AttributeList = [];
@@ -285,19 +267,29 @@ sealed class GetDataBrickLink : IGetData
 
 
         Bot bot = new(Url, DownloadFolderPath);
-        
+
         try
         {
             AccessMainPage(bot);
+            // the first page root which is the ancestor div of all set elements on the main page.
+            IWebElement? pageRootElement = bot.FindPageElement("//div[@class='studio-gallery__card-container']", "xp");
+
             for (int i = 0; i < PageLimit; i++)
             {
                 // we dont use Identifier attribute for simplicity
-                SetAttributeList(bot, "//article[contains(@class,'card')]//a[@class='moc-card__name']", "xp", null);
-                DownloadPageElements(bot, "lt");
+                SetAttributeList(bot, $".//following::a[@class='moc-card__name']", "xp", "Text", pageRootElement);
+                //DownloadPageElements(bot, "lt");
+
+                // Set the pageRootElement as the last element in the attribute list. Find it from the previous pageRootElement
+                pageRootElement = bot.FindPageElement($".//following::a[contains(text(),'{bot.AttributeList[^1]}')]", "xp", pageRootElement);
+                Console.Write($"current root:{pageRootElement.Text}\n");
+
                 // Find the Next button elements which works, considering page responsiveness
-                IWebElement? nextButtonElement = bot.FindPageElement("//button[constains(text(),'Load more creations')]", "xp");
+                IWebElement? nextButtonElement = bot.FindPageElement("//button[contains(text(),'Load more creations')]", "xp");
+
                 if (nextButtonElement != null)
                 {
+                    // Will also clear the attribute list before going to next page.
                     GoToNextPage(bot, nextButtonElement);
                 }
             }

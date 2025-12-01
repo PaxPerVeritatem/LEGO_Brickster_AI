@@ -191,25 +191,37 @@ public class Bot
     /// <param name="ElementString">The string to use for finding the elements.</param>
     /// <param name="ByMechanism">The mechanism to use for finding the elements, such as By.Name, By.Id, By.CssSelector, etc.</param>
     /// <param name="IdentifierAttribute">The attribute of the element to use when adding to the Bot._nameList. If not provided, uses the text of the element.</param>
+    /// <param name="AncestorElement"> optional ancestor element to search for the elements within.
     /// <returns>A list of strings representing the elements found.</returns>
     /// <exception cref="BotElementException">Thrown when the ElementString argument is null.</exception>
     /// <exception cref="BotMechanismException">Thrown when the ElementString did not match to the designated ByMechanism or the ByMechanism did not match any defined ByMechanism.</exception>
-    public List<string> FindPageElements(string ElementString, string ByMechanism, string IdentifierAttribute = "Text")
+    public List<string> FindPageElements(string ElementString, string ByMechanism, string IdentifierAttribute, IWebElement? AncestorElement = null)
     {
         try
         {
-            // will return empty collection if not elements are found, hence does not throw NoSuchElementException
-            IList<IWebElement> elementList = ByMechanism switch
+            // will return empty collection if no elements are found, hence does not throw NoSuchElementException
+            IList<IWebElement> elementList;
+            if (AncestorElement != null)
             {
-                "name" => _driver.FindElements(By.Name(ElementString)),
-                "id" => _driver.FindElements(By.Id(ElementString)),
-                "css" => _driver.FindElements(By.CssSelector(ElementString)),
-                "class" => _driver.FindElements(By.ClassName(ElementString)),
-                "lt" => _driver.FindElements(By.LinkText(ElementString)),
-                "xp" => _driver.FindElements(By.XPath(ElementString)),
-                _ => throw new NotImplementedException(""),
-            };
-
+                elementList = ByMechanism switch
+                {
+                    "xp" => AncestorElement.FindElements(By.XPath(ElementString)),
+                    _ => throw new NotImplementedException(""),
+                };
+            }
+            else
+            {
+                elementList = ByMechanism switch
+                {
+                    "name" => _driver.FindElements(By.Name(ElementString)),
+                    "id" => _driver.FindElements(By.Id(ElementString)),
+                    "css" => _driver.FindElements(By.CssSelector(ElementString)),
+                    "class" => _driver.FindElements(By.ClassName(ElementString)),
+                    "lt" => _driver.FindElements(By.LinkText(ElementString)),
+                    "xp" => _driver.FindElements(By.XPath(ElementString)),
+                    _ => throw new NotImplementedException(""),
+                };
+            }
             if (IdentifierAttribute != "Text")
             {
                 foreach (IWebElement e in elementList)
@@ -333,15 +345,19 @@ public class Bot
 
     public void GetAndRenameFile(string NewFileName)
     {
-        //Get filelist 
+        //Get filelist could maybe be remade into a TreeSet or TreeMap right now we sort every time so not good. 
         string currentFileName = Directory.GetFiles(AbsDownloadFolderPath)
             .OrderByDescending(File.GetLastWriteTime)
             .ToArray()[0];
 
-        // Rename file
-        string currentFilePath = Path.Combine(AbsDownloadFolderPath, currentFileName);
-        FileInfo fileInfo = new(currentFileName);
-        fileInfo.MoveTo(Path.Combine(AbsDownloadFolderPath, NewFileName));
+        // We only change the filename if its name is NOT what we expect it to be. 
+        if (currentFileName != NewFileName)
+        {
+            // Rename file
+            string currentFilePath = Path.Combine(AbsDownloadFolderPath, currentFileName);
+            FileInfo fileInfo = new(currentFileName);
+            fileInfo.MoveTo(Path.Combine(AbsDownloadFolderPath, NewFileName));
+        }
     }
 
     /// <summary>
