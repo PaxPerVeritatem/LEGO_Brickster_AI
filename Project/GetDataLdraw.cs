@@ -64,10 +64,10 @@ sealed class GetDataLdraw : IGetData
     }
 
 
-    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string? IdentifierAttribute = null)
+    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement? AncestorElementString)
     {
         // Attempt to get the list of LEGO set names for the current main page
-        bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism);
+        bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism,IdentifierAttribute);
     }
 
     /// <summary>
@@ -268,7 +268,7 @@ sealed class GetDataLdraw : IGetData
             AccessMainPage(bot, null);
             for (int i = 0; i < PageLimit; i++)
             {
-                SetAttributeList(bot, "fi-ta-cell-name", "class");
+                SetAttributeList(bot, "fi-ta-cell-name", "class","Text", null);
 
                 DownloadPageElements(bot, "lt");
 

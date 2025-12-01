@@ -133,7 +133,7 @@ interface IGetData
   /// Be aware that depending on the specific element the defined <paramref name="IdentifierAttribute"/> needs to be part of all the elements in question. 
   /// by default <paramref name="IdentifierAttribute"/> is set to 'Text' in bot.FindPageElements(). 
   /// </summary>
-  public static abstract void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute);
+  public static abstract void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement AncestorElement);
 
 
   /// <summary>

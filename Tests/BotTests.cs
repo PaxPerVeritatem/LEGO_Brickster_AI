@@ -127,10 +127,10 @@ public sealed class BotTest(ITestOutputHelper output)
     /// <param name="TestBot">The bot instance to test.</param>
     /// <param name="ElementString">The element string to use for finding the elements.</param>
     /// <param name="ByMechanism">The mechanism to use for finding the elements.</param>
-    private static void FindPageElementsException(Bot TestBot, string? ElementString, string ByMechanism)
+    private static void FindPageElementsException(Bot TestBot, string ElementString, string ByMechanism, string IdentifierAttribute="Text")
     {
         // Forgive possible null reference for ElementString
-        TestBot.FindPageElements(ElementString!, ByMechanism);
+        TestBot.FindPageElements(ElementString, ByMechanism, IdentifierAttribute);
     }
 
     /// <summary>
@@ -264,7 +264,7 @@ public sealed class BotTest(ITestOutputHelper output)
         AccessTestWebPage(bot, TestUrl);
         try
         {
-            bot.AttributeList = bot.FindPageElements(ElementString, ByMechanism, IdentifierAttribute);
+            bot.AttributeList = bot.FindPageElements(ElementString, ByMechanism, IdentifierAttribute,null);
             _output.WriteLine($"{bot.AttributeList.Count} of element(s) by{IdentifierAttribute} added to the Bot._nameList");
             _output.WriteLine("--------------------");
             foreach (string name in bot.AttributeList)
@@ -406,7 +406,7 @@ public sealed class BotTest(ITestOutputHelper output)
             // if UseFindElements is true, we will check exceptions in FindElements() as opposed to FindElement()
             if (UseFindElements)
             {
-                Assert.Throws<BotFindElementException>(() => FindPageElementsException(bot, FirstElementString, FirstByMechanism));
+                Assert.Throws<BotFindElementException>(() => FindPageElementsException(bot, FirstElementString!, FirstByMechanism));
             }
             else
             {
