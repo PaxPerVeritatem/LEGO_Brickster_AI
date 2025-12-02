@@ -345,19 +345,68 @@ public class Bot
 
     public void GetAndRenameFile(string NewFileName)
     {
-        //Get filelist could maybe be remade into a TreeSet or TreeMap right now we sort every time so not good. 
-        string currentFileName = Directory.GetFiles(AbsDownloadFolderPath)
-            .OrderByDescending(File.GetLastWriteTime)
-            .ToArray()[0];
-
-        // We only change the filename if its name is NOT what we expect it to be. 
-        if (currentFileName != NewFileName)
+        /*Get filesArray could maybe be remade into a TreeSet or TreeMap right now we sort the array
+        every time even if we dont rename the file. */
+        try
         {
-            // Rename file
-            string currentFilePath = Path.Combine(AbsDownloadFolderPath, currentFileName);
-            FileInfo fileInfo = new(currentFileName);
-            fileInfo.MoveTo(Path.Combine(AbsDownloadFolderPath, NewFileName));
+            // get all files in download folder after the current file download has finished 
+            string[] filesArray = [.. Directory.GetFiles(AbsDownloadFolderPath)];
+            
+            // if the download folder is not empty we sort it and get the latest file.
+            if (filesArray.Length >1)
+            {
+                filesArray = [.. filesArray.OrderByDescending(File.GetLastWriteTime)];
+            }
+            // current file path and name 
+            string currentFilePath = filesArray[0];
+            string currentFileName = Path.GetFileName(currentFilePath);
+
+            // define a cancellation token with a timeout of 5 minutes
+            CancellationTokenSource cts = new(TimeSpan.FromMinutes(5));
+
+            // Wait until file download is confirmed
+            if (ConfirmFileDownload(currentFilePath, cts.Token))
+            {
+                // Only rename the file if it is NOT already the desired name.
+                if (currentFileName != NewFileName)
+                {
+                    FileInfo fileInfo = new(currentFilePath);
+                    fileInfo.MoveTo(Path.Combine(AbsDownloadFolderPath, NewFileName));
+                    return;
+                }
+                // delete file if it is a duplicate 
+                if (currentFileName.Contains("(1)"))
+                {
+                    File.Delete(currentFilePath);
+                    return;
+                }
+            }
         }
+        catch (BotFileDownloadException ex)
+        {
+            Console.WriteLine($"{ex.Message}");
+        }
+    }
+
+
+    public static bool ConfirmFileDownload(string FilePath, CancellationToken CancellationToken)
+    {
+        while (!CancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                using FileStream stream = File.Open(FilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                {
+                    return true;
+                }
+            }
+            catch (FileNotFoundException)
+            {
+                Console.WriteLine($"File {Path.GetFileName(FilePath)} is taken longer to download...");
+                Thread.Sleep(500);
+            }
+        }
+        throw new BotFileDownloadException("File download confirmation timed out.");
     }
 
     /// <summary>

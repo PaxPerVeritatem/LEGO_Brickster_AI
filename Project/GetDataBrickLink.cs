@@ -124,7 +124,7 @@ sealed class GetDataBrickLink : IGetData
             {
                 // Attempt to find LEGO set LinkTest element
                 IWebElement? setNameElement = bot.FindPageElement(IdentifierAttribute, ByMechanism);
-              
+
                 // if current LinkText is not null click the set 
                 if (bot.WaitTillExists(setNameElement))
                 {
@@ -144,7 +144,7 @@ sealed class GetDataBrickLink : IGetData
 
                     //Use IdentifierAttribute as filename, since it matches the name of the downloaded file. 
                     string fullFileName = GetFullFileName(IdentifierAttribute);
-                    
+
                     // if the downloadbutton is there but the file is already downloaded, go back to main page.
                     if (bot.IsFileDownloaded(fullFileName))
                     {
@@ -154,6 +154,7 @@ sealed class GetDataBrickLink : IGetData
                     else if (bot.WaitTillExists(downloadButtonElement))
                     {
                         Bot.ClickElement(downloadButtonElement);
+                        Thread.Sleep(350);
                         bot.GetAndRenameFile(fullFileName);
                         bot.GoToWebPage();
                         Thread.Sleep(1000);
@@ -268,20 +269,22 @@ sealed class GetDataBrickLink : IGetData
 
         Bot bot = new(Url, DownloadFolderPath);
 
+        /*we need to implement right click and tab swap in DownloadPageElements for the download to work properly. Should make it faster and 
+        As well as enable not needed to press the load more creations button for each set. */
         try
         {
             AccessMainPage(bot);
             // the first page root which is the ancestor div of all set elements on the main page.
             IWebElement? pageRootElement = bot.FindPageElement("//div[@class='studio-gallery__card-container']", "xp");
-
             for (int i = 0; i < PageLimit; i++)
             {
                 // we dont use Identifier attribute for simplicity
                 SetAttributeList(bot, $".//following::a[@class='moc-card__name']", "xp", "Text", pageRootElement);
-                //DownloadPageElements(bot, "lt");
+                DownloadPageElements(bot, "lt");
 
                 // Set the pageRootElement as the last element in the attribute list. Find it from the previous pageRootElement
-                pageRootElement = bot.FindPageElement($".//following::a[contains(text(),'{bot.AttributeList[^1]}')]", "xp", pageRootElement);
+                Console.WriteLine($"Amount of elements in attribute list: {bot.AttributeList.Count} ");
+                pageRootElement = bot.FindPageElement($"//a[contains(text(),'{bot.AttributeList[^1]}')]", "xp");
                 Console.Write($"current root:{pageRootElement.Text}\n");
 
                 // Find the Next button elements which works, considering page responsiveness
@@ -289,7 +292,6 @@ sealed class GetDataBrickLink : IGetData
 
                 if (nextButtonElement != null)
                 {
-                    // Will also clear the attribute list before going to next page.
                     GoToNextPage(bot, nextButtonElement);
                 }
             }
