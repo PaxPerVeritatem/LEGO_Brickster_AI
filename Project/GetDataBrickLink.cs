@@ -47,7 +47,7 @@ sealed class GetDataBrickLink : IGetData
         Actions actionBuilder = new(bot.Driver);
         try
         {
-            bot.GoToWebPage();
+            bot.GoToWebPage(bot.Url);
         }
         catch (BotUrlException ex)
         {
@@ -128,7 +128,8 @@ sealed class GetDataBrickLink : IGetData
                 // if current LinkText is not null click the set 
                 if (bot.WaitTillExists(setNameElement))
                 {
-                    Bot.ClickElement(setNameElement);
+                    bot.OpenTabWithElement(setNameElement);
+                    
                     Thread.Sleep(1000);
                     // add for each LEGO set. Should finally match 'downloadAmount'
                     ElementClickCounter += 1;
@@ -148,7 +149,7 @@ sealed class GetDataBrickLink : IGetData
                     // if the downloadbutton is there but the file is already downloaded, go back to main page.
                     if (bot.IsFileDownloaded(fullFileName))
                     {
-                        bot.GoToWebPage();
+                        bot.CloseTab(0);
                         Thread.Sleep(1000);
                     }
                     else if (bot.WaitTillExists(downloadButtonElement))
@@ -156,7 +157,7 @@ sealed class GetDataBrickLink : IGetData
                         Bot.ClickElement(downloadButtonElement);
                         Thread.Sleep(350);
                         bot.GetAndRenameFile(fullFileName);
-                        bot.GoToWebPage();
+                        bot.CloseTab(0);
                         Thread.Sleep(1000);
                     }
                 }
@@ -165,7 +166,7 @@ sealed class GetDataBrickLink : IGetData
             {
                 // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
                 Console.WriteLine($"No more download buttons on current set page:{ex.Message}");
-                bot.GoToWebPage();
+                bot.CloseTab(0);
                 // Thread.Sleep(1000);
             }
 
@@ -174,7 +175,7 @@ sealed class GetDataBrickLink : IGetData
             {
                 // first go back to set page, and then press main page button on the set page in question. 
                 bot.GoBack();
-                bot.GoToWebPage();
+                bot.CloseTab(0);
                 // Thread.Sleep(1000);
             }
         }

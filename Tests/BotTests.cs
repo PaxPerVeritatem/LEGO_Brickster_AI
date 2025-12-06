@@ -56,7 +56,7 @@ public sealed class BotTest(ITestOutputHelper output)
     /// <param name="bot">The configured bot instance.</param>
     private static void AccessTestWebPage(Bot bot, string TestUrl)
     {
-        bot.GoToWebPage();
+        bot.GoToWebPage(bot.Url);
 
         //parse Testurl to make preliminary actions on specific test webpage. 
         switch (TestUrl)
@@ -145,7 +145,7 @@ public sealed class BotTest(ITestOutputHelper output)
         Bot bot = new(TestUrl_1, TestDownloadFolderPath);
         try
         {
-            bot.GoToWebPage();
+            bot.GoToWebPage(bot.Url);
             Assert.Equal(TestUrl_1, bot.Driver.Url);
             bot.CloseBot();
         }
@@ -174,7 +174,7 @@ public sealed class BotTest(ITestOutputHelper output)
     public void FindElementTest(string ElementString, string ByMechanism)
     {
         Bot bot = new(TestUrl_1, TestDownloadFolderPath);
-        bot.GoToWebPage();
+        bot.GoToWebPage(bot.Url);
         try
         {
             IWebElement? pageElement = bot.FindPageElement(ElementString, ByMechanism);
@@ -217,7 +217,7 @@ public sealed class BotTest(ITestOutputHelper output)
         }
         try
         {
-            bot.GoToWebPage();
+            bot.GoToWebPage(bot.Url);
 
             // AncestorElement
             IWebElement? AncestorElement = bot.FindPageElement(AncestorElementString, AncestorByMechanism);
@@ -346,7 +346,7 @@ public sealed class BotTest(ITestOutputHelper output)
     public void WaitTillExistsFalseTest()
     {
         Bot bot = new(TestUrl_1, TestDownloadFolderPath);
-        bot.GoToWebPage();
+        bot.GoToWebPage(bot.Url);
         try
         {
             IWebElement? element = null;
@@ -366,12 +366,12 @@ public sealed class BotTest(ITestOutputHelper output)
     public void ClickElementExceptionTest(string elementString)
     {
         Bot bot = new(TestUrl_1, TestDownloadFolderPath);
-        bot.GoToWebPage();
+        bot.GoToWebPage(bot.Url);
         IWebElement? element = bot.FindPageElement(elementString, "xp");
         Assert.NotNull(element);
         try
         {
-            bot.GoToWebPage();
+            bot.GoToWebPage(bot.Url);
             Assert.Throws<BotStaleElementException>(() => Bot.ClickElement(element));
         }
         finally
@@ -534,7 +534,7 @@ public sealed class BotTest(ITestOutputHelper output)
         Bot bot = new(InvalidUrl, TestDownloadFolderPath);
         try
         {
-            Assert.Throws<BotUrlException>(bot.GoToWebPage);
+            Assert.Throws<BotUrlException>(() =>bot.GoToWebPage(bot.Url));
         }
         finally
         {
@@ -554,7 +554,7 @@ public sealed class BotTest(ITestOutputHelper output)
         Bot bot = new(NullUrl!, TestDownloadFolderPath);
         try
         {
-            Assert.Throws<BotUrlException>(bot.GoToWebPage);
+            Assert.Throws<BotUrlException>(() => bot.GoToWebPage(bot.Url));
         }
         finally
         {

@@ -50,7 +50,7 @@ sealed class GetDataLdraw : IGetData
     {
         try
         {
-            bot.GoToWebPage();
+            bot.GoToWebPage(bot.Url);
         }
         catch (BotUrlException ex)
         {
