@@ -5,6 +5,8 @@ using OpenQA.Selenium.Chrome;
 using SeleniumUndetectedChromeDriver;
 using System;
 using OpenQA.Selenium.Support.UI;
+using OpenQA.Selenium.Interactions;
+using Microsoft.VisualBasic.Devices;
 
 
 /// <summary>
@@ -24,7 +26,7 @@ public class Bot
     private static readonly string _preferencesFilePath = $@"{_userProfileDir}\Default\Preferences";
 
 
-    private Dictionary<string, object>? prefs;
+    private readonly Dictionary<string, object>? prefs;
 
 
     private readonly WebDriverWait _wait;
@@ -37,6 +39,8 @@ public class Bot
     }
 
     public string Url { get; set; }
+
+    private readonly List<string> _windowHandles;
 
 
 
@@ -91,6 +95,9 @@ public class Bot
 
         // create new WebDriverWait for driver with a timeout of 5 seconds
         _wait = new(_driver, TimeSpan.FromSeconds(5));
+
+        // List containing all tabs open. 
+        _windowHandles = [.. _driver.WindowHandles];
     }
 
     /// <summary>
@@ -157,7 +164,7 @@ public class Bot
         //ElementString was null
         catch (ArgumentNullException)
         {
-            throw new BotFindElementException("ElementString argument is null.");
+            throw new BotFindElementException("ElementString argument was null.");
         }
         // No element was found by FindElement() with the designated 'ByMechanism'
         catch (NoSuchElementException)
@@ -269,63 +276,6 @@ public class Bot
 
 
     /// <summary>
-    /// Navigates to the webpage specified by the URL property.
-    /// </summary>
-    /// <exception cref="BotUrlException">Thrown when the URL is null or invalid.</exception>
-    /// <exception cref="BotDriverException">Thrown when the webdriver failed to access the website due to the browser already being closed or the webdriver already being closed.</exception>
-    public void GoToWebPage()
-    {
-        try
-        {
-            _driver.GoToUrl(Url);
-        }
-        //if URL is null
-        catch (ArgumentNullException ex)
-        {
-            throw new BotUrlException("URL was null", ex);
-        }
-
-        //if webpage is not found, URL may be wrong. 
-        catch (WebDriverArgumentException ex)
-        {
-            throw new BotUrlException("Webpage could not be loaded, URL may be invalid", ex);
-        }
-        // if the browser is already closed
-        catch (WebDriverException)
-        {
-            throw new BotDriverException("webdriver failed to access website due to the browser already being closed");
-        }
-        // if the driver is already closed
-        catch (ObjectDisposedException)
-        {
-            throw new BotDriverException("webdriver failed to access website due to the webdriver alredy being closed");
-        }
-    }
-
-
-
-
-
-
-    /// <summary>
-    /// Attempts to click the referenced IWebElement. If the IWebElement referenced is stale, a BotElementException will be thrown.
-    /// </summary>
-    /// <param name="element">The IWebElement to click.</param>
-    /// <exception cref="BotElementException">Thrown if the referenced element data is stale.</exception>
-    public static void ClickElement(IWebElement? element)
-    {
-        try
-        {
-            element?.Click();
-        }
-        catch (StaleElementReferenceException)
-        {
-            throw new BotStaleElementException("Referenced element data is stale. Check element state before attempting to click");
-        }
-    }
-
-
-    /// <summary>
     /// Checks if a file with the inferred filename exists in the bot's download folder.
     /// In some cases the actual filename may differ from the inferred filename,
     /// if ActualFileName is argument is provided, then it will make sure that the InferredFilename matches actual provided ActualFileName.
@@ -351,9 +301,9 @@ public class Bot
         {
             // get all files in download folder after the current file download has finished 
             string[] filesArray = [.. Directory.GetFiles(AbsDownloadFolderPath)];
-            
+
             // if the download folder is not empty we sort it and get the latest file.
-            if (filesArray.Length >1)
+            if (filesArray.Length > 1)
             {
                 filesArray = [.. filesArray.OrderByDescending(File.GetLastWriteTime)];
             }
@@ -391,19 +341,30 @@ public class Bot
 
     public static bool ConfirmFileDownload(string FilePath, CancellationToken CancellationToken)
     {
+        // the path to the chrome tmp file for the current download 
+        string crDownloadPath = FilePath + ".crdownload";
         while (!CancellationToken.IsCancellationRequested)
         {
-            try
+            // if the tmp file stil exsists then we are still downloading 
+            if (File.Exists(crDownloadPath))
             {
-                using FileStream stream = File.Open(FilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
-                {
-                    return true;
-                }
-            }
-            catch (FileNotFoundException)
-            {
-                Console.WriteLine($"File {Path.GetFileName(FilePath)} is taken longer to download...");
                 Thread.Sleep(500);
+                continue;
+            }
+            // if the File Exists but is locked for some reason. 
+            if (File.Exists(FilePath))
+            {
+                try
+                {
+                    using FileStream stream = File.Open(FilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                    {
+                        return true;
+                    }
+                }
+                catch (IOException)
+                {
+                    Console.WriteLine($"File {Path.GetFileName(FilePath)} is still locked after download has finished");
+                }
             }
         }
         throw new BotFileDownloadException("File download confirmation timed out.");
@@ -450,6 +411,136 @@ public class Bot
         }
     }
 
+
+
+    /// <summary>
+    /// Attempts to navigate to a webpage based on the provided URL.
+    /// </summary>
+    /// <param name="Url">The URL of the webpage to navigate to.</param>
+    /// <exception cref="BotUrlException">Thrown if the URL is null or if the webpage could not be loaded due to an invalid URL.</exception>
+    /// <exception cref="BotDriverException">Thrown if the browser is already closed or if the webdriver is already closed.</exception>
+    public void GoToWebPage(string Url)
+    {
+        try
+        {
+            _driver.GoToUrl(Url);
+        }
+        //if URL is null
+        catch (ArgumentNullException ex)
+        {
+            throw new BotUrlException("URL was null", ex);
+        }
+
+        //if webpage is not found, URL may be wrong. 
+        catch (WebDriverArgumentException ex)
+        {
+            throw new BotUrlException("Webpage could not be loaded, URL may be invalid", ex);
+        }
+        // if the browser is already closed
+        catch (WebDriverException)
+        {
+            throw new BotDriverException("webdriver failed to access website due to the browser already being closed");
+        }
+        // if the driver is already closed
+        catch (ObjectDisposedException)
+        {
+            throw new BotDriverException("webdriver failed to access website due to the webdriver alredy being closed");
+        }
+    }
+
+    /// <summary>
+    /// Attempts to click the referenced IWebElement. If the IWebElement referenced is stale, a BotElementException will be thrown.
+    /// </summary>
+    /// <param name="element">The IWebElement to click.</param>
+    /// <exception cref="BotElementException">Thrown if the referenced element data is stale.</exception>
+    public static void ClickElement(IWebElement element)
+    {
+        try
+        {
+            element.Click();
+        }
+        catch (StaleElementReferenceException)
+        {
+            throw new BotStaleElementException("Referenced element data is stale. Check element state before attempting to click");
+        }
+    }
+
+
+
+    /// <summary>
+    /// Opens a new tab with the webpage referenced by the href attribute of the referenced IWebElement.
+    /// </summary>
+    /// <param name="element">The IWebElement with the href attribute to use for opening the new tab.</param>
+    /// <exception cref="BotStaleElementException">Thrown if the referenced element data is stale.</exception>
+    /// <remarks>
+    /// If the IWebElement referenced is null, the function does nothing.
+    /// If the IWebElement referenced does not have an href attribute, the function does nothing.
+    /// </remarks>
+    public void OpenTabWithElement(IWebElement? element)
+    {
+        try
+        {
+            if (element != null && element.GetAttribute("href") != null)
+            {
+                string elementLink = element.GetAttribute("href")!;
+                _driver.SwitchTo().NewWindow(WindowType.Tab);
+                Console.WriteLine(_driver.CurrentWindowHandle);
+                GoToWebPage(elementLink);
+            }
+        }
+        catch (StaleElementReferenceException)
+        {
+            throw new BotStaleElementException("Referenced element data is stale. Check element state before attempting to click");
+        }
+    }
+
+    /// <summary>
+    /// This function is aids in defineing which chrome tab the OS considers active.
+    /// It does not visually change the tab on the screen, but only changes the context window of the bot. 
+    /// Should be used in conjunction with creating new tabs, where closing a tab is not required. 
+    /// </summary>
+    /// <param name="TabToSwitchTo"></param>
+    public void SwitchTab(int TabToSwitchTo)
+    {
+        try
+        {
+            _driver.SwitchTo().Window(_windowHandles[TabToSwitchTo]);
+        }
+        catch (NoSuchWindowException)
+        {
+            throw new BotWindowException($"The specified tab:{TabToSwitchTo}, does not exist.");
+        }
+        catch (ArgumentNullException)
+        {
+            throw new BotFindElementException("'TabToSwitchTo' argument was null.");
+        }
+    }
+
+    /// <summary>
+    /// Closes the current tab and switches to the tab specified by 'TabToSwitchTo'.
+    /// If the tab to switch to does not exist, a BotWindowException is thrown.
+    /// </summary>
+    /// <param name="TabToSwitchTo">The tab to switch to after closing the current tab.</param>
+    /// <exception cref="BotWindowException">Thrown when the tab to switch to does not exist.</exception>
+    public void CloseTab(int TabToSwitchTo)
+    {
+        try
+        {
+            _driver.Close();
+            SwitchTab(TabToSwitchTo);
+        }
+        catch (BotWindowException)
+        {
+            Console.WriteLine("Tab to switch to does not exist.");
+        }
+        catch (BotFindElementException)
+        {
+            Console.WriteLine("'TabToSwitchTo' argument was null.");
+        }
+
+    }
+
+
     /// <summary>
     /// Goes back to the previous webpage in the browser history.
     /// </summary>
@@ -467,6 +558,8 @@ public class Bot
     {
         _driver.Quit();
     }
+
+
 
     /// <summary>
     ///  Cleans up the preferences file used by the bot to store download preferences.
