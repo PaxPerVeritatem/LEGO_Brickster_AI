@@ -96,6 +96,15 @@ public class BotFileDownloadException : BotException
     public BotFileDownloadException(string message, Exception inner) : base(message, inner) { }
 }
 
+public class BotFileRenameException : BotException
+{
+    public BotFileRenameException() : base() { }
+
+    public BotFileRenameException(string message) : base(message) { }
+
+    public BotFileRenameException(string message, Exception inner) : base(message, inner) { }
+}
+
 public class BotWindowException : BotException
 {
     public BotWindowException() : base() { }

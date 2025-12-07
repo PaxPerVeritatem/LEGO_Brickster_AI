@@ -5,8 +5,6 @@ using OpenQA.Selenium.Chrome;
 using SeleniumUndetectedChromeDriver;
 using System;
 using OpenQA.Selenium.Support.UI;
-using OpenQA.Selenium.Interactions;
-using Microsoft.VisualBasic.Devices;
 
 
 /// <summary>
@@ -78,11 +76,11 @@ public class Bot
             ["profile.default_content_setting_values"] = new Dictionary<string, object>
             {
                 // allow multiple downloads at once. 
-                ["multiple_downloads"] = 1,
+                ["multiple_downloads"] = true,
                 // avoid manual download confirmations 
-                ["automatic_downloads"] = 1,
+                ["automatic_downloads"] = true,
                 // allow cookies for chrome.
-                ["profile.cookie_controls_mode"] = 0
+                ["profile.cookie_controls_mode"] = false
             }
         };
 
@@ -91,7 +89,8 @@ public class Bot
             options: _options,
             userDataDir: _userProfileDir,
             driverExecutablePath: _driverPath,
-            prefs: prefs);
+            prefs: prefs
+            );
 
         // create new WebDriverWait for driver with a timeout of 5 seconds
         _wait = new(_driver, TimeSpan.FromSeconds(5));
@@ -295,10 +294,11 @@ public class Bot
 
     public void GetAndRenameFile(string NewFileName)
     {
-        /*Get filesArray could maybe be remade into a TreeSet or TreeMap right now we sort the array
-        every time even if we dont rename the file. */
         try
         {
+            /*Get filesArray could maybe be remade into a TreeSet or TreeMap right now we sort the array
+            every time even if we dont rename the file. */
+
             // get all files in download folder after the current file download has finished 
             string[] filesArray = [.. Directory.GetFiles(AbsDownloadFolderPath)];
 
@@ -312,9 +312,9 @@ public class Bot
             string currentFileName = Path.GetFileName(currentFilePath);
 
             // define a cancellation token with a timeout of 5 minutes
-            CancellationTokenSource cts = new(TimeSpan.FromMinutes(5));
+            CancellationTokenSource cts = new(TimeSpan.FromSeconds(10));
 
-            // Wait until file download is confirmed
+            // Wait until file download is confirmed before renaming
             if (ConfirmFileDownload(currentFilePath, cts.Token))
             {
                 // Only rename the file if it is NOT already the desired name.
@@ -332,14 +332,20 @@ public class Bot
                 }
             }
         }
-        catch (BotFileDownloadException ex)
+        catch (IOException)
         {
-            Console.WriteLine($"{ex.Message}");
+            throw new BotFileRenameException("The fullFileName may include invalid characters for windows file names.\n");
         }
+        catch (IndexOutOfRangeException)
+        {
+
+            throw new BotFileRenameException("Designated download folder was empty, when attempting to rename a file.\nThe time between clicking a download button and then attempting to rename the file might be too short.\n");
+        }
+
     }
 
 
-    public static bool ConfirmFileDownload(string FilePath, CancellationToken CancellationToken)
+    private static bool ConfirmFileDownload(string FilePath, CancellationToken CancellationToken)
     {
         // the path to the chrome tmp file for the current download 
         string crDownloadPath = FilePath + ".crdownload";
@@ -348,14 +354,16 @@ public class Bot
             // if the tmp file stil exsists then we are still downloading 
             if (File.Exists(crDownloadPath))
             {
-                Thread.Sleep(500);
+                Thread.Sleep(300);
                 continue;
             }
-            // if the File Exists but is locked for some reason. 
+
+            // File is there but chrome might still have it locked
             if (File.Exists(FilePath))
             {
                 try
                 {
+                    // may throw IOException if chrome still has the file locked
                     using FileStream stream = File.Open(FilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
                     {
                         return true;
@@ -363,11 +371,12 @@ public class Bot
                 }
                 catch (IOException)
                 {
-                    Console.WriteLine($"File {Path.GetFileName(FilePath)} is still locked after download has finished");
+                    Console.WriteLine($"File {Path.GetFileName(FilePath)} was still locked after download has finished");
+                    Thread.Sleep(300);
                 }
             }
         }
-        throw new BotFileDownloadException("File download confirmation timed out.");
+        throw new BotFileDownloadException("File download confirmation timed out. File might have taken too long to download or the download was interrupted.");
     }
 
     /// <summary>
@@ -484,7 +493,6 @@ public class Bot
             {
                 string elementLink = element.GetAttribute("href")!;
                 _driver.SwitchTo().NewWindow(WindowType.Tab);
-                Console.WriteLine(_driver.CurrentWindowHandle);
                 GoToWebPage(elementLink);
             }
         }
