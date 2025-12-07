@@ -2,7 +2,7 @@ namespace LEGO_Brickster_AI;
 
 using OpenQA.Selenium;
 using OpenQA.Selenium.Interactions;
-using DotNetEnv;
+using System.Text.RegularExpressions;
 sealed class GetDataBrickLink : IGetData
 {
     public static string Url { get; set; } = "https://www.bricklink.com/v3/studio/design.page?tab=Staff-Picks";
@@ -111,8 +111,15 @@ sealed class GetDataBrickLink : IGetData
     /// <returns></returns>
     public static string GetFullFileName(string FileName)
     {
-        string fileExtension = ".io";
-        string fullFileName = FileName + fileExtension;
+
+        // create a new string object via the GetInvalidFileNameChars, which gets a char array of all the invalid chars on windows. 
+        string invalidCharacters = new(Path.GetInvalidFileNameChars());
+
+        // create a regex for with square brackets, which Regex.Replace will interpret as look for any of the character. Without brackets, all characters would have become a single string. 
+        string invalidCharacterPattern = $"[{Regex.Escape(invalidCharacters)}]";
+
+        // Regex.Replace is faster then String.Replace since it uses bitmapping under the hood. 
+        string fullFileName = Regex.Replace(FileName, invalidCharacterPattern, "").Trim() + ".io";
         return fullFileName;
     }
 
@@ -129,9 +136,7 @@ sealed class GetDataBrickLink : IGetData
                 if (bot.WaitTillExists(setNameElement))
                 {
                     bot.OpenTabWithElement(setNameElement);
-                    
-                    Thread.Sleep(1000);
-                    // add for each LEGO set. Should finally match 'downloadAmount'
+                    // increment for each clicked LEGO set. Should finally match 'downloadAmount'
                     ElementClickCounter += 1;
                 }
 
@@ -150,34 +155,45 @@ sealed class GetDataBrickLink : IGetData
                     if (bot.IsFileDownloaded(fullFileName))
                     {
                         bot.CloseTab(0);
-                        Thread.Sleep(1000);
                     }
                     else if (bot.WaitTillExists(downloadButtonElement))
                     {
                         Bot.ClickElement(downloadButtonElement);
-                        Thread.Sleep(350);
+                        Thread.Sleep(500);
                         bot.GetAndRenameFile(fullFileName);
                         bot.CloseTab(0);
-                        Thread.Sleep(1000);
+                        Console.WriteLine($"Sucessfully Downloaded:{fullFileName}");
                     }
                 }
             }
-            catch (BotFindElementException ex)
-            {
-                // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
-                Console.WriteLine($"No more download buttons on current set page:{ex.Message}");
-                bot.CloseTab(0);
-                // Thread.Sleep(1000);
-            }
 
+            // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
+            catch (BotFindElementException)
+            {
+                
+                //Console.WriteLine($"No more download buttons on current set page:{ex.Message}");
+                bot.CloseTab(0);
+            }
             // should be thrown in case of stale element or 404 page error.
             catch (BotStaleElementException)
             {
                 // first go back to set page, and then press main page button on the set page in question. 
-                bot.GoBack();
                 bot.CloseTab(0);
-                // Thread.Sleep(1000);
             }
+
+            // should be thrown in case of the file could not be downloaded for some reason. 
+            catch (BotFileDownloadException ex)
+            {
+                Console.WriteLine(ex.Message);
+                bot.CloseTab(0);
+            }
+
+            // When the time between clicking a download button and then attempting to rename the file might have been too short.
+            catch (BotFileRenameException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
         }
     }
 
@@ -248,7 +264,7 @@ sealed class GetDataBrickLink : IGetData
         }
         catch (BotDownloadAmountException ex)
         {
-            Console.WriteLine($"Assumed amount of LEGO Sets was either not correct or something went wrong during clicking set elements:{ex.Message}");
+            Console.WriteLine($"Assumed amount of clicked LEGO Sets was either not correct or something went wrong during clicking set elements:{ex.Message}");
             return false;
         }
     }
@@ -283,17 +299,21 @@ sealed class GetDataBrickLink : IGetData
                 SetAttributeList(bot, $".//following::a[@class='moc-card__name']", "xp", "Text", pageRootElement);
                 DownloadPageElements(bot, "lt");
 
-                // Set the pageRootElement as the last element in the attribute list. Find it from the previous pageRootElement
-                Console.WriteLine($"Amount of elements in attribute list: {bot.AttributeList.Count} ");
-                pageRootElement = bot.FindPageElement($"//a[contains(text(),'{bot.AttributeList[^1]}')]", "xp");
-                Console.Write($"current root:{pageRootElement.Text}\n");
+
+                /* Set the pageRootElement as the last element in the attribute list. Find it from the previous pageRootElement.
+                Escape double quotes which will allow for pageRootElement to have single or double quotes in its name, but not both*/
+                pageRootElement = bot.FindPageElement($"//a[contains(text(),\"{bot.AttributeList[^1]}\")]", "xp");
+
 
                 // Find the Next button elements which works, considering page responsiveness
                 IWebElement? nextButtonElement = bot.FindPageElement("//button[contains(text(),'Load more creations')]", "xp");
 
-                if (nextButtonElement != null)
+                // We dont have to click on the next button if we are on the last page
+                if (nextButtonElement != null && i < PageLimit - 1)
                 {
+                    Console.Write($"current root:{pageRootElement.Text}\n");
                     GoToNextPage(bot, nextButtonElement);
+                    Thread.Sleep(1000);
                 }
             }
         }
