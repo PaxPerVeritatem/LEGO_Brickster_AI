@@ -3,7 +3,13 @@ namespace LEGO_Brickster_AI;
 using OpenQA.Selenium;
 sealed class GetDataLdraw : IGetData
 {
+
+    // Bot Properties
     public static string Url { get; set; } = "https://library.ldraw.org/omr/sets";
+
+
+    public static string DownloadFolderPath => @"..\..\..\LEGO_Data\Ldraw_Data";
+
 
     // Global run Properties
     public static int MaxPage => 59;
@@ -18,7 +24,6 @@ sealed class GetDataLdraw : IGetData
 
     public static int ElementClickCounter { get; set; } = 0;
 
-    public static string DownloadFolderPath => @"..\..\..\LEGO_Data\Ldraw_Data";
 
 
     // Custom run Properties 
@@ -28,16 +33,9 @@ sealed class GetDataLdraw : IGetData
 
     public static string UrlPageVarient => "?page=";
 
-    public static Dictionary<string, string> NextPageElements => new() {
-        {"//button[@rel='next']", "xp" },
-        {"//button[@aria-label='Next']","xp" }
-        };
 
 
-
-
-
-    public static void UseCustomStartingPage()
+    public static void ConfigureCustomRun()
     {
         Url = $"{Url}{UrlPageVarient}{StartFromPage}";
         if (StartFromPage != MaxPage)
@@ -48,27 +46,51 @@ sealed class GetDataLdraw : IGetData
 
 
 
-    public static void AccessWebPage(Bot bot)
+    public static void AccessMainPage(Bot bot, Dictionary<string, string>? CandidateElementDict)
     {
         try
         {
-            bot.GoToWebpage();
+            bot.GoToWebPage(bot.Url);
         }
         catch (BotUrlException ex)
         {
             Console.WriteLine($"Failed to load webpage: {ex.Message}");
         }
-        catch(BotDriverException ex )
+        catch (BotDriverException ex)
         {
-            Console.WriteLine(ex.Message); 
+            Console.WriteLine(ex.Message);
         }
     }
 
 
-    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string? IdentifierAttribute=null)
+    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement? AncestorElementString)
     {
         // Attempt to get the list of LEGO set names for the current main page
-        bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism);
+        bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism,IdentifierAttribute);
+    }
+
+    /// <summary>
+    /// We extract the last part of the download butttons href string, which is always <c>Filename></c>.mpd. 
+    /// We can then use this to check if the file has already been downloaded. 
+    /// </summary>
+    /// <param name="FileName"></param>
+    /// <returns></returns>
+    /// <exception cref="BotStaleElementException"></exception>
+    public static string GetFullFileName(string FileName)
+    {
+        try
+        {
+            if (FileName != null)
+            {
+                string downloadFileSubstring = Path.GetFileName(FileName);
+                return downloadFileSubstring;
+            }
+            return "";
+        }
+        catch (StaleElementReferenceException)
+        {
+            throw new BotStaleElementException("Referenced element data is stale. Check element state before attempting to click");
+        }
     }
 
 
@@ -98,21 +120,25 @@ sealed class GetDataLdraw : IGetData
                     // if the ModelElement is not null, attempt to find the first download button element
                     IWebElement? downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", ModelsElement);
 
-                    // while there are download buttons on the page find them and press them., 
+                    // while there are download buttons on the page find them and press them.,  
                     while (bot.WaitTillExists(downloadButtonElement))
                     {
-                        // i belive we can forgive here since WaitTillExists checks for null element.
-                        string downloadFileSubstring = Bot.GetFileName(downloadButtonElement!, "href");
+                        // i belive we can null forgive here since WaitTillExists checks for null element.
+                        string? FileName = downloadButtonElement!.GetAttribute("href");
 
-                        string downloadFilePath = Path.Combine(bot.AbsDownloadFolderPath!, downloadFileSubstring);
-                        // if the file has already been downloaded, skip it
-                        if (Bot.IsFileDownloaded(downloadFilePath))
+                        // again, if we know FileName is never null in this case, then we can null forgive FullFileName for the current file.
+                        string FullFileName = GetFullFileName(FileName!);
+
+
+                        // if the file has already been downloaded,
+                        if (bot.IsFileDownloaded(FullFileName))
                         {
                             // try to find the next download button. 
                             downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", downloadButtonElement);
                         }
                         else
                         {
+                            // press download button
                             Bot.ClickElement(downloadButtonElement);
                             // try to find the next download button
                             downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", downloadButtonElement);
@@ -140,13 +166,13 @@ sealed class GetDataLdraw : IGetData
         }
     }
 
-    public static IWebElement GetNextPageElement(Bot bot)
+    public static IWebElement FindDisplayedElement(Bot bot, Dictionary<string, string> CandidatElementDict)
     {
-        foreach (KeyValuePair<string, string> Elementtuple in NextPageElements)
+        foreach (KeyValuePair<string, string> Candidate in CandidatElementDict)
         {
             try
             {
-                IWebElement? nextPageElement = bot.FindPageElement(Elementtuple.Key, Elementtuple.Value);
+                IWebElement? nextPageElement = bot.FindPageElement(Candidate.Key, Candidate.Value);
                 if (nextPageElement != null && nextPageElement.Displayed)
                 {
                     return nextPageElement;
@@ -177,7 +203,7 @@ sealed class GetDataLdraw : IGetData
                 Bot.ClickElement(NextButtonElement);
 
                 // Bot should not proceed until the next page is fully loaded indicated by a change in the url.
-                bot.ExplicitWait(oldUrl);
+                bot.ExplicitWaitURL(oldUrl);
             }
             // reset the bot attribute list for next page of elements. 
             bot.AttributeList = [];
@@ -218,24 +244,35 @@ sealed class GetDataLdraw : IGetData
     //process the Ldraw website LEGO sets and download them. 
     public static void ProcessData()
     {
+        Dictionary<string, string> NextPageCandiates = new()
+        {
+            { "//button[@rel='next']", "xp" },
+            { "//button[@aria-label='Next']","xp" }
+        };
+
         // initial check if run is custom or not
         if (CustomRun)
         {
-            UseCustomStartingPage();
+            ConfigureCustomRun();
         }
-        Bot bot = new(Url, DownloadFolderPath);
 
+        // clean up any existing preferences file from previous bot runs.
+        Bot.CleanupPreferencesFile();
+
+
+        Bot bot = new(Url, DownloadFolderPath);
         try
         {
-            AccessWebPage(bot);
+            // no dict needed here.
+            AccessMainPage(bot, null);
             for (int i = 0; i < PageLimit; i++)
             {
-                SetAttributeList(bot, "fi-ta-cell-name", "class");
+                SetAttributeList(bot, "fi-ta-cell-name", "class","Text", null);
 
                 DownloadPageElements(bot, "lt");
 
                 // Find the Next button elements which works, considering page responsiveness
-                IWebElement nextButtonElement = GetNextPageElement(bot);
+                IWebElement nextButtonElement = FindDisplayedElement(bot, NextPageCandiates);
                 GoToNextPage(bot, nextButtonElement);
             }
         }
@@ -246,6 +283,7 @@ sealed class GetDataLdraw : IGetData
         finally
         {
             AssertDownloadAmount();
+            Bot.CleanupPreferencesFile();
             bot.CloseBot();
         }
     }
