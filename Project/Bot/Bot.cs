@@ -2,8 +2,10 @@ namespace LEGO_Brickster_AI;
 
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using SeleniumUndetectedChromeDriver;
 using System;
 using OpenQA.Selenium.Support.UI;
+
 
 /// <summary>
 /// A class which wraps and simplifies some functionality of the Selenium ChromeDriver class.
@@ -12,16 +14,23 @@ using OpenQA.Selenium.Support.UI;
 /// </summary>
 public class Bot
 {
-    private readonly ChromeDriver _driver;
-    public ChromeDriver Driver => _driver;
+    private readonly UndetectedChromeDriver _driver;
+    public UndetectedChromeDriver Driver => _driver;
 
-    private readonly ChromeOptions? _options;
-    public ChromeOptions? Options => _options;
+    private readonly ChromeOptions _options;
+    public ChromeOptions Options => _options;
+
+    private static readonly string _userProfileDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, @"..\..\..\DriverProfile"));
+    private static readonly string _preferencesFilePath = $@"{_userProfileDir}\Default\Preferences";
+
+
+    private readonly Dictionary<string, object>? prefs;
+
 
     private readonly WebDriverWait _wait;
 
-    private IList<string> _attributeList = [];
-    public IList<string> AttributeList
+    private List<string> _attributeList = [];
+    public List<string> AttributeList
     {
         get => _attributeList;
         set => _attributeList = value;
@@ -29,53 +38,66 @@ public class Bot
 
     public string Url { get; set; }
 
-    private readonly string? _absDownloadFolderPath;
-    public string? AbsDownloadFolderPath => _absDownloadFolderPath;
+    private readonly List<string> _windowHandles;
 
 
 
+    // get a string array of the all the chrome version folders. 
+    private static readonly string[] _driverPathFolders = Directory.GetDirectories(
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".cache",
+            "selenium",
+            "chromedriver",
+            "win64")
+    );
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Bot"/> class with the given URL and optional download folder path.
-    /// </summary>
-    /// <param name="url">The URL of the webpage to access.</param>
-    /// <param name="downloadFolderPath">The path to the default download folder for the bot. If null, the default download folder is used.</param>
-    /// <remarks>
-    /// If <paramref name="downloadFolderPath"/> is not null, the bot will use the specified download folder path.
-    /// Otherwise, the bot will use the default download folder path.
-    /// </remarks>
-    public Bot(string url, string? downloadFolderPath = null)
+    // The last index value should be the path to the latest version folder of chromedriver.exe
+    private readonly string _driverPath = Path.Combine(_driverPathFolders[^1], "chromedriver.exe");
+
+
+    private readonly string _absDownloadFolderPath;
+    public string AbsDownloadFolderPath => _absDownloadFolderPath;
+
+
+    public Bot(string url, string downloadFolderPath)
     {
         Url = url;
-        if (downloadFolderPath != null)
-        {
-            _absDownloadFolderPath = GetAbsoluteDownloadFolderPath(downloadFolderPath);
-            _options = InitializeBotPrefs(_absDownloadFolderPath);
-            _driver = new ChromeDriver(_options);
-        }
-        else
-        {
-            _options = InitializeBotPrefs();
-            _driver = new ChromeDriver();
-        }
 
+        // get the absolute path to the download folder from the relative provided download folder path
+        _absDownloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, downloadFolderPath));
+
+        // initialize ChromeOptions
+        _options = InitializeBotOptions();
+
+        prefs = new()
+        {
+            ["download.default_directory"] = _absDownloadFolderPath,
+            ["profile.default_content_setting_values"] = new Dictionary<string, object>
+            {
+                // allow multiple downloads at once. 
+                ["multiple_downloads"] = true,
+                // avoid manual download confirmations 
+                ["automatic_downloads"] = true,
+                // allow cookies for chrome.
+                ["profile.cookie_controls_mode"] = false
+            }
+        };
+
+        // construct driver with all arguments
+        _driver = UndetectedChromeDriver.Create(
+            options: _options,
+            userDataDir: _userProfileDir,
+            driverExecutablePath: _driverPath,
+            prefs: prefs
+            );
+
+        // create new WebDriverWait for driver with a timeout of 5 seconds
         _wait = new(_driver, TimeSpan.FromSeconds(5));
+
+        // List containing all tabs open. 
+        _windowHandles = [.. _driver.WindowHandles];
     }
-
-
-    /// <summary>
-    /// Returns the absolute path to the download folder by combining the provided relative download folder path with the application's base directory.
-    /// </summary>
-    /// <param name="DownloadFolderPath">The relative path to the download folder.</param>
-    /// <returns>The absolute path to the download folder.</returns>
-    public static string GetAbsoluteDownloadFolderPath(string DownloadFolderPath)
-    {
-        string absDownloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, DownloadFolderPath));
-        return absDownloadFolderPath;
-    }
-
-
-
 
     /// <summary>
     /// Initializes Chrome options with preferences for the bot.
@@ -85,22 +107,12 @@ public class Bot
     /// </summary>
     /// <param name="DownloadFolderPath">The path to the default download folder for the bot.</param>
     /// <returns>The initialized Chrome options.</returns>
-    public static ChromeOptions InitializeBotPrefs(string? DownloadFolderPath = null)
+    public static ChromeOptions InitializeBotOptions()
     {
-        ChromeOptions options = new();
-        if (DownloadFolderPath != null)
+        ChromeOptions options = new()
         {
-            // add preferenced download folder to optionsPreferences.
-            options.AddUserProfilePreference("download.default_directory", DownloadFolderPath);
-            // to allow for multiple downloads and prevent the browser from blocking them 'allow multiple downloads' prombt
-            options.AddUserProfilePreference("disable-popup-blocking", "true");
-            options.PageLoadStrategy = PageLoadStrategy.Normal;
-        }
-        else
-        {
-            options.AddUserProfilePreference("disable-popup-blocking", "true");
-            options.PageLoadStrategy = PageLoadStrategy.Normal;
-        }
+            PageLoadStrategy = PageLoadStrategy.Normal
+        };
         return options;
     }
 
@@ -151,7 +163,7 @@ public class Bot
         //ElementString was null
         catch (ArgumentNullException)
         {
-            throw new BotFindElementException("ElementString argument is null.");
+            throw new BotFindElementException("ElementString argument was null.");
         }
         // No element was found by FindElement() with the designated 'ByMechanism'
         catch (NoSuchElementException)
@@ -185,25 +197,37 @@ public class Bot
     /// <param name="ElementString">The string to use for finding the elements.</param>
     /// <param name="ByMechanism">The mechanism to use for finding the elements, such as By.Name, By.Id, By.CssSelector, etc.</param>
     /// <param name="IdentifierAttribute">The attribute of the element to use when adding to the Bot._nameList. If not provided, uses the text of the element.</param>
+    /// <param name="AncestorElement"> optional ancestor element to search for the elements within.
     /// <returns>A list of strings representing the elements found.</returns>
     /// <exception cref="BotElementException">Thrown when the ElementString argument is null.</exception>
     /// <exception cref="BotMechanismException">Thrown when the ElementString did not match to the designated ByMechanism or the ByMechanism did not match any defined ByMechanism.</exception>
-    public IList<string> FindPageElements(string ElementString, string ByMechanism, string IdentifierAttribute = "Text")
+    public List<string> FindPageElements(string ElementString, string ByMechanism, string IdentifierAttribute, IWebElement? AncestorElement = null)
     {
         try
         {
-            // will return empty collection if not elements are found, hence does not throw NoSuchElementException
-            IList<IWebElement> elementList = ByMechanism switch
+            // will return empty collection if no elements are found, hence does not throw NoSuchElementException
+            IList<IWebElement> elementList;
+            if (AncestorElement != null)
             {
-                "name" => _driver.FindElements(By.Name(ElementString)),
-                "id" => _driver.FindElements(By.Id(ElementString)),
-                "css" => _driver.FindElements(By.CssSelector(ElementString)),
-                "class" => _driver.FindElements(By.ClassName(ElementString)),
-                "lt" => _driver.FindElements(By.LinkText(ElementString)),
-                "xp" => _driver.FindElements(By.XPath(ElementString)),
-                _ => throw new NotImplementedException(""),
-            };
-
+                elementList = ByMechanism switch
+                {
+                    "xp" => AncestorElement.FindElements(By.XPath(ElementString)),
+                    _ => throw new NotImplementedException(""),
+                };
+            }
+            else
+            {
+                elementList = ByMechanism switch
+                {
+                    "name" => _driver.FindElements(By.Name(ElementString)),
+                    "id" => _driver.FindElements(By.Id(ElementString)),
+                    "css" => _driver.FindElements(By.CssSelector(ElementString)),
+                    "class" => _driver.FindElements(By.ClassName(ElementString)),
+                    "lt" => _driver.FindElements(By.LinkText(ElementString)),
+                    "xp" => _driver.FindElements(By.XPath(ElementString)),
+                    _ => throw new NotImplementedException(""),
+                };
+            }
             if (IdentifierAttribute != "Text")
             {
                 foreach (IWebElement e in elementList)
@@ -251,15 +275,164 @@ public class Bot
 
 
     /// <summary>
-    /// Navigates to the webpage specified by the URL property.
+    /// Checks if a file with the inferred filename exists in the bot's download folder.
+    /// In some cases the actual filename may differ from the inferred filename,
+    /// if ActualFileName is argument is provided, then it will make sure that the InferredFilename matches actual provided ActualFileName.
     /// </summary>
-    /// <exception cref="BotUrlException">Thrown when the URL is null or invalid.</exception>
-    /// <exception cref="BotDriverException">Thrown when the webdriver failed to access the website due to the browser already being closed or the webdriver already being closed.</exception>
-    public void GoToWebpage()
+    public bool IsFileDownloaded(string InferredFilename)
+    {
+        string downloadFilePath = Path.Combine(AbsDownloadFolderPath, InferredFilename);
+        if (File.Exists(downloadFilePath))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public void GetAndRenameFile(string NewFileName)
     {
         try
         {
-            _driver.Navigate().GoToUrl(Url);
+            /*Get filesArray could maybe be remade into a TreeSet or TreeMap right now we sort the array
+            every time even if we dont rename the file. */
+
+            // get all files in download folder after the current file download has finished 
+            string[] filesArray = [.. Directory.GetFiles(AbsDownloadFolderPath)];
+
+            // if the download folder is not empty we sort it and get the latest file.
+            if (filesArray.Length > 1)
+            {
+                filesArray = [.. filesArray.OrderByDescending(File.GetLastWriteTime)];
+            }
+            // current file path and name 
+            string currentFilePath = filesArray[0];
+            string currentFileName = Path.GetFileName(currentFilePath);
+
+            // define a cancellation token with a timeout of 5 minutes
+            CancellationTokenSource cts = new(TimeSpan.FromSeconds(10));
+
+            // Wait until file download is confirmed before renaming
+            if (ConfirmFileDownload(currentFilePath, cts.Token))
+            {
+                // Only rename the file if it is NOT already the desired name.
+                if (currentFileName != NewFileName)
+                {
+                    FileInfo fileInfo = new(currentFilePath);
+                    fileInfo.MoveTo(Path.Combine(AbsDownloadFolderPath, NewFileName));
+                    return;
+                }
+                // delete file if it is a duplicate 
+                if (currentFileName.Contains("(1)"))
+                {
+                    File.Delete(currentFilePath);
+                    return;
+                }
+            }
+        }
+        catch (IOException)
+        {
+            throw new BotFileRenameException("The fullFileName may include invalid characters for windows file names.\n");
+        }
+        catch (IndexOutOfRangeException)
+        {
+
+            throw new BotFileRenameException("Designated download folder was empty, when attempting to rename a file.\nThe time between clicking a download button and then attempting to rename the file might be too short.\n");
+        }
+
+    }
+
+
+    private static bool ConfirmFileDownload(string FilePath, CancellationToken CancellationToken)
+    {
+        // the path to the chrome tmp file for the current download 
+        string crDownloadPath = FilePath + ".crdownload";
+        while (!CancellationToken.IsCancellationRequested)
+        {
+            // if the tmp file stil exsists then we are still downloading 
+            if (File.Exists(crDownloadPath))
+            {
+                Thread.Sleep(300);
+                continue;
+            }
+
+            // File is there but chrome might still have it locked
+            if (File.Exists(FilePath))
+            {
+                try
+                {
+                    // may throw IOException if chrome still has the file locked
+                    using FileStream stream = File.Open(FilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                    {
+                        return true;
+                    }
+                }
+                catch (IOException)
+                {
+                    Console.WriteLine($"File {Path.GetFileName(FilePath)} was still locked after download has finished");
+                    Thread.Sleep(300);
+                }
+            }
+        }
+        throw new BotFileDownloadException("File download confirmation timed out. File might have taken too long to download or the download was interrupted.");
+    }
+
+    /// <summary>
+    /// Waits until the referenced IWebElement exists on the webpage.
+    /// If the IWebElement referenced is null, the function will return false.
+    /// Note that if the driver is instanceiated without a generous PageLoadStrategy, 
+    /// some combinations of actions may lead to the blot clicking elements which are not yet loaded on the page 
+    /// or the bot go though its actions to fast and leads to attempting no longer valid actions.
+    /// </summary>
+    /// <param name="element">The IWebElement to wait for.</param>
+    /// <returns>true if the element is found, false if the element is null.</returns>
+    public bool WaitTillExists(IWebElement? element)
+    {
+        try
+        {
+            if (element != null && _wait.Until(_driver => element.Displayed))
+            {
+                return true;
+            }
+            return false;
+        }
+        // should catch in case the element is not displayed due to website responsiveness
+        catch (WebDriverTimeoutException)
+        {
+            throw new BotTimeOutException();
+        }
+    }
+
+    /// some combinations of actions may lead to the bot clicking elements which are not yet loaded on the page 
+    /// or the bot go though its actions too fast and leads to attempting no longer valid actions.
+    public void ExplicitWaitURL(string oldurl)
+    {
+        try
+        {
+            _wait.Until(_driver => _driver.Url != oldurl);
+        }
+        // should catch in case the element is not displayed due to website responsiveness
+        catch (WebDriverTimeoutException)
+        {
+            throw new BotTimeOutException();
+        }
+    }
+
+
+
+    /// <summary>
+    /// Attempts to navigate to a webpage based on the provided URL.
+    /// </summary>
+    /// <param name="Url">The URL of the webpage to navigate to.</param>
+    /// <exception cref="BotUrlException">Thrown if the URL is null or if the webpage could not be loaded due to an invalid URL.</exception>
+    /// <exception cref="BotDriverException">Thrown if the browser is already closed or if the webdriver is already closed.</exception>
+    public void GoToWebPage(string Url)
+    {
+        try
+        {
+            _driver.GoToUrl(Url);
         }
         //if URL is null
         catch (ArgumentNullException ex)
@@ -284,21 +457,16 @@ public class Bot
         }
     }
 
-
-
-
-
-
     /// <summary>
     /// Attempts to click the referenced IWebElement. If the IWebElement referenced is stale, a BotElementException will be thrown.
     /// </summary>
     /// <param name="element">The IWebElement to click.</param>
     /// <exception cref="BotElementException">Thrown if the referenced element data is stale.</exception>
-    public static void ClickElement(IWebElement? element)
+    public static void ClickElement(IWebElement element)
     {
         try
         {
-            element?.Click();
+            element.Click();
         }
         catch (StaleElementReferenceException)
         {
@@ -306,80 +474,80 @@ public class Bot
         }
     }
 
-    public static string GetFileName(IWebElement DownloadButtonElement, string ElementAttribute)
+
+
+    /// <summary>
+    /// Opens a new tab with the webpage referenced by the href attribute of the referenced IWebElement.
+    /// </summary>
+    /// <param name="element">The IWebElement with the href attribute to use for opening the new tab.</param>
+    /// <exception cref="BotStaleElementException">Thrown if the referenced element data is stale.</exception>
+    /// <remarks>
+    /// If the IWebElement referenced is null, the function does nothing.
+    /// If the IWebElement referenced does not have an href attribute, the function does nothing.
+    /// </remarks>
+    public void OpenTabWithElement(IWebElement? element)
     {
         try
         {
-            string? downloadFileName = DownloadButtonElement.GetAttribute(ElementAttribute);
-            Console.WriteLine(downloadFileName);
-            if (downloadFileName != null)
+            if (element != null && element.GetAttribute("href") != null)
             {
-                string downloadFileSubstring = Path.GetFileName(downloadFileName);
-                return downloadFileSubstring;
+                string elementLink = element.GetAttribute("href")!;
+                _driver.SwitchTo().NewWindow(WindowType.Tab);
+                GoToWebPage(elementLink);
             }
-            return "";
         }
         catch (StaleElementReferenceException)
         {
             throw new BotStaleElementException("Referenced element data is stale. Check element state before attempting to click");
-        }
-    }
-
-    public static bool IsFileDownloaded(string DownloadFilePath)
-    {
-        if (File.Exists(DownloadFilePath))
-        {
-            return true;
-
-        }
-        else
-        {
-            return false;
         }
     }
 
     /// <summary>
-    /// Waits until the referenced IWebElement exists on the webpage.
-    /// If the IWebElement referenced is null, the function will return false.
-    /// Note that if the driver is instanceiated without a generous PageLoadStrategy, 
-    /// some combinations of actions may lead to the blot clicking elements which are not yet loaded on the page 
-    /// or the bot go though its actions to fast and leads to attempting no longer valid actions.
+    /// This function is aids in defineing which chrome tab the OS considers active.
+    /// It does not visually change the tab on the screen, but only changes the context window of the bot. 
+    /// Should be used in conjunction with creating new tabs, where closing a tab is not required. 
     /// </summary>
-    /// <param name="element">The IWebElement to wait for.</param>
-    /// <returns>true if the element is found, false if the element is null.</returns>
-    public bool WaitTillExists(IWebElement? element)
+    /// <param name="TabToSwitchTo"></param>
+    public void SwitchTab(int TabToSwitchTo)
     {
         try
         {
-            if (element != null)
-            {
-                _wait.Until(_driver => element.Displayed);
-                return true;
-            }
-            return false;
+            _driver.SwitchTo().Window(_windowHandles[TabToSwitchTo]);
         }
-        // should catch in case the element is not displayed due to website responsiveness
-        catch (WebDriverTimeoutException)
+        catch (NoSuchWindowException)
         {
-            throw new BotTimeOutException();
+            throw new BotWindowException($"The specified tab:{TabToSwitchTo}, does not exist.");
+        }
+        catch (ArgumentNullException)
+        {
+            throw new BotFindElementException("'TabToSwitchTo' argument was null.");
         }
     }
 
-
-    /// some combinations of actions may lead to the bot clicking elements which are not yet loaded on the page 
-    /// or the bot go though its actions too fast and leads to attempting no longer valid actions.
-    public void ExplicitWait(string oldurl)
+    /// <summary>
+    /// Closes the current tab and switches to the tab specified by 'TabToSwitchTo'.
+    /// If the tab to switch to does not exist, a BotWindowException is thrown.
+    /// </summary>
+    /// <param name="TabToSwitchTo">The tab to switch to after closing the current tab.</param>
+    /// <exception cref="BotWindowException">Thrown when the tab to switch to does not exist.</exception>
+    public void CloseTab(int TabToSwitchTo)
     {
         try
         {
-            _wait.Until(_driver => _driver.Url != oldurl);
+            _driver.Close();
+            SwitchTab(TabToSwitchTo);
         }
-        // should catch in case the element is not displayed due to website responsiveness
-        catch (WebDriverTimeoutException)
+        catch (BotWindowException)
         {
-            throw new BotTimeOutException();
+            Console.WriteLine("Tab to switch to does not exist.");
         }
+        catch (BotFindElementException)
+        {
+            Console.WriteLine("'TabToSwitchTo' argument was null.");
+        }
+
     }
+
 
     /// <summary>
     /// Goes back to the previous webpage in the browser history.
@@ -390,22 +558,6 @@ public class Bot
         _driver.Navigate().Back();
     }
 
-    /// <summary>
-    /// Only closes the browser instance of the Bot.
-    /// </summary>
-    public void CloseBotBrowser()
-    {
-        _driver.Close();
-    }
-
-
-    /// <summary>
-    /// Only stops the webdriver instance of the Bot .
-    /// </summary>
-    public void CloseBotDriver()
-    {
-        _driver.Dispose();
-    }
 
     /// <summary>
     ///  Closes and stops both the browser and the webdriver instance of the Bot. 
@@ -413,5 +565,28 @@ public class Bot
     public void CloseBot()
     {
         _driver.Quit();
+    }
+
+
+
+    /// <summary>
+    ///  Cleans up the preferences file used by the bot to store download preferences.
+    ///  Should be called before bot creation and after bot closure to ensure no stale preferences interfere with future bot runs.
+    /// </summary>
+    public static void CleanupPreferencesFile()
+    {
+        try
+        {
+            if (File.Exists(_preferencesFilePath))
+            {
+                File.Delete(_preferencesFilePath);
+                Console.WriteLine("Preferences file cleaned up");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Silently fail - we're exiting anyway
+            Console.WriteLine($"Cleanup warning: {ex.Message}");
+        }
     }
 }

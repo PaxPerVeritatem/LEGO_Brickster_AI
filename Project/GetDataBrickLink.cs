@@ -2,16 +2,17 @@ namespace LEGO_Brickster_AI;
 
 using OpenQA.Selenium;
 using OpenQA.Selenium.Interactions;
+using System.Text.RegularExpressions;
 sealed class GetDataBrickLink : IGetData
 {
-    public static string Url { get; set; } = "https://www.bricklink.com/v3/studio/design.page?idModel";
-
+    public static string Url { get; set; } = "https://www.bricklink.com/v3/studio/design.page?tab=Staff-Picks";
+    public static string DownloadFolderPath => @"..\..\..\LEGO_Data\BrickLink_Data";
 
 
     // Global run Properties
-    public static int MaxPage => 59;
+    public static int MaxPage => 2;
 
-    public static int PageLimit => 1;
+    public static int PageLimit => MaxPage;
 
     public static int ExpectedSetsPrPage => 50;
 
@@ -21,26 +22,17 @@ sealed class GetDataBrickLink : IGetData
 
     public static int ElementClickCounter { get; set; } = 0;
 
-    public static string DownloadFolderPath => @"..\..\..\LEGO_Data\BrickLink_Data";
-
 
     // Custom run Properties 
-    public static bool CustomRun => true;
+    public static bool CustomRun => false;
 
     public static int StartFromPage => 1;
 
     public static string UrlPageVarient => "";
 
-    public static Dictionary<string, string> NextPageElements => new() {
-        {"//button[@rel='next']", "xp" },
-        {"//button[@aria-label='Next']","xp" }
-        };
 
 
-
-
-
-    public static void UseCustomStartingPage()
+    public static void ConfigureCustomRun()
     {
         Url = $"{Url}{UrlPageVarient}{StartFromPage}";
         if (StartFromPage != MaxPage)
@@ -50,66 +42,86 @@ sealed class GetDataBrickLink : IGetData
     }
 
 
-
-    public static void AccessWebPage(Bot bot)
+    public static void AccessMainPage(Bot bot, Dictionary<string, string>? ElementCandidatesDict = null)
     {
+        Actions actionBuilder = new(bot.Driver);
         try
         {
-            bot.GoToWebpage();
-            Actions actionsBuilder = new(bot.Driver);
-            // find and click the ageGateElement
-            IWebElement? ageGateElement = bot.FindPageElement("//input[@class='blp-age-gate__input-field']", "xp");
-            if (bot.WaitTillExists(ageGateElement))
-            {
-                Bot.ClickElement(ageGateElement);
-                actionsBuilder.SendKeys("1");
-                actionsBuilder.SendKeys("9");
-                actionsBuilder.SendKeys("9");
-                actionsBuilder.SendKeys("4");
-                actionsBuilder.Perform();
-                actionsBuilder.Reset();
-            }
-            // find and press cookie button 
-            IWebElement? cookieButton = bot.FindPageElement("//div[@class='cookie-notice__content']//button[contains(text(), 'Just necessary')]", "xp");
-            if (bot.WaitTillExists(cookieButton))
-            {
-                Bot.ClickElement(cookieButton);
-            }
+            bot.GoToWebPage(bot.Url);
         }
         catch (BotUrlException ex)
         {
             Console.WriteLine($"Failed to load webpage: {ex.Message}");
         }
-        catch (BotDriverException ex)
+
+        // find and click the ageGateElement. If its not there Throw exception and continue. 
+        try
         {
-            Console.WriteLine(ex.Message);
+            IWebElement? ageGateElement = bot.FindPageElement("//input[@class='blp-age-gate__input-field']", "xp");
+            if (bot.WaitTillExists(ageGateElement))
+            {
+                Bot.ClickElement(ageGateElement);
+                actionBuilder.SendKeys("1");
+                actionBuilder.SendKeys("9");
+                actionBuilder.SendKeys("9");
+                actionBuilder.SendKeys("4");
+                actionBuilder.Perform();
+
+            }
         }
-        catch (BotFindElementException ex)
+        catch (BotFindElementException)
         {
-            Console.WriteLine($"Failed to return an html element\n{ex.Message}");
+            Console.WriteLine($"Age gate input field was not found or was not present. Continueing");
         }
-        catch (BotMechanismException ex)
+
+        // find and press cookie button. If its not there, throw an exception and continue. 
+        try
         {
-            Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
+            IWebElement? cookieButton = bot.FindPageElement("//article[@class='blp-cookie-notice__content']//button[contains(text(), 'Reject all')]", "xp");
+            if (bot.WaitTillExists(cookieButton))
+            {
+                Bot.ClickElement(cookieButton);
+                actionBuilder.Click();
+                actionBuilder.Perform();
+            }
         }
-        catch (BotTimeOutException ex)
+        catch (BotFindElementException)
         {
-            Console.WriteLine($"Bot waited _wait time before timing out waiting for an element to appear:{ex.Message}");
-        }
-        catch (BotStaleElementException ex)
-        {
-            Console.WriteLine($"{ex.Message}: Element was probably found but page responsiveness or reload caused staleness");
+            Console.WriteLine($"Cookie button was not found or was not present. Continueing");
         }
     }
 
 
-    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute)
+
+
+    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement AncestorElement)
     {
         // Attempt to get the list of LEGO set names for the current main page
-        bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism, IdentifierAttribute);
-
+        bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism, IdentifierAttribute, AncestorElement);
     }
 
+
+    /// <summary>
+    /// For this implementation of GetFullFileName, the fileExtension is harcoded to '.io', since all 
+    /// BrickLink files will be of this type. The only thing needed to be done is to get each Identifierattribute, 
+    /// ,which will the set name for each LEGO set, and append '.io' to it. Finally return the full file name for comparison to 
+    /// a potentially downloaded the file.   
+    /// </summary>
+    /// <param name="FileName"></param>
+    /// <returns></returns>
+    public static string GetFullFileName(string FileName)
+    {
+
+        // create a new string object via the GetInvalidFileNameChars, which gets a char array of all the invalid chars on windows. 
+        string invalidCharacters = new(Path.GetInvalidFileNameChars());
+
+        // create a regex for with square brackets, which Regex.Replace will interpret as look for any of the character. Without brackets, all characters would have become a single string. 
+        string invalidCharacterPattern = $"[{Regex.Escape(invalidCharacters)}]";
+
+        // Regex.Replace is faster then String.Replace since it uses bitmapping under the hood. 
+        string fullFileName = Regex.Replace(FileName, invalidCharacterPattern, "").Trim() + ".io";
+        return fullFileName;
+    }
 
     public static void DownloadPageElements(Bot bot, string ByMechanism)
     {
@@ -123,77 +135,94 @@ sealed class GetDataBrickLink : IGetData
                 // if current LinkText is not null click the set 
                 if (bot.WaitTillExists(setNameElement))
                 {
-                    Bot.ClickElement(setNameElement);
-                    // add for each LEGO set. Should finally match 'downloadAmount'
+                    bot.OpenTabWithElement(setNameElement);
+                    // increment for each clicked LEGO set. Should finally match 'downloadAmount'
                     ElementClickCounter += 1;
                 }
 
-                // Attempt to find 'Download Studio file' button element on LEGO set page
-                IWebElement? downloadButtonElement = bot.FindPageElement("//button[contains(text(),'Download Studio file')]", "xp");
-
-                if (bot.WaitTillExists(downloadButtonElement))
+                // The main div containing set info on each set page
+                IWebElement? Modeldiv = bot.FindPageElement("//div[@class='studio-model__meta-block studio-model__meta-block--main']", "xp");
+                // wait until ModelElement has rendered on page
+                if (bot.WaitTillExists(Modeldiv))
                 {
-                    // i belive we can forgive here since WaitTillExists checks for null element.
-                    string downloadFileSubstring = Bot.GetFileName(downloadButtonElement!, "Text");
+                    // find The download button element on each set page
+                    IWebElement? downloadButtonElement = bot.FindPageElement("//button[contains(text(),'Download Studio file')]", "xp");
 
-                    string downloadFilePath = Path.Combine(bot.AbsDownloadFolderPath!, downloadFileSubstring);
+                    //Use IdentifierAttribute as filename, since it matches the name of the downloaded file. 
+                    string fullFileName = GetFullFileName(IdentifierAttribute);
 
-                    if (Bot.IsFileDownloaded(downloadFilePath))
+                    // if the downloadbutton is there but the file is already downloaded, go back to main page.
+                    if (bot.IsFileDownloaded(fullFileName))
                     {
-                        // if the file has already been downloaded, skip it
-                        continue;
+                        bot.CloseTab(0);
                     }
-                    else
+                    else if (bot.WaitTillExists(downloadButtonElement))
                     {
                         Bot.ClickElement(downloadButtonElement);
-                        // try to find the next download button
-                        downloadButtonElement = bot.FindPageElement(".//button[contains(text(),'Download Studio file')]", "xp", downloadButtonElement);
+                        Thread.Sleep(500);
+                        bot.GetAndRenameFile(fullFileName);
+                        bot.CloseTab(0);
+                        Console.WriteLine($"Sucessfully Downloaded:{fullFileName}");
                     }
                 }
             }
 
-            catch (BotFindElementException ex)
+            // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
+            catch (BotFindElementException)
             {
-                // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
-                Console.WriteLine(ex.Message);
-                bot.GoBack();
-            }
-            catch (BotMechanismException ex)
-            {
-                Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
-
+                
+                //Console.WriteLine($"No more download buttons on current set page:{ex.Message}");
+                bot.CloseTab(0);
             }
             // should be thrown in case of stale element or 404 page error.
             catch (BotStaleElementException)
             {
-                bot.GoBack();
-                bot.GoBack();
+                // first go back to set page, and then press main page button on the set page in question. 
+                bot.CloseTab(0);
             }
+
+            // should be thrown in case of the file could not be downloaded for some reason. 
+            catch (BotFileDownloadException ex)
+            {
+                Console.WriteLine(ex.Message);
+                bot.CloseTab(0);
+            }
+
+            // When the time between clicking a download button and then attempting to rename the file might have been too short.
+            catch (BotFileRenameException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
         }
     }
 
-    public static IWebElement GetNextPageElement(Bot bot)
+    public static IWebElement FindDisplayedElement(Bot bot, Dictionary<string, string> ElementCandidatesDict)
     {
-        foreach (KeyValuePair<string, string> Elementtuple in NextPageElements)
+        foreach (KeyValuePair<string, string> Candiate in ElementCandidatesDict)
         {
             try
             {
-                IWebElement? nextPageElement = bot.FindPageElement(Elementtuple.Key, Elementtuple.Value);
+                IWebElement? nextPageElement = bot.FindPageElement(Candiate.Key, Candiate.Value);
                 if (nextPageElement != null && nextPageElement.Displayed)
                 {
                     return nextPageElement;
                 }
             }
-            catch (BotFindElementException ex)
+            catch (BotFindElementException)
             {
-                throw new BotFindElementException($"{ex.Message}: Element not found, trying next option.");
+                throw new BotFindElementException("Element not found in candidate dict, trying next option.");
             }
             catch (BotTimeOutException ex)
             {
                 throw new BotTimeOutException($"The referenced element was found but, it was not displayed on the webpage: {ex.Message}");
             }
+            catch (BotStaleElementException ex)
+            {
+                Console.WriteLine($"{ex.Message}");
+            }
         }
-        throw new BotStaleElementException("The referenced element is no longer displayed on the webpage");
+        throw new BotFindElementException("No elements from the candidate dict was found. The candiate elements are either not displayed, or not representative of the page state");
     }
 
 
@@ -204,12 +233,7 @@ sealed class GetDataBrickLink : IGetData
             // click next button if it is loaded. 
             if (bot.WaitTillExists(NextButtonElement))
             {
-                // get the url of the driver before clicking the next button. 
-                string oldUrl = bot.Driver.Url;
                 Bot.ClickElement(NextButtonElement);
-
-                // Bot should not proceed until the next page is fully loaded indicated by a change in the url.
-                bot.ExplicitWait(oldUrl);
             }
             // reset the bot attribute list for next page of elements. 
             bot.AttributeList = [];
@@ -240,7 +264,7 @@ sealed class GetDataBrickLink : IGetData
         }
         catch (BotDownloadAmountException ex)
         {
-            Console.WriteLine($"Assumed amount of LEGO Sets was either not correct or something went wrong during clicking set elements:{ex.Message}");
+            Console.WriteLine($"Assumed amount of clicked LEGO Sets was either not correct or something went wrong during clicking set elements:{ex.Message}");
             return false;
         }
     }
@@ -250,34 +274,57 @@ sealed class GetDataBrickLink : IGetData
     //process the Ldraw website LEGO sets and download them. 
     public static void ProcessData()
     {
+
         // initial check if run is custom or not
         if (CustomRun)
         {
-            UseCustomStartingPage();
+            ConfigureCustomRun();
         }
+        // clean up any existing preferences file from previous bot runs.
+        Bot.CleanupPreferencesFile();
+
+
         Bot bot = new(Url, DownloadFolderPath);
+
+        /*we need to implement right click and tab swap in DownloadPageElements for the download to work properly. Should make it faster and 
+        As well as enable not needed to press the load more creations button for each set. */
         try
         {
-            AccessWebPage(bot);
+            AccessMainPage(bot);
+            // the first page root which is the ancestor div of all set elements on the main page.
+            IWebElement? pageRootElement = bot.FindPageElement("//div[@class='studio-gallery__card-container']", "xp");
             for (int i = 0; i < PageLimit; i++)
             {
-                SetAttributeList(bot, "//article[contains(@class,'card')]//a[@class='moc-card__name']", "xp", "href");
-            
+                // we dont use Identifier attribute for simplicity
+                SetAttributeList(bot, $".//following::a[@class='moc-card__name']", "xp", "Text", pageRootElement);
                 DownloadPageElements(bot, "lt");
 
-                //     // Find the Next button elements which works, considering page responsiveness
-                //     IWebElement nextButtonElement = GetNextPageElement(bot);
-                //     GoToNextPage(bot, nextButtonElement);
-                // }
+
+                /* Set the pageRootElement as the last element in the attribute list. Find it from the previous pageRootElement.
+                Escape double quotes which will allow for pageRootElement to have single or double quotes in its name, but not both*/
+                pageRootElement = bot.FindPageElement($"//a[contains(text(),\"{bot.AttributeList[^1]}\")]", "xp");
+
+
+                // Find the Next button elements which works, considering page responsiveness
+                IWebElement? nextButtonElement = bot.FindPageElement("//button[contains(text(),'Load more creations')]", "xp");
+
+                // We dont have to click on the next button if we are on the last page
+                if (nextButtonElement != null && i < PageLimit - 1)
+                {
+                    Console.Write($"current root:{pageRootElement.Text}\n");
+                    GoToNextPage(bot, nextButtonElement);
+                    Thread.Sleep(1000);
+                }
             }
         }
-        catch (StaleElementReferenceException)
+        catch (BotFindElementException ex)
         {
-            Console.WriteLine($"No more next buttons. Reached last page.");
+            Console.WriteLine($"{ex}");
         }
         finally
         {
             AssertDownloadAmount();
+            Bot.CleanupPreferencesFile();
             bot.CloseBot();
         }
     }

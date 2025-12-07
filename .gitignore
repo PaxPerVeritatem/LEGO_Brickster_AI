@@ -571,7 +571,7 @@ pyrightconfig.json
 
 
 # Custom folders 
-# LEGO_Data folder
 Project/LEGO_Data/
+Project/DriverProfile
 
 # End of https://www.toptal.com/developers/gitignore/api/csharp,python

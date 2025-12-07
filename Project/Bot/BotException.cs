@@ -1,4 +1,5 @@
-namespace LEGO_Brickster_AI; 
+namespace LEGO_Brickster_AI;
+
 using System;
 public class BotException : Exception
 //Base BotException class
@@ -13,13 +14,13 @@ public class BotException : Exception
 /// <summary>
 ///  A general Bot exception for when the webdriver itself throws exceptions
 /// </summary>
-public class  BotDriverException : BotException
+public class BotDriverException : BotException
 {
     public BotDriverException() : base() { }
 
     public BotDriverException(string message) : base(message) { }
 
-public BotDriverException(string message, Exception inner) : base(message, inner) { }  
+    public BotDriverException(string message, Exception inner) : base(message, inner) { }
 }
 
 
@@ -84,4 +85,31 @@ public class BotDownloadAmountException : BotException
     public BotDownloadAmountException(string message) : base(message) { }
 
     public BotDownloadAmountException(string message, Exception inner) : base(message, inner) { }
+}
+
+public class BotFileDownloadException : BotException
+{
+    public BotFileDownloadException() : base() { }
+
+    public BotFileDownloadException(string message) : base(message) { }
+
+    public BotFileDownloadException(string message, Exception inner) : base(message, inner) { }
+}
+
+public class BotFileRenameException : BotException
+{
+    public BotFileRenameException() : base() { }
+
+    public BotFileRenameException(string message) : base(message) { }
+
+    public BotFileRenameException(string message, Exception inner) : base(message, inner) { }
+}
+
+public class BotWindowException : BotException
+{
+    public BotWindowException() : base() { }
+
+    public BotWindowException(string message) : base(message) { }
+
+    public BotWindowException(string message, Exception inner) : base(message, inner) { }
 }
