@@ -10,7 +10,7 @@ sealed class GetDataBrickLink : IGetData
 
 
     // Global run Properties
-    public static int MaxPage => 2;
+    public static int MaxPage => 10;
 
     public static int PageLimit => MaxPage;
 
@@ -29,6 +29,9 @@ sealed class GetDataBrickLink : IGetData
     public static int StartFromPage => 1;
 
     public static string UrlPageVarient => "";
+
+
+    public static int EnsureDownloadMatchName = 0;
 
 
 
@@ -58,16 +61,12 @@ sealed class GetDataBrickLink : IGetData
         try
         {
             IWebElement? ageGateElement = bot.FindPageElement("//input[@class='blp-age-gate__input-field']", "xp");
-            if (bot.WaitTillExists(ageGateElement))
-            {
-                Bot.ClickElement(ageGateElement);
-                actionBuilder.SendKeys("1");
-                actionBuilder.SendKeys("9");
-                actionBuilder.SendKeys("9");
-                actionBuilder.SendKeys("4");
-                actionBuilder.Perform();
-
-            }
+            bot.ClickElement(ageGateElement);
+            actionBuilder.SendKeys("1");
+            actionBuilder.SendKeys("9");
+            actionBuilder.SendKeys("9");
+            actionBuilder.SendKeys("4");
+            actionBuilder.Perform();
         }
         catch (BotFindElementException)
         {
@@ -78,12 +77,9 @@ sealed class GetDataBrickLink : IGetData
         try
         {
             IWebElement? cookieButton = bot.FindPageElement("//article[@class='blp-cookie-notice__content']//button[contains(text(), 'Reject all')]", "xp");
-            if (bot.WaitTillExists(cookieButton))
-            {
-                Bot.ClickElement(cookieButton);
-                actionBuilder.Click();
-                actionBuilder.Perform();
-            }
+            bot.ClickElement(cookieButton);
+            actionBuilder.Click();
+            actionBuilder.Perform();
         }
         catch (BotFindElementException)
         {
@@ -156,13 +152,13 @@ sealed class GetDataBrickLink : IGetData
                     {
                         bot.CloseTab(0);
                     }
-                    else if (bot.WaitTillExists(downloadButtonElement))
+                    else
                     {
-                        Bot.ClickElement(downloadButtonElement);
+                        bot.ClickElement(downloadButtonElement);
+                        EnsureDownloadMatchName++;
                         Thread.Sleep(500);
                         bot.GetAndRenameFile(fullFileName);
                         bot.CloseTab(0);
-                        Console.WriteLine($"Sucessfully Downloaded:{fullFileName}");
                     }
                 }
             }
@@ -170,7 +166,7 @@ sealed class GetDataBrickLink : IGetData
             // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
             catch (BotFindElementException)
             {
-                
+
                 //Console.WriteLine($"No more download buttons on current set page:{ex.Message}");
                 bot.CloseTab(0);
             }
@@ -226,16 +222,17 @@ sealed class GetDataBrickLink : IGetData
     }
 
 
-    public static void GoToNextPage(Bot bot, IWebElement NextButtonElement)
+    public static void GoToNextPage(Bot bot, IWebElement NextButtonElement, int? ClickAmount)
     {
         try
         {
-            // click next button if it is loaded. 
-            if (bot.WaitTillExists(NextButtonElement))
+            // BrickLink page button can be clicked multiple times and load multiple sets with no new page load. 
+            for (int i = 0; i < ClickAmount; i++)
             {
-                Bot.ClickElement(NextButtonElement);
+                // click next button if it is loaded. 
+                bot.ClickElement(NextButtonElement);
             }
-            // reset the bot attribute list for next page of elements. 
+            // reset the bot attribute list for next page of elements.
             bot.AttributeList = [];
         }
         catch (BotStaleElementException ex)
@@ -295,24 +292,26 @@ sealed class GetDataBrickLink : IGetData
             IWebElement? pageRootElement = bot.FindPageElement("//div[@class='studio-gallery__card-container']", "xp");
             for (int i = 0; i < PageLimit; i++)
             {
-                // we dont use Identifier attribute for simplicity
-                SetAttributeList(bot, $".//following::a[@class='moc-card__name']", "xp", "Text", pageRootElement);
-                DownloadPageElements(bot, "lt");
-
-
+                // we "Text" as identifier for simplicity 
+                if(pageRootElement !=null)
+                {
+                    SetAttributeList(bot, $".//following::a[@class='moc-card__name']", "xp", "Text", pageRootElement);
+                    DownloadPageElements(bot, "lt");
+                }
+               
                 /* Set the pageRootElement as the last element in the attribute list. Find it from the previous pageRootElement.
                 Escape double quotes which will allow for pageRootElement to have single or double quotes in its name, but not both*/
                 pageRootElement = bot.FindPageElement($"//a[contains(text(),\"{bot.AttributeList[^1]}\")]", "xp");
-
+                bot.WaitTillExists(pageRootElement);
 
                 // Find the Next button elements which works, considering page responsiveness
                 IWebElement? nextButtonElement = bot.FindPageElement("//button[contains(text(),'Load more creations')]", "xp");
-
-                // We dont have to click on the next button if we are on the last page
+                // We need i< PageLimit-1 since we dont want to set a new root, even if there is one, for future pages if current page is last page 
                 if (nextButtonElement != null && i < PageLimit - 1)
                 {
-                    Console.Write($"current root:{pageRootElement.Text}\n");
-                    GoToNextPage(bot, nextButtonElement);
+                    Console.Write($"current root:{pageRootElement!.Text}\n");
+                    GoToNextPage(bot, nextButtonElement, 1);
+                    // This long sleep is nessesary to load next ExpectedSetsPrPage 
                     Thread.Sleep(1000);
                 }
             }
@@ -325,6 +324,7 @@ sealed class GetDataBrickLink : IGetData
         {
             AssertDownloadAmount();
             Bot.CleanupPreferencesFile();
+            Console.WriteLine("Download Amount during current run: " + EnsureDownloadMatchName);
             bot.CloseBot();
         }
     }

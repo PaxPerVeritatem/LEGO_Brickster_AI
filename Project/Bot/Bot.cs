@@ -292,91 +292,127 @@ public class Bot
         }
     }
 
+
+
     public void GetAndRenameFile(string NewFileName)
     {
         try
         {
-            /*Get filesArray could maybe be remade into a TreeSet or TreeMap right now we sort the array
-            every time even if we dont rename the file. */
-
-            // get all files in download folder after the current file download has finished 
-            string[] filesArray = [.. Directory.GetFiles(AbsDownloadFolderPath)];
-
-            // if the download folder is not empty we sort it and get the latest file.
-            if (filesArray.Length > 1)
-            {
-                filesArray = [.. filesArray.OrderByDescending(File.GetLastWriteTime)];
-            }
-            // current file path and name 
-            string currentFilePath = filesArray[0];
-            string currentFileName = Path.GetFileName(currentFilePath);
-
-            // define a cancellation token with a timeout of 5 minutes
+            // define a cancellation token with a timeout of 10 seconds
             CancellationTokenSource cts = new(TimeSpan.FromSeconds(10));
 
-            // Wait until file download is confirmed before renaming
-            if (ConfirmFileDownload(currentFilePath, cts.Token))
+            //step 1) Get the path to the latest downloaded file in the designated Bot download folder and Wait until file download is confirmed 
+            string currentFilePath = ConfirmFileDownload(cts.Token);
+            string currentFileName = Path.GetFileName(currentFilePath);
+
+
+            // step 2) Only rename the file if it is NOT already the desired name.
+            if (currentFileName != NewFileName)
             {
-                // Only rename the file if it is NOT already the desired name.
-                if (currentFileName != NewFileName)
-                {
-                    FileInfo fileInfo = new(currentFilePath);
-                    fileInfo.MoveTo(Path.Combine(AbsDownloadFolderPath, NewFileName));
-                    return;
-                }
-                // delete file if it is a duplicate 
-                if (currentFileName.Contains("(1)"))
+                // The old file info object 
+                FileInfo fileInfo = new(currentFilePath);
+
+                // The new path is the download folder with the new file name 
+                string newFilePath = Path.Combine(AbsDownloadFolderPath, NewFileName);
+
+                // change the name of the file 
+                fileInfo.MoveTo(newFilePath);
+                Console.WriteLine($"Filename: {currentFileName} was changed to: {NewFileName}\n");
+
+                // Redefine the NewFileName in case the new name from MoveTo() contains "(1)" 
+                NewFileName = Path.GetFileName(newFilePath);
+                // delete the new file if it is a duplicate 
+                if (NewFileName.Contains("(1)"))
                 {
                     File.Delete(currentFilePath);
-                    return;
                 }
             }
+            Console.WriteLine($"Sucessfully Downloaded:{NewFileName}\n");
         }
         catch (IOException)
         {
             throw new BotFileRenameException("The fullFileName may include invalid characters for windows file names.\n");
         }
-        catch (IndexOutOfRangeException)
+        catch (BotFileDownloadException ex)
         {
-
-            throw new BotFileRenameException("Designated download folder was empty, when attempting to rename a file.\nThe time between clicking a download button and then attempting to rename the file might be too short.\n");
+            Console.WriteLine(ex.Message);
         }
-
     }
 
 
-    private static bool ConfirmFileDownload(string FilePath, CancellationToken CancellationToken)
+    private string ConfirmFileDownload(CancellationToken CancellationToken)
     {
-        // the path to the chrome tmp file for the current download 
-        string crDownloadPath = FilePath + ".crdownload";
+
         while (!CancellationToken.IsCancellationRequested)
         {
-            // if the tmp file stil exsists then we are still downloading 
-            if (File.Exists(crDownloadPath))
+            try
             {
-                Thread.Sleep(300);
-                continue;
-            }
-
-            // File is there but chrome might still have it locked
-            if (File.Exists(FilePath))
-            {
-                try
+               
+                string? currentFilePath = GetLastDownloadedFilePath();
+                // If the download folder was empty prior to current download
+                if (currentFilePath == null)
                 {
-                    // may throw IOException if chrome still has the file locked
-                    using FileStream stream = File.Open(FilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                    Thread.Sleep(300);
+                    continue;
+                }
+
+                // if the tmp file exsist, then we are still downloading or we caught the file name in the middle of downloading.  
+                if (currentFilePath.EndsWith(".crdownload"))
+                {
+                    Thread.Sleep(300);
+                    continue;
+                }
+
+                string crdownloadFilePath = currentFilePath + ".crdownload";
+                // if we have finished downloading but the tmp file is not deleted yet by chrome
+                if (File.Exists(crdownloadFilePath))
+                {
+                    Thread.Sleep(300);
+                    continue;
+                }
+
+                // Final file is there but chrome might still have it locked
+                if (File.Exists(currentFilePath))
+                {
+                    try
                     {
-                        return true;
+                        // may throw IOException if chrome still has the file locked
+                        using FileStream stream = File.Open(currentFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                        {
+                            return currentFilePath;
+                        }
+                    }
+                    catch (IOException)
+                    {
+                        Console.WriteLine($"File {Path.GetFileName(currentFilePath)} was still locked after download has finished");
+                        Thread.Sleep(300);
+                        continue;
                     }
                 }
-                catch (IOException)
-                {
-                    Console.WriteLine($"File {Path.GetFileName(FilePath)} was still locked after download has finished");
-                    Thread.Sleep(300);
-                }
+                return currentFilePath;
+
+            }
+            catch (BotFileDownloadException ex)
+            {
+                Console.WriteLine(ex.Message);
             }
         }
-        throw new BotFileDownloadException("File download confirmation timed out. File might have taken too long to download or the download was interrupted.");
+        throw new BotFileDownloadException("File download confirmation timed out. File might have taken too long to download or chrome locked the file indenfinetly and could not be opened \n File may still work .");
+    }
+
+
+
+
+    private string? GetLastDownloadedFilePath()
+    {
+
+        string[] filesArray = Directory.GetFiles(AbsDownloadFolderPath);
+        string? latestModifiedFile = filesArray.MaxBy(file => File.GetLastWriteTime(file));
+        if (latestModifiedFile != null)
+        {
+            return latestModifiedFile;
+        }
+        return null; 
     }
 
     /// <summary>
@@ -462,11 +498,14 @@ public class Bot
     /// </summary>
     /// <param name="element">The IWebElement to click.</param>
     /// <exception cref="BotElementException">Thrown if the referenced element data is stale.</exception>
-    public static void ClickElement(IWebElement element)
+    public void ClickElement(IWebElement? element)
     {
         try
         {
-            element.Click();
+            if (WaitTillExists(element))
+            {
+                element!.Click();
+            }
         }
         catch (StaleElementReferenceException)
         {
