@@ -65,7 +65,7 @@ public sealed class BotTest(ITestOutputHelper output)
                 //press reject to cookies on google.com if TestUrl_2 is utilized
                 IWebElement? RejectButton = bot.FindPageElement("//button[@id='W0wltc']", "xp");
                 Assert.NotNull(RejectButton);
-                Bot.ClickElement(RejectButton);
+                bot.ClickElement(RejectButton);
                 break;
 
             case TestUrl_3:
@@ -73,22 +73,18 @@ public sealed class BotTest(ITestOutputHelper output)
                 Actions actionsBuilder = new(testdriver);
                 // find and click the ageGateElement
                 IWebElement? ageGateElement = bot.FindPageElement("//input[@class='blp-age-gate__input-field']", "xp");
-                if (bot.WaitTillExists(ageGateElement))
-                {
-                    Bot.ClickElement(ageGateElement);
-                    actionsBuilder.SendKeys("1");
-                    actionsBuilder.SendKeys("9");
-                    actionsBuilder.SendKeys("9");
-                    actionsBuilder.SendKeys("4");
-                    actionsBuilder.Perform();
-                    actionsBuilder.Reset();
-                }
+
+                bot.ClickElement(ageGateElement);
+                actionsBuilder.SendKeys("1");
+                actionsBuilder.SendKeys("9");
+                actionsBuilder.SendKeys("9");
+                actionsBuilder.SendKeys("4");
+                actionsBuilder.Perform();
+                actionsBuilder.Reset();
+
                 // find and press cookie button 
                 IWebElement? cookieButton = bot.FindPageElement("//div[@class='cookie-notice__content']//button[contains(text(), 'Just necessary')]", "xp");
-                if (bot.WaitTillExists(cookieButton))
-                {
-                    Bot.ClickElement(cookieButton);
-                }
+                bot.ClickElement(cookieButton);
                 break;
 
             default:
@@ -127,7 +123,7 @@ public sealed class BotTest(ITestOutputHelper output)
     /// <param name="TestBot">The bot instance to test.</param>
     /// <param name="ElementString">The element string to use for finding the elements.</param>
     /// <param name="ByMechanism">The mechanism to use for finding the elements.</param>
-    private static void FindPageElementsException(Bot TestBot, string ElementString, string ByMechanism, string IdentifierAttribute="Text")
+    private static void FindPageElementsException(Bot TestBot, string ElementString, string ByMechanism, string IdentifierAttribute = "Text")
     {
         // Forgive possible null reference for ElementString
         TestBot.FindPageElements(ElementString, ByMechanism, IdentifierAttribute);
@@ -264,7 +260,7 @@ public sealed class BotTest(ITestOutputHelper output)
         AccessTestWebPage(bot, TestUrl);
         try
         {
-            bot.AttributeList = bot.FindPageElements(ElementString, ByMechanism, IdentifierAttribute,null);
+            bot.AttributeList = bot.FindPageElements(ElementString, ByMechanism, IdentifierAttribute, null);
             _output.WriteLine($"{bot.AttributeList.Count} of element(s) by{IdentifierAttribute} added to the Bot._nameList");
             _output.WriteLine("--------------------");
             foreach (string name in bot.AttributeList)
@@ -313,29 +309,23 @@ public sealed class BotTest(ITestOutputHelper output)
         {
             bot.CloseBot();
         }
-        static void ClickElementTest(string ElementString, Bot testBot, bool GoBack)
+        static void ClickElementTest(string ElementString, Bot bot, bool GoBack)
         {
             IWebElement? clickableElement;
             if (GoBack)
             {
                 for (int i = 0; i < 2; i++)
                 {
-                    clickableElement = testBot.FindPageElement(ElementString, "xp");
+                    clickableElement = bot.FindPageElement(ElementString, "xp");
                     Assert.NotNull(clickableElement);
-                    if (testBot.WaitTillExists(clickableElement))
-                    {
-                        Bot.ClickElement(clickableElement);
-                        testBot.GoBack();
-                    }
+                    bot.ClickElement(clickableElement);
+                    bot.GoBack();
                 }
             }
             else
             {
-                clickableElement = testBot.FindPageElement(ElementString, "xp");
-                if (testBot.WaitTillExists(clickableElement))
-                {
-                    Bot.ClickElement(clickableElement);
-                }
+                clickableElement = bot.FindPageElement(ElementString, "xp");
+                bot.ClickElement(clickableElement);
             }
         }
     }
@@ -372,7 +362,7 @@ public sealed class BotTest(ITestOutputHelper output)
         try
         {
             bot.GoToWebPage(bot.Url);
-            Assert.Throws<BotStaleElementException>(() => Bot.ClickElement(element));
+            Assert.Throws<BotStaleElementException>(() => bot.ClickElement(element));
         }
         finally
         {
@@ -534,7 +524,7 @@ public sealed class BotTest(ITestOutputHelper output)
         Bot bot = new(InvalidUrl, TestDownloadFolderPath);
         try
         {
-            Assert.Throws<BotUrlException>(() =>bot.GoToWebPage(bot.Url));
+            Assert.Throws<BotUrlException>(() => bot.GoToWebPage(bot.Url));
         }
         finally
         {

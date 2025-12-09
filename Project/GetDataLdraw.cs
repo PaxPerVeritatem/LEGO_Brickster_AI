@@ -27,7 +27,7 @@ sealed class GetDataLdraw : IGetData
 
 
     // Custom run Properties 
-    public static bool CustomRun => false;
+    public static bool CustomRun => true;
 
     public static int StartFromPage => 1;
 
@@ -66,7 +66,7 @@ sealed class GetDataLdraw : IGetData
     public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement? AncestorElementString)
     {
         // Attempt to get the list of LEGO set names for the current main page
-        bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism,IdentifierAttribute);
+        bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism, IdentifierAttribute);
     }
 
     /// <summary>
@@ -104,12 +104,10 @@ sealed class GetDataLdraw : IGetData
                 IWebElement? setNameElement = bot.FindPageElement(IdentifierAttribute, ByMechanism);
 
                 // if current LinkText is not null call Click()
-                if (bot.WaitTillExists(setNameElement))
-                {
-                    Bot.ClickElement(setNameElement);
-                    // add for each LEGO set. Should finally match 'downloadAmount'
-                    ElementClickCounter += 1;
-                }
+                bot.ClickElement(setNameElement);
+                // add for each LEGO set. Should finally match 'downloadAmount'
+                ElementClickCounter += 1;
+
 
                 // Attempt to find 'Models' element on LEGO set page
                 IWebElement? ModelsElement = bot.FindPageElement("//div[contains(text(),'Model')]", "xp");
@@ -139,7 +137,7 @@ sealed class GetDataLdraw : IGetData
                         else
                         {
                             // press download button
-                            Bot.ClickElement(downloadButtonElement);
+                            bot.ClickElement(downloadButtonElement);
                             // try to find the next download button
                             downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", downloadButtonElement);
                         }
@@ -191,20 +189,18 @@ sealed class GetDataLdraw : IGetData
     }
 
 
-    public static void GoToNextPage(Bot bot, IWebElement NextButtonElement)
+    // Since we load a new page on every NextButtonElementClick, ClickAmount and be defaulted to null 
+    public static void GoToNextPage(Bot bot, IWebElement NextButtonElement,int? ClickAmount=null)
     {
         try
         {
-            // click next button if it is loaded. 
-            if (bot.WaitTillExists(NextButtonElement))
-            {
-                // get the url of the driver before clicking the next button. 
-                string oldUrl = bot.Driver.Url;
-                Bot.ClickElement(NextButtonElement);
+            // get the url of the driver before clicking the next button. 
+            string oldUrl = bot.Driver.Url;
+            bot.ClickElement(NextButtonElement);
 
-                // Bot should not proceed until the next page is fully loaded indicated by a change in the url.
-                bot.ExplicitWaitURL(oldUrl);
-            }
+            // Bot should not proceed until the next page is fully loaded indicated by a change in the url.
+            bot.ExplicitWaitURL(oldUrl);
+
             // reset the bot attribute list for next page of elements. 
             bot.AttributeList = [];
         }
@@ -267,7 +263,7 @@ sealed class GetDataLdraw : IGetData
             AccessMainPage(bot, null);
             for (int i = 0; i < PageLimit; i++)
             {
-                SetAttributeList(bot, "fi-ta-cell-name", "class","Text", null);
+                SetAttributeList(bot, "fi-ta-cell-name", "class", "Text", null);
 
                 DownloadPageElements(bot, "lt");
 

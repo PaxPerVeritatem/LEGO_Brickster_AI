@@ -218,7 +218,7 @@ interface IGetData
   ///      }
   /// </code>
   /// </remarks>
-  public static abstract void GoToNextPage(Bot bot, IWebElement NextButtonElement);
+  public static abstract void GoToNextPage(Bot bot, IWebElement NextButtonElement, int? ClickAmount);
 
 
 
