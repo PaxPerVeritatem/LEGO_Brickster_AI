@@ -14,7 +14,7 @@ sealed class GetDataLdraw : IGetData
     // Global run Properties
     public static int MaxPage => 59;
 
-    public static int PageLimit => 1;
+    public static int PageLimit => 2;
 
     public static int ExpectedSetsPrPage => 25;
 
@@ -29,24 +29,28 @@ sealed class GetDataLdraw : IGetData
     // Custom run Properties 
     public static bool CustomRun => true;
 
-    public static int StartFromPage => 1;
+    public static int StartFromPage => 2;
 
-    public static string UrlPageVarient => "?page=";
+    public static string? UrlPageVarient {get; set; } = "?page=";
+
+    // We use UrlPageVarient in this implementation so we dont need SubpageElementTuple. 
+    public static (string ElementString, string ByMechanism)? SubpageElementTuple { get; set; }  = null; 
 
 
-
-    public static void ConfigureCustomRun()
+    // dont need a bot to configure custom runs for this implementation of IGetData
+    public static void ConfigureCustomRun(Bot? bot=null)
     {
         Url = $"{Url}{UrlPageVarient}{StartFromPage}";
         if (StartFromPage != MaxPage)
         {
             ExpectedElementClickAmount += ExpectedElementClickDeviation;
         }
+
     }
 
 
 
-    public static void AccessMainPage(Bot bot, Dictionary<string, string>? CandidateElementDict)
+    public static void AccessMainPage(Bot bot, Dictionary<string, string>? CandidateElementDict=null)
     {
         try
         {
@@ -63,7 +67,7 @@ sealed class GetDataLdraw : IGetData
     }
 
 
-    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement? AncestorElementString)
+    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement? AncestorElementString=null)
     {
         // Attempt to get the list of LEGO set names for the current main page
         bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism, IdentifierAttribute);
@@ -144,10 +148,10 @@ sealed class GetDataLdraw : IGetData
                     }
                 }
             }
-            catch (BotFindElementException ex)
+            catch (BotFindElementException)
             {
                 // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
-                Console.WriteLine($"No more download buttons on current set page:{ex.Message}");
+                Console.WriteLine($"No more download buttons on current set page for: {IdentifierAttribute}\n");
                 bot.GoBack();
             }
             catch (BotMechanismException ex)
@@ -190,7 +194,7 @@ sealed class GetDataLdraw : IGetData
 
 
     // Since we load a new page on every NextButtonElementClick, ClickAmount and be defaulted to null 
-    public static void GoToNextPage(Bot bot, IWebElement NextButtonElement,int? ClickAmount=null)
+    public static void GoToNextPage(Bot bot, IWebElement NextButtonElement, int? ClickAmount = null)
     {
         try
         {
@@ -240,11 +244,14 @@ sealed class GetDataLdraw : IGetData
     //process the Ldraw website LEGO sets and download them. 
     public static void ProcessData()
     {
+        
+
         Dictionary<string, string> NextPageCandiates = new()
         {
             { "//button[@rel='next']", "xp" },
             { "//button[@aria-label='Next']","xp" }
         };
+
 
         // initial check if run is custom or not
         if (CustomRun)
@@ -260,10 +267,10 @@ sealed class GetDataLdraw : IGetData
         try
         {
             // no dict needed here.
-            AccessMainPage(bot, null);
+            AccessMainPage(bot);
             for (int i = 0; i < PageLimit; i++)
             {
-                SetAttributeList(bot, "fi-ta-cell-name", "class", "Text", null);
+                SetAttributeList(bot, "fi-ta-cell-name", "class", "Text");
 
                 DownloadPageElements(bot, "lt");
 
