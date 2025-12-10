@@ -284,6 +284,7 @@ public class Bot
         string downloadFilePath = Path.Combine(AbsDownloadFolderPath, InferredFilename);
         if (File.Exists(downloadFilePath))
         {
+            Console.WriteLine($"File by the name:{InferredFilename} already exsists in the download folder. Skipping download.\n");
             return true;
         }
         else

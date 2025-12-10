@@ -90,7 +90,10 @@ interface IGetData
   /// A substring serving as an extension the main website url extension, 
   /// which can be combined with <param name = "StartFromPage"> to begin a run from a certain subpage.  
   /// </summary>
-  static abstract string UrlPageVarient { get; }
+  static abstract string? UrlPageVarient {get; set;}
+
+
+  static abstract (string ElementString,string ByMechanism)? SubpageElementTuple  { get; set; }
 
 
   /// <summary>
@@ -110,7 +113,7 @@ interface IGetData
   /// such as <c>Url</c> and <c> ExpectedElementClickAmount</c> via the custom run Properties.
   /// <c> AccessWebPage()</c>  within <c> ProcessData()</c>
   /// </summary>
-  public static abstract void ConfigureCustomRun();
+  public static abstract void ConfigureCustomRun(Bot bot);
 
 
 
@@ -124,7 +127,6 @@ interface IGetData
   ///  and utilizeing the saved cookies for the chrome driver. This can vastely simply the implementation of AccessMainPage(). 
   /// </summary>
   public static abstract void AccessMainPage(Bot bot, Dictionary<string, string> ElementCandidatesDict);
-
 
 
   /// <summary>

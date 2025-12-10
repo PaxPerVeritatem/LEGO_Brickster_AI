@@ -10,12 +10,13 @@ sealed class GetDataBrickLink : IGetData
 
 
     // Global run Properties
-    public static int MaxPage => 10;
+    public static int MaxPage => 2;
 
     public static int PageLimit => MaxPage;
 
     public static int ExpectedSetsPrPage => 50;
 
+    // so far there does not seems to be any 404 error for any sets. 
     public static int ExpectedElementClickDeviation => 0;
 
     public static int ExpectedElementClickAmount { get; set; } = ExpectedSetsPrPage * PageLimit - ExpectedElementClickDeviation;
@@ -24,24 +25,26 @@ sealed class GetDataBrickLink : IGetData
 
 
     // Custom run Properties 
-    public static bool CustomRun => false;
+    public static bool CustomRun => true;
 
     public static int StartFromPage => 1;
 
-    public static string UrlPageVarient => "";
+    // We use SubPageElement in this implementation, so we dont need UrlPageVarien. 
+    public static string? UrlPageVarient {get; set; } = null; 
+    
+    public static (string ElementString,string ByMechanism)? SubpageElementTuple  { get; set; } = ("//li[@data-ts-id='0']", "xp");  
 
 
-    public static int EnsureDownloadMatchName = 0;
+    public static int DataDownloadAmount = 0;
 
 
 
-    public static void ConfigureCustomRun()
+    public static void ConfigureCustomRun(Bot bot)
     {
-        Url = $"{Url}{UrlPageVarient}{StartFromPage}";
-        if (StartFromPage != MaxPage)
-        {
-            ExpectedElementClickAmount += ExpectedElementClickDeviation;
-        }
+        //find and click the subpage link text to acess subpage. Additionally, we can use forgive operator, since we always manually set SubPageElementTuple. 
+        IWebElement? subPageElement = bot.FindPageElement(SubpageElementTuple!.Value.ElementString,SubpageElementTuple!.Value.ByMechanism!);
+        bot.ClickElement(subPageElement);
+        Thread.Sleep(1000); 
     }
 
 
@@ -86,9 +89,6 @@ sealed class GetDataBrickLink : IGetData
             Console.WriteLine($"Cookie button was not found or was not present. Continueing");
         }
     }
-
-
-
 
     public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement AncestorElement)
     {
@@ -155,7 +155,7 @@ sealed class GetDataBrickLink : IGetData
                     else
                     {
                         bot.ClickElement(downloadButtonElement);
-                        EnsureDownloadMatchName++;
+                        DataDownloadAmount++;
                         Thread.Sleep(500);
                         bot.GetAndRenameFile(fullFileName);
                         bot.CloseTab(0);
@@ -271,34 +271,33 @@ sealed class GetDataBrickLink : IGetData
     //process the Ldraw website LEGO sets and download them. 
     public static void ProcessData()
     {
-
-        // initial check if run is custom or not
-        if (CustomRun)
-        {
-            ConfigureCustomRun();
-        }
         // clean up any existing preferences file from previous bot runs.
         Bot.CleanupPreferencesFile();
 
-
         Bot bot = new(Url, DownloadFolderPath);
 
-        /*we need to implement right click and tab swap in DownloadPageElements for the download to work properly. Should make it faster and 
-        As well as enable not needed to press the load more creations button for each set. */
         try
         {
             AccessMainPage(bot);
+            // initial check if run is custom or not
+            if (CustomRun)
+            {
+                /*We need to configure the run after acessing the main page for this implementation, since subpages 
+                can only be accessed though the main page by direct bot clicks.*/ 
+                ConfigureCustomRun(bot);
+            }
+
             // the first page root which is the ancestor div of all set elements on the main page.
             IWebElement? pageRootElement = bot.FindPageElement("//div[@class='studio-gallery__card-container']", "xp");
             for (int i = 0; i < PageLimit; i++)
             {
                 // we "Text" as identifier for simplicity 
-                if(pageRootElement !=null)
+                if (pageRootElement != null)
                 {
                     SetAttributeList(bot, $".//following::a[@class='moc-card__name']", "xp", "Text", pageRootElement);
                     DownloadPageElements(bot, "lt");
                 }
-               
+
                 /* Set the pageRootElement as the last element in the attribute list. Find it from the previous pageRootElement.
                 Escape double quotes which will allow for pageRootElement to have single or double quotes in its name, but not both*/
                 pageRootElement = bot.FindPageElement($"//a[contains(text(),\"{bot.AttributeList[^1]}\")]", "xp");
@@ -324,7 +323,7 @@ sealed class GetDataBrickLink : IGetData
         {
             AssertDownloadAmount();
             Bot.CleanupPreferencesFile();
-            Console.WriteLine("Download Amount during current run: " + EnsureDownloadMatchName);
+            Console.WriteLine("Download Amount during current run: " + DataDownloadAmount);
             bot.CloseBot();
         }
     }
