@@ -1,10 +1,10 @@
 # 🧱 LEGO Brickster AI
 
-<div align="center">
-  <img src="images/ai-under-construction.png" alt="AI Under Construction" width="600"/>
-</div>
 
-<div align="center">
+![alt text](https://https://github.com/PaxPerVeritatem/LEGO_Brickster_AI/images/ai-under-construction.png "Logo Title Text 1")
+
+
+
 
 > Automated data collection framework for building LEGO training datasets from BrickLink and LDraw repositories
 
