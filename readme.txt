@@ -109,32 +109,12 @@ await brickLinkCollector.CollectData(
     maxSets: 1000
 );
 
-// Collect from LDraw repository
-IGetData ldrawCollector = new GetDataLdraw();
-await ldrawCollector.CollectData(
-    outputPath: "./collected_data",
-    maxSets: 1000
-);
-```
+
 
 ### Bot Abstraction Layer
 
 ```csharp
 // The Bot class provides a clean interface over Selenium
-using (var bot = new Bot())
-{
-    try 
-    {
-        bot.NavigateTo("https://example.com");
-        bot.ClickElement(By.Id("download-button"));
-        bot.WaitForDownload();
-    }
-    catch (BotException ex)
-    {
-        // Custom exception handling
-        Console.WriteLine($"Bot error: {ex.Message}");
-    }
-}
 ```
 
 ## 🗺️ Development Roadmap
