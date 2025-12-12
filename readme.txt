@@ -1,8 +1,7 @@
 # 🧱 LEGO Brickster AI
 
 
-![alt text](https://https://github.com/PaxPerVeritatem/LEGO_Brickster_AI/images/ai-under-construction.png "Logo Title Text 1")
-
+![alt text](https://github.com/PaxPerVeritatem/LEGO_Brickster_AI/images/ai-under-construction.png "Logo Title Text 1")
 
 
 
