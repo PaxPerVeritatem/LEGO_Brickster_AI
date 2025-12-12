@@ -18,7 +18,7 @@ sealed class GetDataLdraw : IGetData
 
     public static int ExpectedSetsPrPage => 25;
 
-    public static int ExpectedElementClickDeviation => 10;
+    public static int ExpectedElementClickDeviation => 0;
 
     public static int ExpectedElementClickAmount { get; set; } = ExpectedSetsPrPage * PageLimit - ExpectedElementClickDeviation;
 

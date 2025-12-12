@@ -14,6 +14,8 @@ using OpenQA.Selenium.Support.UI;
 /// </summary>
 public class Bot
 {
+
+    // ChromeDriver version must always match the version of chrome. 
     private readonly UndetectedChromeDriver _driver;
     public UndetectedChromeDriver Driver => _driver;
 
@@ -348,7 +350,7 @@ public class Bot
         {
             try
             {
-               
+
                 string? currentFilePath = GetLastDownloadedFilePath();
                 // If the download folder was empty prior to current download
                 if (currentFilePath == null)
@@ -413,7 +415,7 @@ public class Bot
         {
             return latestModifiedFile;
         }
-        return null; 
+        return null;
     }
 
     /// <summary>

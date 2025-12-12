@@ -10,7 +10,7 @@ sealed class GetDataBrickLink : IGetData
 
 
     // Global run Properties
-    public static int MaxPage => 2;
+    public static int MaxPage => 200;
 
     public static int PageLimit => MaxPage;
 
@@ -32,7 +32,7 @@ sealed class GetDataBrickLink : IGetData
     // We use SubPageElement in this implementation, so we dont need UrlPageVarien. 
     public static string? UrlPageVarient {get; set; } = null; 
     
-    public static (string ElementString,string ByMechanism)? SubpageElementTuple  { get; set; } = ("//li[@data-ts-id='0']", "xp");  
+    public static (string ElementString,string ByMechanism)? SubpageElementTuple  { get; set; } = ("//li[@data-ts-id='3']", "xp");  
 
 
     public static int DataDownloadAmount = 0;
@@ -275,6 +275,7 @@ sealed class GetDataBrickLink : IGetData
         Bot.CleanupPreferencesFile();
 
         Bot bot = new(Url, DownloadFolderPath);
+       
 
         try
         {
