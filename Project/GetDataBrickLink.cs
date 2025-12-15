@@ -5,12 +5,11 @@ using OpenQA.Selenium.Interactions;
 using System.Text.RegularExpressions;
 sealed class GetDataBrickLink : IGetData
 {
+    // Global run Properties
     public static string Url { get; set; } = "https://www.bricklink.com/v3/studio/design.page?tab=Staff-Picks";
     public static string DownloadFolderPath => @"..\..\..\LEGO_Data\BrickLink_Data";
 
-
-    // Global run Properties
-    public static int MaxPage => 200;
+    public static int MaxPage => 40;
 
     public static int PageLimit => MaxPage;
 
@@ -27,12 +26,15 @@ sealed class GetDataBrickLink : IGetData
     // Custom run Properties 
     public static bool CustomRun => true;
 
-    public static int StartFromPage => 1;
+    // Not nessesary for this implementation. 
+    public static int StartFromPage => 0;
 
     // We use SubPageElement in this implementation, so we dont need UrlPageVarien. 
-    public static string? UrlPageVarient {get; set; } = null; 
-    
-    public static (string ElementString,string ByMechanism)? SubpageElementTuple  { get; set; } = ("//li[@data-ts-id='3']", "xp");  
+    public static string? UrlPageVarient { get; set; } = null;
+
+
+    // Each subpage is just a IWebElement with an accompanying the ByMechanism to call FindElement during ConfigureCustomRun(). 
+    public static (string ElementString, string ByMechanism)? SubpageElementTuple { get; set; } = ("//li[@data-ts-id='1']", "xp");
 
 
     public static int DataDownloadAmount = 0;
@@ -42,9 +44,9 @@ sealed class GetDataBrickLink : IGetData
     public static void ConfigureCustomRun(Bot bot)
     {
         //find and click the subpage link text to acess subpage. Additionally, we can use forgive operator, since we always manually set SubPageElementTuple. 
-        IWebElement? subPageElement = bot.FindPageElement(SubpageElementTuple!.Value.ElementString,SubpageElementTuple!.Value.ByMechanism!);
+        IWebElement? subPageElement = bot.FindPageElement(SubpageElementTuple!.Value.ElementString, SubpageElementTuple!.Value.ByMechanism!);
         bot.ClickElement(subPageElement);
-        Thread.Sleep(1000); 
+        Thread.Sleep(1000);
     }
 
 
@@ -275,7 +277,7 @@ sealed class GetDataBrickLink : IGetData
         Bot.CleanupPreferencesFile();
 
         Bot bot = new(Url, DownloadFolderPath);
-       
+
 
         try
         {
@@ -284,7 +286,7 @@ sealed class GetDataBrickLink : IGetData
             if (CustomRun)
             {
                 /*We need to configure the run after acessing the main page for this implementation, since subpages 
-                can only be accessed though the main page by direct bot clicks.*/ 
+                can only be accessed though the main page by direct bot clicks.*/
                 ConfigureCustomRun(bot);
             }
 
