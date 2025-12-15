@@ -17,7 +17,10 @@ static class Program
         //Application.Run(new Form1());
         
         //GetDataLdraw.ProcessData();
-        GetDataBrickLink.ProcessData();
+        //GetDataBrickLink.ProcessData();
+        DataConverter.ConvertFiles(); 
+
+        
     }
 
 }
