@@ -24,7 +24,9 @@ sealed class GetDataLdraw : IGetData
 
     public static int ElementClickCounter { get; set; } = 0;
 
-
+    // never did use this one for this implementation. 
+    public static int ElementDownloadCounter { get; set; } = 0;
+    
 
     // Custom run Properties 
     public static bool CustomRun => true;

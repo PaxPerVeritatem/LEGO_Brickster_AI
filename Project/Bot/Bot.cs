@@ -286,7 +286,7 @@ public class Bot
         string downloadFilePath = Path.Combine(AbsDownloadFolderPath, InferredFilename);
         if (File.Exists(downloadFilePath))
         {
-            Console.WriteLine($"File by the name:{InferredFilename} already exsists in the download folder. Skipping download.\n");
+            Console.WriteLine($"File by the name: {InferredFilename} already exsists in the download folder. Skipping download.\n");
             return true;
         }
         else
@@ -327,14 +327,15 @@ public class Bot
                 // delete the new file if it is a duplicate 
                 if (NewFileName.Contains("(1)"))
                 {
+                    Console.WriteLine($"Duplicate file found by name:{NewFileName}, deleting duplicate file.\n");
                     File.Delete(currentFilePath);
                 }
             }
-            Console.WriteLine($"Sucessfully Downloaded:{NewFileName}\n");
+            Console.WriteLine($"{NewFileName} downloaded successfully.\n");
         }
-        catch (IOException)
+        catch (IOException ex)
         {
-            throw new BotFileRenameException("The fullFileName may include invalid characters for windows file names.\n");
+            throw new BotFileRenameException($"The fullFileName:{NewFileName} may have included invalid characters for windows file names: {ex.Message}");
         }
         catch (BotFileDownloadException ex)
         {
