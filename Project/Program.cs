@@ -18,9 +18,7 @@ static class Program
         
         //GetDataLdraw.ProcessData();
         //GetDataBrickLink.ProcessData();
-        DataConverter.ConvertFiles(); 
-
-        
+        DataConverter.ConvertFiles();        
     }
 
 }
