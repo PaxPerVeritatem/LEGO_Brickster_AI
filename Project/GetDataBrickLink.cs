@@ -9,7 +9,7 @@ sealed class GetDataBrickLink : IGetData
     public static string Url { get; set; } = "https://www.bricklink.com/v3/studio/design.page?tab=Staff-Picks";
     public static string DownloadFolderPath => @"..\..\..\LEGO_Data\BrickLink_Data";
 
-    public static int MaxPage => 40;
+    public static int MaxPage => 100;
 
     public static int PageLimit => MaxPage;
 
@@ -34,7 +34,7 @@ sealed class GetDataBrickLink : IGetData
 
 
     // Each subpage is just a IWebElement with an accompanying the ByMechanism to call FindElement during ConfigureCustomRun(). 
-    public static (string ElementString, string ByMechanism)? SubpageElementTuple { get; set; } = ("//li[@data-ts-id='1']", "xp");
+    public static (string ElementString, string ByMechanism)? SubpageElementTuple { get; set; } = ("//li[@data-ts-id='0']", "xp");
 
 
     public static int DataDownloadAmount = 0;
