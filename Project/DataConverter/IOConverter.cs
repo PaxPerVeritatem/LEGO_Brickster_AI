@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 using ICSharpCode.SharpZipLib.Zip;
-static class DataConverter
+static class IOConverter
 {
     private static string[] PruneFileNames(string AbsDownloadFolderPath)
     {
@@ -23,9 +23,8 @@ static class DataConverter
         for (int i = 0; i < FileNames.Length; i++)
         {
             // get the Filename without their paths and ".<extension>" ending. 
-            string currentFileName = Path.GetFileName(FileNames[i]);
-            currentFileName = currentFileName.Substring(0, currentFileName.Length - 3);
-            FileNames[i] = currentFileName;
+            string newFileName =  Path.GetFileName(FileNames[i]).Substring(0,Path.GetFileName(FileNames[i]).Length-3);
+            FileNames[i] = newFileName; 
         }
         // after changeing every index value, we return the array but with the paths pruned from the names of the files. 
         return FileNames;
@@ -45,7 +44,9 @@ static class DataConverter
     }
 
     private static void UnzipAndMove(string[] ZipFilePaths, string[] NewFileNames, string ExtractToFolderPath)
-    {
+    {   
+        Console.WriteLine($"Expected amount of files to unzip: {ZipFilePaths.Length}"); 
+        Console.WriteLine($"--------------------------------------------------------"); 
         int SucessfullFilescounter = 0;
         int AlreadyExistedFileCounter = 0; 
         int corruptedFilesCounter = 0;
@@ -59,9 +60,18 @@ static class DataConverter
             try
             {
                 string newFilePath = Path.Combine(ExtractToFolderPath, NewFileNames[i] + ".ldr");
-                if (IsFileUnziped(newFilePath))
+                string currentFileName = Path.GetFileName(ZipFilePaths[i]); 
+
+                // if there is already a .ldr file with the same name in the Model_Files folder
+                if (File.Exists(newFilePath))
                 {
+                    Console.WriteLine($"File by the name: {Path.GetFileName(newFilePath)}, already exsisted in the Models folder. Skipping unzipping.\n");
                     AlreadyExistedFileCounter ++; 
+                }
+                // if the current file's extension is not .io format
+                else if (currentFileName.Substring(currentFileName.Length-3,3)!=".io")
+                {
+                    throw new FileFormatException($"The file: {currentFileName}, was not in '.io' format. Skipping unzip\n"); 
                 }
                 else
                 {
@@ -78,39 +88,27 @@ static class DataConverter
                     currentModelFileInfo.MoveTo(newFilePath);
                     SucessfullFilescounter++;
                 }
-
+            }
+            catch (FileFormatException ex)
+            {
+                Console.WriteLine(ex.Message); 
+                corruptedFilesCounter++; 
             }
             catch (FileNotFoundException)
             {
                 corruptedFilesCounter++;
                 continue;
             }
+            
         }
-        Console.WriteLine($"{SucessfullFilescounter} .io files were unziped, renamed and moved");
-        Console.WriteLine($"{AlreadyExistedFileCounter} .io files already existed in the Model_Files folder, hence they were not unziped"); 
-        Console.WriteLine($"{corruptedFilesCounter} .io files were corrupted or could not be unziped");
+        Console.WriteLine($"Actual amount of '.io' files unziped, renamed and moved: {SucessfullFilescounter}");
+        Console.WriteLine($"{AlreadyExistedFileCounter} '.io' files already existed in the Model_Files folder, hence they were not unziped"); 
+        Console.WriteLine($"{corruptedFilesCounter} '.io' files were corrupted, could not be unziped or had the wrong file extension");
     }
-    public static bool IsFileUnziped(string filePath)
-    {
-
-        if (File.Exists(filePath))
-        {
-            Console.WriteLine($"File by the name:{Path.GetFileName(filePath)} already exsisted in the Models folder. Skipping unzipping.\n");
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
 
 
     public static void ConvertFiles()
     {
-        // make hash map to store filePaths as keys and newFileNames as values. 
-        Dictionary<string, string> filesMap = [];
-
         string testDataPath = @"..\..\..\LEGO_Data\TestDataFolder";
         string unzipedDataPath = @"..\..\..\LEGO_Data\TestDataFolder\Model_Files";
         string absDownloadFolderPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, testDataPath));
@@ -124,7 +122,7 @@ static class DataConverter
 
 
 
-        // the default path for all extract model.ldr entries, before they get renamed
+        
         // Extract all model.ldr zip entry files in ZipFilePaths, then move and rename them to expectedFile names. 
         UnzipAndMove(filePaths, newFileNames, absDestinationFolderPath);
     }
