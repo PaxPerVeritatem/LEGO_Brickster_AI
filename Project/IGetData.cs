@@ -66,6 +66,9 @@ interface IGetData
   ///  /// </summary>
   static abstract int ElementClickCounter { get; set; }
 
+
+  static abstract int ElementDownloadCounter { get; set; }
+
  
   // --------------------------------------------------------------------------------------------------------------------------------------------//
 
