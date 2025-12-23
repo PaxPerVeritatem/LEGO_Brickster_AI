@@ -20,39 +20,42 @@ sealed class GetDataLdraw : IGetData
 
     public static int ExpectedElementClickDeviation => 0;
 
-    public static int ExpectedElementClickAmount { get; set; } = ExpectedSetsPrPage * PageLimit - ExpectedElementClickDeviation;
+    public static int ExpectedSetClickAmount { get; set; } = ExpectedSetsPrPage * PageLimit - ExpectedElementClickDeviation;
 
-    public static int ElementClickCounter { get; set; } = 0;
+    public static int ExpectedSetScrapeAmount =>  ExpectedSetClickAmount;
+
+
+    public static int SetClickCounter { get; set; } = 0;
 
     // never did use this one for this implementation. 
-    public static int ElementDownloadCounter { get; set; } = 0;
-    
+    public static int FileDownloadCounter { get; set; } = 0;
+
 
     // Custom run Properties 
     public static bool CustomRun => true;
 
     public static int StartFromPage => 2;
 
-    public static string? UrlPageVarient {get; set; } = "?page=";
+    public static string? UrlPageVarient { get; set; } = "?page=";
 
     // We use UrlPageVarient in this implementation so we dont need SubpageElementTuple. 
-    public static (string ElementString, string ByMechanism)? SubpageElementTuple { get; set; }  = null; 
+    public static (string ElementString, string ByMechanism)? SubpageElementTuple { get; set; } = null;
 
 
     // dont need a bot to configure custom runs for this implementation of IGetData
-    public static void ConfigureCustomRun(Bot? bot=null)
+    public static void ConfigureCustomRun(Bot? bot = null)
     {
         Url = $"{Url}{UrlPageVarient}{StartFromPage}";
         if (StartFromPage != MaxPage)
         {
-            ExpectedElementClickAmount += ExpectedElementClickDeviation;
+            ExpectedSetClickAmount += ExpectedElementClickDeviation;
         }
 
     }
 
 
 
-    public static void AccessMainPage(Bot bot, Dictionary<string, string>? CandidateElementDict=null)
+    public static void AccessMainPage(Bot bot, Dictionary<string, string>? CandidateElementDict = null)
     {
         try
         {
@@ -69,7 +72,7 @@ sealed class GetDataLdraw : IGetData
     }
 
 
-    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement? AncestorElementString=null)
+    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement? AncestorElementString = null)
     {
         // Attempt to get the list of LEGO set names for the current main page
         bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism, IdentifierAttribute);
@@ -112,7 +115,7 @@ sealed class GetDataLdraw : IGetData
                 // if current LinkText is not null call Click()
                 bot.ClickElement(setNameElement);
                 // add for each LEGO set. Should finally match 'downloadAmount'
-                ElementClickCounter += 1;
+                SetClickCounter += 1;
 
 
                 // Attempt to find 'Models' element on LEGO set page
@@ -224,14 +227,14 @@ sealed class GetDataLdraw : IGetData
     {
         try
         {
-            if (ExpectedElementClickAmount == ElementClickCounter)
+            if (ExpectedSetClickAmount == SetClickCounter)
             {
-                Console.WriteLine($"Expected {ExpectedElementClickAmount}, matched clicked {ElementClickCounter} set page elements");
+                Console.WriteLine($"Expected {ExpectedSetClickAmount}, matched clicked {SetClickCounter} set page elements");
                 return true;
             }
             else
             {
-                throw new BotDownloadAmountException($"Expected {ExpectedElementClickAmount}, but clicked {ElementClickCounter} set page elements");
+                throw new BotDownloadAmountException($"Expected {ExpectedSetClickAmount}, but clicked {SetClickCounter} set page elements");
             }
         }
         catch (BotDownloadAmountException ex)
@@ -246,7 +249,7 @@ sealed class GetDataLdraw : IGetData
     //process the Ldraw website LEGO sets and download them. 
     public static void ProcessData()
     {
-        
+
 
         Dictionary<string, string> NextPageCandiates = new()
         {

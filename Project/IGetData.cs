@@ -25,7 +25,7 @@ interface IGetData
   /// </summary>
   static abstract string DownloadFolderPath { get; }
 
-  
+
   // --------------------------------------------------------------------------------------------------------------------------------------------//
 
   // Global Properties
@@ -50,26 +50,31 @@ interface IGetData
   /// Int defining the number of expected sets of data pr page. A 'set' is defined as an element which has either one or 
   /// multiple downloadable files associated with it.
   /// </summary>
-  static abstract int ExpectedSetsPrPage { get; }
+  static abstract int ExpectedSetsPrPage {get;}
 
 
   /// <summary>
   /// User defined deviation of the ExpectedElementClickAmount. Should be implemented after testing 
-  /// whether there some pages which have a different amount of downloadable sets.
+  /// whether there some pages which have a different amount of downloadable ets.
   /// </summary>
-  static abstract int ExpectedElementClickDeviation { get; }
+  static abstract int ExpectedSetClickAmount { get; set; }
+
+
+
+  static abstract int ExpectedSetScrapeAmount { get;}
+
 
 
   /// <summary>
   /// A simple reference counter for asserting correct amount of elements have been clicked, 
   /// inferred from <c>ExpectedElementClickAmount </c>
   ///  /// </summary>
-  static abstract int ElementClickCounter { get; set; }
+  static abstract int SetClickCounter { get; set; }
 
 
-  static abstract int ElementDownloadCounter { get; set; }
+  static abstract int FileDownloadCounter { get; set; }
 
- 
+
   // --------------------------------------------------------------------------------------------------------------------------------------------//
 
 
@@ -93,19 +98,10 @@ interface IGetData
   /// A substring serving as an extension the main website url extension, 
   /// which can be combined with <param name = "StartFromPage"> to begin a run from a certain subpage.  
   /// </summary>
-  static abstract string? UrlPageVarient {get; set;}
+  static abstract string? UrlPageVarient { get; set; }
 
 
-  static abstract (string ElementString,string ByMechanism)? SubpageElementTuple  { get; set; }
-
-
-  /// <summary>
-  /// Int defining the expected amount of elements to be clicked, 
-  /// inferred from <param name = "SetsPrPage"> and <param name = "PageLimit">
-  /// </summary>
-  static abstract int ExpectedElementClickAmount { get; set; }
-
-
+  static abstract (string ElementString, string ByMechanism)? SubpageElementTuple { get; set; }
   // --------------------------------------------------------------------------------------------------------------------------------------------//
 
   // Functions
@@ -147,8 +143,8 @@ interface IGetData
   ///  map's key-value pairs. For each key-value pair it calls <c>bot.FindElement()</c>
   ///  to locate a button on the webpage which should be a valid currently displayed element.
   /// </summary> 
-  
-  
+
+
   public abstract static IWebElement FindDisplayedElement(Bot bot, Dictionary<string, string> ElementCandidatesDict);
   /// <summary>
   /// Should perform the necessary bot actions to navigate to the next desired page by clicking the 
