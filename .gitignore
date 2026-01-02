@@ -17,6 +17,7 @@
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
+
 # Mono auto generated files
 mono_crash.*
 
@@ -573,5 +574,9 @@ pyrightconfig.json
 # Custom folders 
 Project/LEGO_Data/
 Project/DriverProfile
+
+# git function realted files 
+git-filter-repo
+mail_map.txt
 
 # End of https://www.toptal.com/developers/gitignore/api/csharp,python
