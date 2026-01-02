@@ -15,8 +15,10 @@ static class Program
         //GUI turned off for now 
         //ApplicationConfiguration.Initialize();
         //Application.Run(new Form1());
-
-        GetDataLdraw.GetData(); 
+        
+        //GetDataLdraw.ProcessData();
+        //GetDataBrickLink.ProcessData();
+        IOConverter.ConvertFiles();        
     }
 
 }

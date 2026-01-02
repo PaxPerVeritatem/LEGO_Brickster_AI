@@ -1,191 +1,231 @@
 namespace LEGO_Brickster_AI;
 
 using OpenQA.Selenium;
-sealed class GetDataLdraw : IGetData 
+sealed class GetDataLdraw : IGetData
 {
-    // the following static fields are can be used to setup run configurations
 
-    // defining whether running the bot should stop after a certain page. 
-
-    public static string Url {get; set;}  = "https://library.ldraw.org/omr/sets";
-    public static bool CustomRun => false;
-
-    public static int StartFromPage => 44;
-
-    public static int SetsPrPage => 25;
-
-    public static int PageLimit => 59;
-
-    public static string UrlPageVarient => "?page=";
-
-    
-
-    // minus 10 because we only have 15 sets on the last page. 
-    public static int ExpectedElementClickAmount => SetsPrPage * PageLimit - 10;
-
-    public static int ElementClickCounter { get; set; } = 0; 
+    // Bot Properties
+    public static string Url { get; set; } = "https://library.ldraw.org/omr/sets";
 
 
-    // Can be changed to another path if desired.  
-    public static string DownloadFolderPath => @"..\..\..\LEGO_Data";
+    public static string DownloadFolderPath => @"..\..\..\LEGO_Data\Ldraw_Data";
 
 
-    public static void AccessWebPage(Bot bot)
-    {
-        bot.GoToWebpage();
-    }
+    // Global run Properties
+    public static int MaxPage => 59;
 
-    public static void UseCustomStartingPage()
+    public static int PageLimit => 2;
+
+    public static int ExpectedSetsPrPage => 25;
+
+    public static int ExpectedElementClickDeviation => 0;
+
+    public static int ExpectedElementClickAmount { get; set; } = ExpectedSetsPrPage * PageLimit - ExpectedElementClickDeviation;
+
+    public static int ElementClickCounter { get; set; } = 0;
+
+
+
+    // Custom run Properties 
+    public static bool CustomRun => true;
+
+    public static int StartFromPage => 2;
+
+    public static string? UrlPageVarient {get; set; } = "?page=";
+
+    // We use UrlPageVarient in this implementation so we dont need SubpageElementTuple. 
+    public static (string ElementString, string ByMechanism)? SubpageElementTuple { get; set; }  = null; 
+
+
+    // dont need a bot to configure custom runs for this implementation of IGetData
+    public static void ConfigureCustomRun(Bot? bot=null)
     {
         Url = $"{Url}{UrlPageVarient}{StartFromPage}";
+        if (StartFromPage != MaxPage)
+        {
+            ExpectedElementClickAmount += ExpectedElementClickDeviation;
+        }
+
     }
 
 
 
-    //process the Ldraw website LEGO sets and download them. 
-    public static void ProcessData()
+    public static void AccessMainPage(Bot bot, Dictionary<string, string>? CandidateElementDict=null)
     {
-        if (CustomRun)
-        {
-            UseCustomStartingPage();
-        }
-
-        Bot bot = new(Url, DownloadFolderPath);
-
         try
         {
-            // Attempt to access webpage
-            AccessWebPage(bot);
+            bot.GoToWebPage(bot.Url);
         }
         catch (BotUrlException ex)
         {
             Console.WriteLine($"Failed to load webpage: {ex.Message}");
-            bot.CloseBot();
         }
-        catch (BotElementException ex)
+        catch (BotDriverException ex)
         {
-            Console.WriteLine($"Failed to return an html element\n{ex.Message}");
-            Console.WriteLine("Closeing driver");
-            bot.CloseBot();
+            Console.WriteLine(ex.Message);
         }
-        catch (BotMechanismException ex)
-        {
-            Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
-            Console.WriteLine("Closeing driver");
-            bot.CloseBot();
-        }
+    }
 
-        // initialize the 'Next' button element for the main page
-        IWebElement? nextButtonElement;
+
+    public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement? AncestorElementString=null)
+    {
+        // Attempt to get the list of LEGO set names for the current main page
+        bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism, IdentifierAttribute);
+    }
+
+    /// <summary>
+    /// We extract the last part of the download butttons href string, which is always <c>Filename></c>.mpd. 
+    /// We can then use this to check if the file has already been downloaded. 
+    /// </summary>
+    /// <param name="FileName"></param>
+    /// <returns></returns>
+    /// <exception cref="BotStaleElementException"></exception>
+    public static string GetFullFileName(string FileName)
+    {
         try
         {
-            // currently we go one page over what we should in page limit. But before we had one page less! 
-            for (int i = 0; i < PageLimit; i++)
+            if (FileName != null)
             {
+                string downloadFileSubstring = Path.GetFileName(FileName);
+                return downloadFileSubstring;
+            }
+            return "";
+        }
+        catch (StaleElementReferenceException)
+        {
+            throw new BotStaleElementException("Referenced element data is stale. Check element state before attempting to click");
+        }
+    }
 
-                // Attempt to get the list of LEGO set names for the current main page
-                bot.AttributeList = bot.FindPageElements("fi-ta-cell-name", "class");
-                foreach (string name in bot.AttributeList)
+
+    public static void DownloadPageElements(Bot bot, string ByMechanism)
+    {
+        foreach (string IdentifierAttribute in bot.AttributeList)
+        {
+            try
+            {
+                // Attempt to find LEGO set LinkTest element
+                IWebElement? setNameElement = bot.FindPageElement(IdentifierAttribute, ByMechanism);
+
+                // if current LinkText is not null call Click()
+                bot.ClickElement(setNameElement);
+                // add for each LEGO set. Should finally match 'downloadAmount'
+                ElementClickCounter += 1;
+
+
+                // Attempt to find 'Models' element on LEGO set page
+                IWebElement? ModelsElement = bot.FindPageElement("//div[contains(text(),'Model')]", "xp");
+
+                // wait until ModelElement has rendered on page
+                if (bot.WaitTillExists(ModelsElement))
                 {
-                    try
+                    // if the ModelElement is not null, attempt to find the first download button element
+                    IWebElement? downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", ModelsElement);
+
+                    // while there are download buttons on the page find them and press them.,  
+                    while (bot.WaitTillExists(downloadButtonElement))
                     {
+                        // i belive we can null forgive here since WaitTillExists checks for null element.
+                        string? FileName = downloadButtonElement!.GetAttribute("href");
 
-                        // Attempt to find LEGO set LinkTest element
-                        IWebElement? setNameElement = bot.FindPageElement(name, "lt");
+                        // again, if we know FileName is never null in this case, then we can null forgive FullFileName for the current file.
+                        string FullFileName = GetFullFileName(FileName!);
 
-                        // if current LinkText is not null call Click()
-                        if (bot.WaitTillExists(setNameElement))
+
+                        // if the file has already been downloaded,
+                        if (bot.IsFileDownloaded(FullFileName))
                         {
-                            Bot.ClickElement(setNameElement);
-                            // add for each LEGO set. Should finally match 'downloadAmount'
-                            ElementClickCounter += 1;
+                            // try to find the next download button. 
+                            downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", downloadButtonElement);
                         }
-
-
-                        // Attempt to find 'Models' element on LEGO set page
-                        IWebElement? ModelsElement = bot.FindPageElement("//div[contains(text(),'Model')]", "xp");
-
-                        // wait until ModelElement has rendered on page
-                        if (bot.WaitTillExists(ModelsElement))
+                        else
                         {
-                            // if the ModelElement is not null, attempt to find the first download button element
-                            IWebElement? downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", ModelsElement);
-
-                            // while there are download buttons on the page find them and press them., 
-                            while (bot.WaitTillExists(downloadButtonElement))
-                            {
-                                // i belive we can forgive here since WaitTillExists checks for null element.
-                                string downloadFileSubstring = Bot.GetFileName(downloadButtonElement!, "href");
-
-                                string downloadFilePath = Path.Combine(bot.AbsDownloadFolderPath!, downloadFileSubstring);
-                                // if the file has already been downloaded, skip it
-                                if (Bot.IsFileDownloaded(downloadFilePath))
-                                {
-                                    // try to find the next download button. 
-                                    downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", downloadButtonElement);
-                                }
-                                else
-                                {
-                                    Bot.ClickElement(downloadButtonElement);
-                                    // try to find the next download button
-                                    downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", downloadButtonElement);
-                                }
-                            }
+                            // press download button
+                            bot.ClickElement(downloadButtonElement);
+                            // try to find the next download button
+                            downloadButtonElement = bot.FindPageElement(".//following::a[contains(.,'Download')]", "xp", downloadButtonElement);
                         }
-                    }
-                    catch (BotElementException ex)
-                    {
-                        // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
-                        Console.WriteLine($"No more download buttons on current set page:{ex.Message}");
-                        bot.GoBack();
-                    }
-                    catch (BotMechanismException ex)
-                    {
-                        Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
-
-                    }
-                    // should be thrown in case of stale element or 404 page error. Shitty fix 
-                    catch (BotException ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                        bot.GoBack();
-                        bot.GoBack();
                     }
                 }
+            }
+            catch (BotFindElementException)
+            {
+                // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
+                Console.WriteLine($"No more download buttons on current set page for: {IdentifierAttribute}\n");
+                bot.GoBack();
+            }
+            catch (BotMechanismException ex)
+            {
+                Console.WriteLine($"By() mechanism is invalid: {ex.Message}\n");
 
-                // look for the next page button 
-                nextButtonElement = bot.FindPageElement("//button[@aria-label='Next']", "xp");
-
-                // click next button if it is loaded. 
-                if (bot.WaitTillExists(nextButtonElement))
-                {
-                    Bot.ClickElement(nextButtonElement);
-
-                    // Bot should not proceed until the next page to loaded after clicking the 'Next' page button
-                    bot.ExplicitWait();
-                }
-                // reset the bot attribute list for next page of elements. 
-                bot.AttributeList = [];
-
-                // while there is an other page of sets to go to. 
+            }
+            // should be thrown in case of stale element or 404 page error.
+            catch (BotStaleElementException)
+            {
+                bot.GoBack();
+                bot.GoBack();
             }
         }
+    }
+
+    public static IWebElement FindDisplayedElement(Bot bot, Dictionary<string, string> CandidatElementDict)
+    {
+        foreach (KeyValuePair<string, string> Candidate in CandidatElementDict)
+        {
+            try
+            {
+                IWebElement? nextPageElement = bot.FindPageElement(Candidate.Key, Candidate.Value);
+                if (nextPageElement != null && nextPageElement.Displayed)
+                {
+                    return nextPageElement;
+                }
+            }
+            catch (BotFindElementException ex)
+            {
+                throw new BotFindElementException($"{ex.Message}: Element not found, trying next option.");
+            }
+            catch (BotTimeOutException ex)
+            {
+                throw new BotTimeOutException($"The referenced element was found but, it was not displayed on the webpage: {ex.Message}");
+            }
+        }
+        throw new BotStaleElementException("The referenced element is no longer displayed on the webpage");
+    }
 
 
-        catch (BotElementException)
+    // Since we load a new page on every NextButtonElementClick, ClickAmount and be defaulted to null 
+    public static void GoToNextPage(Bot bot, IWebElement NextButtonElement, int? ClickAmount = null)
+    {
+        try
         {
-            Console.WriteLine($"No more next buttons. Reached last page.");
+            // get the url of the driver before clicking the next button. 
+            string oldUrl = bot.Driver.Url;
+            bot.ClickElement(NextButtonElement);
+
+            // Bot should not proceed until the next page is fully loaded indicated by a change in the url.
+            bot.ExplicitWaitURL(oldUrl);
+
+            // reset the bot attribute list for next page of elements. 
+            bot.AttributeList = [];
         }
-        finally
+        catch (BotStaleElementException ex)
         {
-            bot.CloseBot();
+            Console.WriteLine(ex.Message);
         }
+        catch (BotTimeOutException ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+
+    }
+    public static bool AssertDownloadAmount()
+    {
         try
         {
             if (ExpectedElementClickAmount == ElementClickCounter)
             {
                 Console.WriteLine($"Expected {ExpectedElementClickAmount}, matched clicked {ElementClickCounter} set page elements");
-
+                return true;
             }
             else
             {
@@ -194,7 +234,60 @@ sealed class GetDataLdraw : IGetData
         }
         catch (BotDownloadAmountException ex)
         {
-            Console.WriteLine($"Assumed amount of LEGO Sets was either not correct or something went wrong during clicking set elements:{ex}");
+            Console.WriteLine($"Assumed amount of LEGO Sets was either not correct or something went wrong during clicking set elements:{ex.Message}");
+            return false;
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------------------------//
+
+    //process the Ldraw website LEGO sets and download them. 
+    public static void ProcessData()
+    {
+        
+
+        Dictionary<string, string> NextPageCandiates = new()
+        {
+            { "//button[@rel='next']", "xp" },
+            { "//button[@aria-label='Next']","xp" }
+        };
+
+
+        // initial check if run is custom or not
+        if (CustomRun)
+        {
+            ConfigureCustomRun();
+        }
+
+        // clean up any existing preferences file from previous bot runs.
+        Bot.CleanupPreferencesFile();
+
+
+        Bot bot = new(Url, DownloadFolderPath);
+        try
+        {
+            // no dict needed here.
+            AccessMainPage(bot);
+            for (int i = 0; i < PageLimit; i++)
+            {
+                SetAttributeList(bot, "fi-ta-cell-name", "class", "Text");
+
+                DownloadPageElements(bot, "lt");
+
+                // Find the Next button elements which works, considering page responsiveness
+                IWebElement nextButtonElement = FindDisplayedElement(bot, NextPageCandiates);
+                GoToNextPage(bot, nextButtonElement);
+            }
+        }
+        catch (StaleElementReferenceException)
+        {
+            Console.WriteLine($"No more next buttons. Reached last page.");
+        }
+        finally
+        {
+            AssertDownloadAmount();
+            Bot.CleanupPreferencesFile();
+            bot.CloseBot();
         }
     }
 }

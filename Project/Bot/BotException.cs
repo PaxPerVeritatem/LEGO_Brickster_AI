@@ -1,4 +1,5 @@
-namespace LEGO_Brickster_AI; 
+namespace LEGO_Brickster_AI;
+
 using System;
 public class BotException : Exception
 //Base BotException class
@@ -13,13 +14,13 @@ public class BotException : Exception
 /// <summary>
 ///  A general Bot exception for when the webdriver itself throws exceptions
 /// </summary>
-public class  BotDriverException : BotException
+public class BotDriverException : BotException
 {
     public BotDriverException() : base() { }
 
     public BotDriverException(string message) : base(message) { }
 
-public BotDriverException(string message, Exception inner) : base(message, inner) { }  
+    public BotDriverException(string message, Exception inner) : base(message, inner) { }
 }
 
 
@@ -39,13 +40,13 @@ public class BotUrlException : BotException
 /// <summary>
 /// Exception thrown when a bot fails to navigate to a webpage due to an invalid 'By' lolocator mechanism (Link Text, XPath etc).
 /// </summary>
-public class BotElementException : BotException
+public class BotFindElementException : BotException
 {
-    public BotElementException() : base() { }
+    public BotFindElementException() : base() { }
 
-    public BotElementException(string message) : base(message) { }
+    public BotFindElementException(string message) : base(message) { }
 
-    public BotElementException(string message, Exception inner) : base(message, inner) { }
+    public BotFindElementException(string message, Exception inner) : base(message, inner) { }
 }
 
 public class BotMechanismException : BotException
@@ -57,6 +58,24 @@ public class BotMechanismException : BotException
     public BotMechanismException(string message, Exception inner) : base(message, inner) { }
 }
 
+public class BotTimeOutException : BotException
+{
+    public BotTimeOutException() : base() { }
+
+    public BotTimeOutException(string message) : base(message) { }
+
+    public BotTimeOutException(string message, Exception inner) : base(message, inner) { }
+}
+
+public class BotStaleElementException : BotException
+{
+    public BotStaleElementException() : base() { }
+
+    public BotStaleElementException(string message) : base(message) { }
+
+    public BotStaleElementException(string message, Exception inner) : base(message, inner) { }
+}
+
 
 
 public class BotDownloadAmountException : BotException
@@ -66,4 +85,31 @@ public class BotDownloadAmountException : BotException
     public BotDownloadAmountException(string message) : base(message) { }
 
     public BotDownloadAmountException(string message, Exception inner) : base(message, inner) { }
+}
+
+public class BotFileDownloadException : BotException
+{
+    public BotFileDownloadException() : base() { }
+
+    public BotFileDownloadException(string message) : base(message) { }
+
+    public BotFileDownloadException(string message, Exception inner) : base(message, inner) { }
+}
+
+public class BotFileRenameException : BotException
+{
+    public BotFileRenameException() : base() { }
+
+    public BotFileRenameException(string message) : base(message) { }
+
+    public BotFileRenameException(string message, Exception inner) : base(message, inner) { }
+}
+
+public class BotWindowException : BotException
+{
+    public BotWindowException() : base() { }
+
+    public BotWindowException(string message) : base(message) { }
+
+    public BotWindowException(string message, Exception inner) : base(message, inner) { }
 }

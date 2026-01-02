@@ -34,20 +34,17 @@ public sealed class BotTest(ITestOutputHelper output)
     [Fact]
     public void InitializeBotTest()
     {
-        Bot basicBot = new(TestUrl_1);
-        Bot configuredBot = new(TestUrl_1, TestDownloadFolderPath);
+        Bot bot = new(TestUrl_1, TestDownloadFolderPath);
         try
         {
-            Assert.NotNull(basicBot.Driver);
-            Assert.NotNull(configuredBot.Driver);
-            string? testAbsDownloadFolderPath = Bot.GetAbsoluteDownloadFolderPath(TestDownloadFolderPath);
-            Assert.NotNull(testAbsDownloadFolderPath);
-            Assert.Equal(testAbsDownloadFolderPath, configuredBot.AbsDownloadFolderPath);
-            basicBot.CloseBot();
+            Assert.NotNull(bot.Driver);
+            Assert.NotNull(bot.AbsDownloadFolderPath);
+            Assert.Equal(bot.AbsDownloadFolderPath, Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, TestDownloadFolderPath)));
+            bot.CloseBot();
         }
         finally
         {
-            configuredBot.CloseBot();
+            bot.CloseBot();
         }
     }
 
@@ -56,42 +53,38 @@ public sealed class BotTest(ITestOutputHelper output)
     /// A private helper function to define the different cases and preliminary actions nessesary to access the main page of a test web site.
     /// </summary>
     /// <param name="TestUrl">The URL of the test webpage.</param>
-    /// <param name="ConfiguredBot">The configured bot instance.</param>
-    private static void AccessTestWebPage(Bot ConfiguredBot,string TestUrl)
+    /// <param name="bot">The configured bot instance.</param>
+    private static void AccessTestWebPage(Bot bot, string TestUrl)
     {
-        ConfiguredBot.GoToWebpage();
+        bot.GoToWebPage(bot.Url);
 
         //parse Testurl to make preliminary actions on specific test webpage. 
         switch (TestUrl)
         {
             case TestUrl_2:
                 //press reject to cookies on google.com if TestUrl_2 is utilized
-                IWebElement? RejectButton = ConfiguredBot.FindPageElement("//button[@id='W0wltc']", "xp");
+                IWebElement? RejectButton = bot.FindPageElement("//button[@id='W0wltc']", "xp");
                 Assert.NotNull(RejectButton);
-                Bot.ClickElement(RejectButton);
+                bot.ClickElement(RejectButton);
                 break;
 
             case TestUrl_3:
-                ChromeDriver testdriver = ConfiguredBot.Driver;
+                ChromeDriver testdriver = bot.Driver;
                 Actions actionsBuilder = new(testdriver);
                 // find and click the ageGateElement
-                IWebElement? ageGateElement = ConfiguredBot.FindPageElement("//input[@class='blp-age-gate__input-field']", "xp");
-                if (ConfiguredBot.WaitTillExists(ageGateElement))
-                {
-                    Bot.ClickElement(ageGateElement);
-                    actionsBuilder.SendKeys("1");
-                    actionsBuilder.SendKeys("9");
-                    actionsBuilder.SendKeys("9");
-                    actionsBuilder.SendKeys("4");
-                    actionsBuilder.Perform();
-                    actionsBuilder.Reset();
-                }
+                IWebElement? ageGateElement = bot.FindPageElement("//input[@class='blp-age-gate__input-field']", "xp");
+
+                bot.ClickElement(ageGateElement);
+                actionsBuilder.SendKeys("1");
+                actionsBuilder.SendKeys("9");
+                actionsBuilder.SendKeys("9");
+                actionsBuilder.SendKeys("4");
+                actionsBuilder.Perform();
+                actionsBuilder.Reset();
+
                 // find and press cookie button 
-                IWebElement? cookieButton = ConfiguredBot.FindPageElement("//div[@class='cookie-notice__content']//button[contains(text(), 'Just necessary')]", "xp");
-                if (ConfiguredBot.WaitTillExists(cookieButton))
-                {
-                    Bot.ClickElement(cookieButton);
-                }
+                IWebElement? cookieButton = bot.FindPageElement("//div[@class='cookie-notice__content']//button[contains(text(), 'Just necessary')]", "xp");
+                bot.ClickElement(cookieButton);
                 break;
 
             default:
@@ -130,35 +123,35 @@ public sealed class BotTest(ITestOutputHelper output)
     /// <param name="TestBot">The bot instance to test.</param>
     /// <param name="ElementString">The element string to use for finding the elements.</param>
     /// <param name="ByMechanism">The mechanism to use for finding the elements.</param>
-    private static void FindPageElementsException(Bot TestBot, string? ElementString, string ByMechanism)
+    private static void FindPageElementsException(Bot TestBot, string ElementString, string ByMechanism, string IdentifierAttribute = "Text")
     {
         // Forgive possible null reference for ElementString
-        TestBot.FindPageElements(ElementString!, ByMechanism);
+        TestBot.FindPageElements(ElementString, ByMechanism, IdentifierAttribute);
     }
 
     /// <summary>
-    /// Tests that GoToWebpage() correctly navigates to a webpage and that the Bot.Driver.Url is updated accordingly.
+    /// Tests that GoToWebPage() correctly navigates to a webpage and that the Bot.Driver.Url is updated accordingly.
     /// </summary>
     /// <remarks>
-    /// Asserts that the Bot.Driver.Url is equal to TestUrl_1 after calling GoToWebpage().
+    /// Asserts that the Bot.Driver.Url is equal to TestUrl_1 after calling GoToWebPage().
     /// </remarks>
     [Fact]
-    public void GoToWebpageTest()
+    public void GoToMainPageTest()
     {
-        Bot basicBot = new(TestUrl_1);
+        Bot bot = new(TestUrl_1, TestDownloadFolderPath);
         try
         {
-            basicBot.GoToWebpage();
-            Assert.Equal(TestUrl_1, basicBot.Driver.Url);
-            basicBot.CloseBot();
+            bot.GoToWebPage(bot.Url);
+            Assert.Equal(TestUrl_1, bot.Driver.Url);
+            bot.CloseBot();
         }
         catch (BotUrlException)
         {
-            basicBot.CloseBot();
+            bot.CloseBot();
         }
         catch (BotDriverException)
         {
-            basicBot.CloseBot();
+            bot.CloseBot();
         }
     }
     /// <summary>
@@ -176,20 +169,20 @@ public sealed class BotTest(ITestOutputHelper output)
     [InlineData("//img[@id='main-logo']", "xp")]
     public void FindElementTest(string ElementString, string ByMechanism)
     {
-        Bot configuredBot = new(TestUrl_1, TestDownloadFolderPath);
-        configuredBot.GoToWebpage();
+        Bot bot = new(TestUrl_1, TestDownloadFolderPath);
+        bot.GoToWebPage(bot.Url);
         try
         {
-            IWebElement? pageElement = configuredBot.FindPageElement(ElementString, ByMechanism);
+            IWebElement? pageElement = bot.FindPageElement(ElementString, ByMechanism);
             // make sure the IWeb element is not null.
             Assert.NotNull(pageElement);
             string? elementOuter = pageElement.GetAttribute("outerHTML");
             _output.WriteLine($"{ElementString} outer HTML via {ByMechanism}:\n {elementOuter}\n------------------------------------------------\n");
-            configuredBot.CloseBot();
+            bot.CloseBot();
         }
         finally
         {
-            configuredBot.CloseBot();
+            bot.CloseBot();
         }
     }
 
@@ -205,7 +198,7 @@ public sealed class BotTest(ITestOutputHelper output)
     [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", ".//following::a[@href='https://library.ldraw.org/omr/sets/657']", "xp", "xp")]
     public void FindElementWithAncestorTest(string TestUrl, string AncestorElementString, string DecendentElementString, string AncestorByMechanism, string DecendentByMechanism)
     {
-        Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
+        Bot bot = new(TestUrl, TestDownloadFolderPath);
 
         //local function
         static List<string> InterpolateByMechanism(IWebElement element, string elementByMechanism)
@@ -220,10 +213,10 @@ public sealed class BotTest(ITestOutputHelper output)
         }
         try
         {
-            configuredBot.GoToWebpage();
+            bot.GoToWebPage(bot.Url);
 
             // AncestorElement
-            IWebElement? AncestorElement = configuredBot.FindPageElement(AncestorElementString, AncestorByMechanism);
+            IWebElement? AncestorElement = bot.FindPageElement(AncestorElementString, AncestorByMechanism);
             Assert.NotNull(AncestorElement);
             List<string> a_AttributeList = InterpolateByMechanism(AncestorElement, AncestorByMechanism);
             Assert.Equal(2, a_AttributeList.Count);
@@ -231,7 +224,7 @@ public sealed class BotTest(ITestOutputHelper output)
 
 
             //DecendentElement
-            IWebElement? DecendentElement = configuredBot.FindPageElement(DecendentElementString, DecendentByMechanism, AncestorElement);
+            IWebElement? DecendentElement = bot.FindPageElement(DecendentElementString, DecendentByMechanism, AncestorElement);
             Assert.NotNull(DecendentElement);
             IList<string> d_AttributeList = InterpolateByMechanism(DecendentElement, DecendentByMechanism);
             Assert.Equal(2, d_AttributeList.Count);
@@ -239,7 +232,7 @@ public sealed class BotTest(ITestOutputHelper output)
         }
         finally
         {
-            configuredBot.CloseBot();
+            bot.CloseBot();
         }
     }
 
@@ -263,23 +256,23 @@ public sealed class BotTest(ITestOutputHelper output)
     [InlineData(TestUrl_3, 50, "//article[contains(@class,'card')]//div[@class='moc-card__designer-name']", "xp")]
     public void FindElementsTest(string TestUrl, int ExpectedElementAmount, string ElementString, string ByMechanism, string IdentifierAttribute = "Text")
     {
-        Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
-        AccessTestWebPage(configuredBot,TestUrl);
+        Bot bot = new(TestUrl, TestDownloadFolderPath);
+        AccessTestWebPage(bot, TestUrl);
         try
         {
-            configuredBot.AttributeList = configuredBot.FindPageElements(ElementString, ByMechanism, IdentifierAttribute);
-            _output.WriteLine($"{configuredBot.AttributeList.Count} of element(s) by{IdentifierAttribute} added to the Bot._nameList");
+            bot.AttributeList = bot.FindPageElements(ElementString, ByMechanism, IdentifierAttribute, null);
+            _output.WriteLine($"{bot.AttributeList.Count} of element(s) by{IdentifierAttribute} added to the Bot._nameList");
             _output.WriteLine("--------------------");
-            foreach (string name in configuredBot.AttributeList)
+            foreach (string name in bot.AttributeList)
             {
                 _output.WriteLine(name);
             }
             _output.WriteLine("--------------------\n\n");
-            Assert.Equal(ExpectedElementAmount, configuredBot.AttributeList.Count);
+            Assert.Equal(ExpectedElementAmount, bot.AttributeList.Count);
         }
         finally
         {
-            configuredBot.CloseBot();
+            bot.CloseBot();
         }
     }
 
@@ -306,39 +299,33 @@ public sealed class BotTest(ITestOutputHelper output)
         /// Using a basic bot can sometimes incur that the Bot will click elements which are not loaded yet.
         /// </note>
 
-        Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
+        Bot bot = new(TestUrl, TestDownloadFolderPath);
         try
         {
-            AccessTestWebPage(configuredBot,TestUrl);
-            ClickElementTest(ElementString, configuredBot, Goback);
+            AccessTestWebPage(bot, TestUrl);
+            ClickElementTest(ElementString, bot, Goback);
         }
         finally
         {
-            configuredBot.CloseBot();
+            bot.CloseBot();
         }
-        static void ClickElementTest(string ElementString, Bot testBot, bool GoBack)
+        static void ClickElementTest(string ElementString, Bot bot, bool GoBack)
         {
             IWebElement? clickableElement;
             if (GoBack)
             {
                 for (int i = 0; i < 2; i++)
                 {
-                    clickableElement = testBot.FindPageElement(ElementString, "xp");
+                    clickableElement = bot.FindPageElement(ElementString, "xp");
                     Assert.NotNull(clickableElement);
-                    if (testBot.WaitTillExists(clickableElement))
-                    {
-                        Bot.ClickElement(clickableElement);
-                        testBot.GoBack();
-                    }
+                    bot.ClickElement(clickableElement);
+                    bot.GoBack();
                 }
             }
             else
             {
-                clickableElement = testBot.FindPageElement(ElementString, "xp");
-                if (testBot.WaitTillExists(clickableElement))
-                {
-                    Bot.ClickElement(clickableElement);
-                }
+                clickableElement = bot.FindPageElement(ElementString, "xp");
+                bot.ClickElement(clickableElement);
             }
         }
     }
@@ -348,16 +335,16 @@ public sealed class BotTest(ITestOutputHelper output)
     [Fact]
     public void WaitTillExistsFalseTest()
     {
-        Bot basic_bot = new(TestUrl_1);
-        basic_bot.GoToWebpage();
+        Bot bot = new(TestUrl_1, TestDownloadFolderPath);
+        bot.GoToWebPage(bot.Url);
         try
         {
             IWebElement? element = null;
-            Assert.False(basic_bot.WaitTillExists(element));
+            Assert.False(bot.WaitTillExists(element));
         }
         finally
         {
-            basic_bot.CloseBot();
+            bot.CloseBot();
         }
     }
     /// <summary>
@@ -368,18 +355,18 @@ public sealed class BotTest(ITestOutputHelper output)
     [InlineData("//a[@href='https://library.ldraw.org/documentation']")]
     public void ClickElementExceptionTest(string elementString)
     {
-        Bot basic_bot = new(TestUrl_1);
-        basic_bot.GoToWebpage();
-        IWebElement? element = basic_bot.FindPageElement(elementString, "xp");
+        Bot bot = new(TestUrl_1, TestDownloadFolderPath);
+        bot.GoToWebPage(bot.Url);
+        IWebElement? element = bot.FindPageElement(elementString, "xp");
         Assert.NotNull(element);
         try
         {
-            basic_bot.GoToWebpage();
-            Assert.Throws<BotElementException>(() => Bot.ClickElement(element));
+            bot.GoToWebPage(bot.Url);
+            Assert.Throws<BotStaleElementException>(() => bot.ClickElement(element));
         }
         finally
         {
-            basic_bot.CloseBot();
+            bot.CloseBot();
         }
     }
 
@@ -402,23 +389,23 @@ public sealed class BotTest(ITestOutputHelper output)
     [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "xp", null, "xp", false, true)]
     public void ArgumentNullExceptionTest(string TestUrl, string? FirstElementString, string FirstByMechanism, string? SecondElementString, string SecondByMechanism, bool UseFindElements = false, bool UseAncestorElementPattern = false)
     {
-        Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
-        AccessTestWebPage(configuredBot,TestUrl);
+        Bot bot = new(TestUrl, TestDownloadFolderPath);
+        AccessTestWebPage(bot, TestUrl);
         try
         {
             // if UseFindElements is true, we will check exceptions in FindElements() as opposed to FindElement()
             if (UseFindElements)
             {
-                Assert.Throws<BotElementException>(() => FindPageElementsException(configuredBot, FirstElementString, FirstByMechanism));
+                Assert.Throws<BotFindElementException>(() => FindPageElementsException(bot, FirstElementString!, FirstByMechanism));
             }
             else
             {
-                Assert.Throws<BotElementException>(() => FindPageElementException(configuredBot, FirstElementString, FirstByMechanism, SecondElementString, SecondByMechanism, UseAncestorElementPattern));
+                Assert.Throws<BotFindElementException>(() => FindPageElementException(bot, FirstElementString, FirstByMechanism, SecondElementString, SecondByMechanism, UseAncestorElementPattern));
             }
         }
         finally
         {
-            configuredBot.CloseBot();
+            bot.CloseBot();
         }
     }
 
@@ -434,15 +421,15 @@ public sealed class BotTest(ITestOutputHelper output)
     [InlineData(TestUrl_1, "NO_SUCH_ELEMENT", "lt")]
     public void NoSuchElementExceptionTest(string TestUrl, string ElementString, string ByMechanism)
     {
-        Bot basicBot = new(TestUrl);
-        AccessTestWebPage(basicBot,TestUrl);
+        Bot bot = new(TestUrl, TestDownloadFolderPath);
+        AccessTestWebPage(bot, TestUrl);
         try
         {
-            Assert.Throws<BotElementException>(() => FindPageElementException(basicBot, ElementString, ByMechanism, null, null));
+            Assert.Throws<BotFindElementException>(() => FindPageElementException(bot, ElementString, ByMechanism, null, null));
         }
         finally
         {
-            basicBot.CloseBot();
+            bot.CloseBot();
         }
     }
 
@@ -466,23 +453,23 @@ public sealed class BotTest(ITestOutputHelper output)
     [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "xp", ".//following::a[@href='https://library.ldraw.org/omr/sets/657'", "xp", false, true)]
     public void InvalidSelectorTest(string TestUrl, string FirstElementString, string FirstByMechanism, string? SecondElementString, string? SecondByMechanism, bool UseFindElements = false, bool UseAncestorElementPattern = false)
     {
-        Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
-        AccessTestWebPage(configuredBot,TestUrl);
+        Bot bot = new(TestUrl, TestDownloadFolderPath);
+        AccessTestWebPage(bot, TestUrl);
         try
         {
             // if UseFindElements is true, we will check exceptions in FindElements() as opposed to FindElement()
             if (UseFindElements)
             {
-                Assert.Throws<BotMechanismException>(() => FindPageElementsException(configuredBot, FirstElementString, FirstByMechanism));
+                Assert.Throws<BotMechanismException>(() => FindPageElementsException(bot, FirstElementString, FirstByMechanism));
             }
             else
             {
-                Assert.Throws<BotMechanismException>(() => FindPageElementException(configuredBot, FirstElementString, FirstByMechanism, SecondElementString, SecondByMechanism, UseAncestorElementPattern));
+                Assert.Throws<BotMechanismException>(() => FindPageElementException(bot, FirstElementString, FirstByMechanism, SecondElementString, SecondByMechanism, UseAncestorElementPattern));
             }
         }
         finally
         {
-            configuredBot.CloseBot();
+            bot.CloseBot();
         }
     }
 
@@ -506,47 +493,47 @@ public sealed class BotTest(ITestOutputHelper output)
     [InlineData(TestUrl_1, "//h2[@class='fi-ta-header-heading']", "xp", ".//following::a[@href='https://library.ldraw.org/omr/sets/657']", "NOT_IMPLEMENTED_BY_MECHANISM", false, true)]
     public void NotImplementedExceptionTest(string TestUrl, string FirstElementString, string FirstByMechanism, string? SecondElementString, string? SecondByMechanism, bool UseFindElements = false, bool UseAncestorElementPattern = false)
     {
-        Bot configuredBot = new(TestUrl, TestDownloadFolderPath);
-        AccessTestWebPage(configuredBot,TestUrl);
+        Bot bot = new(TestUrl, TestDownloadFolderPath);
+        AccessTestWebPage(bot, TestUrl);
         try
         {
             // if UseFindElements is true, we will check exceptions in FindElements() as opposed to FindElement()
             if (UseFindElements)
             {
-                Assert.Throws<BotMechanismException>(() => FindPageElementsException(configuredBot, FirstElementString, FirstByMechanism));
+                Assert.Throws<BotMechanismException>(() => FindPageElementsException(bot, FirstElementString, FirstByMechanism));
             }
             else
             {
-                Assert.Throws<BotMechanismException>(() => FindPageElementException(configuredBot, FirstElementString, FirstByMechanism, SecondElementString, SecondByMechanism, UseAncestorElementPattern));
+                Assert.Throws<BotMechanismException>(() => FindPageElementException(bot, FirstElementString, FirstByMechanism, SecondElementString, SecondByMechanism, UseAncestorElementPattern));
             }
         }
         finally
         {
-            configuredBot.CloseBot();
+            bot.CloseBot();
         }
     }
 
     /// <summary>
-    /// Tests whether the GoToWebpage() method throws a BotUrlException when an invalid URL is provided to the constructor.
+    /// Tests whether the GoToWebPage() method throws a BotUrlException when an invalid URL is provided to the constructor.
     /// </summary>
     /// <param name="InvalidUrl">The invalid URL to test.</param>
     [Theory]
     [InlineData("www.NotAWebsiteForBots.Bot.com")]
     public void InvalidUrlTest(string InvalidUrl)
     {
-        Bot basicBot = new(InvalidUrl);
+        Bot bot = new(InvalidUrl, TestDownloadFolderPath);
         try
         {
-            Assert.Throws<BotUrlException>(basicBot.GoToWebpage);
+            Assert.Throws<BotUrlException>(() => bot.GoToWebPage(bot.Url));
         }
         finally
         {
-            basicBot.CloseBot();
+            bot.CloseBot();
         }
     }
 
     /// <summary>
-    /// Tests whether the GoToWebpage() method throws a BotUrlException when a null URL is provided to the constructor.
+    /// Tests whether the GoToWebPage() method throws a BotUrlException when a null URL is provided to the constructor.
     /// </summary>
     /// <param name="NullUrl">The null URL to test.</param>
     [Theory]
@@ -554,92 +541,54 @@ public sealed class BotTest(ITestOutputHelper output)
     public void NullUrlTest(string? NullUrl)
     {
         // use null forgiveness to actually make test possible 
-        Bot basicBot = new(NullUrl!);
+        Bot bot = new(NullUrl!, TestDownloadFolderPath);
         try
         {
-            Assert.Throws<BotUrlException>(basicBot.GoToWebpage);
+            Assert.Throws<BotUrlException>(() => bot.GoToWebPage(bot.Url));
         }
         finally
         {
-            basicBot.CloseBot();
+            bot.CloseBot();
         }
     }
 
     /// <summary>
-    /// Tests whether the Bot class throws a BotDriverException when calling GoToWebpage() after calling CloseBotBrowser().
+    /// Tests whether the Bot class exposes the ChromeOptions used to initialize the ChromeDriver instance.
     /// </summary>
-    [Fact]
-    public void CloseBrowserTest()
-    {
-        Bot basicBot = new(TestUrl_1);
-        try
-        {
-            basicBot.CloseBotBrowser();
-            // use a Action type with delegator to reference the method
-            Assert.Throws<BotDriverException>(basicBot.GoToWebpage);
-        }
-        finally
-        {
-            basicBot.CloseBot();
-        }
-    }
-
-    /// <summary>
-    /// Tests whether the Bot class throws a BotDriverException when calling GoToWebpage() after calling CloseBotDriver().
-    /// </summary>
-    [Fact]
-    public void CloseDriverTest()
-    {
-        Bot basicBot = new(TestUrl_1);
-        try
-        {
-            basicBot.CloseBotDriver();
-            // use a Action type with delegator to reference the method
-            Assert.Throws<BotDriverException>(basicBot.GoToWebpage);
-        }
-        finally
-        {
-            basicBot.CloseBot();
-        }
-    }
-
-/// <summary>
-/// Tests whether the Bot class exposes the ChromeOptions used to initialize the ChromeDriver instance.
-/// </summary>
     [Fact]
     public void GetChromeOptionsTest()
     {
-        Bot configuredBot = new(TestUrl_1, TestDownloadFolderPath);
+        Bot bot = new(TestUrl_1, TestDownloadFolderPath);
         try
         {
-            ChromeOptions? actualOptions = configuredBot.Options;
+            ChromeOptions? actualOptions = bot.Options;
             Assert.NotNull(actualOptions);
         }
         finally
         {
-            configuredBot.CloseBot();
+            bot.CloseBot();
         }
     }
 
-        /// <summary>
-        /// Tests whether the Bot class exposes the NameList property, which contains a list of names found on the webpage.
-        /// </summary>
+    /// <summary>
+    /// Tests whether the Bot class exposes the NameList property, which contains a list of names found on the webpage.
+    /// </summary>
     [Fact]
     public void GetNameListTest()
     {
-        Bot configuredBot = new(TestUrl_1, TestDownloadFolderPath)
+        Bot bot = new(TestUrl_1, TestDownloadFolderPath)
         {
             AttributeList = ["Test_NameList"]
         };
         try
         {
             string[] expectedList = ["Test_NameList"];
-            Assert.NotNull(configuredBot.AttributeList);
-            Assert.Equal(expectedList, configuredBot.AttributeList);
+            Assert.NotNull(bot.AttributeList);
+            Assert.Equal(expectedList, bot.AttributeList);
         }
         finally
         {
-            configuredBot.CloseBot();
+            bot.CloseBot();
         }
     }
 }
