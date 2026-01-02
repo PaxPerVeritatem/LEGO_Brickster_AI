@@ -1,0 +1,21 @@
+2025/12/19-11:14:16.712 566c Reusing MANIFEST C:\Users\admin\OneDrive\Skrivebord\LEGO_Brickster_AI\Project\DriverProfile\Default\Local Storage\leveldb/MANIFEST-000001
+2025/12/19-11:14:16.715 566c Recovering log #537
+2025/12/19-11:14:16.717 566c Reusing old log C:\Users\admin\OneDrive\Skrivebord\LEGO_Brickster_AI\Project\DriverProfile\Default\Local Storage\leveldb/000537.log 
+2025/12/19-11:15:16.727 4384 Level-0 table #540: started
+2025/12/19-11:15:16.730 4384 Level-0 table #540: 16358 bytes OK
+2025/12/19-11:15:16.731 4384 Delete type=0 #537
+2025/12/19-11:15:16.732 4384 Compacting 4@0 + 1@1 files
+2025/12/19-11:15:16.736 4384 Generated table #541@0: 65 keys, 30466 bytes
+2025/12/19-11:15:16.736 4384 Compacted 4@0 + 1@1 files => 30466 bytes
+2025/12/19-11:15:16.737 4384 compacted to: files[ 0 1 0 0 0 0 0 ]
+2025/12/19-11:15:16.738 4384 Delete type=2 #530
+2025/12/19-11:15:16.738 4384 Delete type=2 #532
+2025/12/19-11:15:16.738 4384 Delete type=2 #534
+2025/12/19-11:15:16.738 4384 Delete type=2 #536
+2025/12/19-11:15:16.738 4384 Delete type=2 #540
+2025/12/19-11:26:17.774 4384 Level-0 table #543: started
+2025/12/19-11:26:17.780 4384 Level-0 table #543: 19104 bytes OK
+2025/12/19-11:26:17.781 4384 Delete type=0 #539
+2025/12/19-11:36:17.772 4384 Level-0 table #545: started
+2025/12/19-11:36:17.777 4384 Level-0 table #545: 20789 bytes OK
+2025/12/19-11:36:17.779 4384 Delete type=0 #542
