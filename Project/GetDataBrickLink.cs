@@ -9,48 +9,60 @@ sealed class GetDataBrickLink : IGetData
     public static string Url { get; set; } = "https://www.bricklink.com/v3/studio/design.page?tab=Staff-Picks";
     public static string DownloadFolderPath => @"..\..\..\LEGO_Data\BrickLink_Data";
 
-    public static int MaxPage => 1;
+    // We cant infer the MaxPage for this implementation.
+    public static int? MaxPage => null;
 
-    public static int PageLimit => MaxPage;
+    public static int PageLimit => 1;
 
-    // the actual amount of sets pr page. 
+
     public static int ExpectedSetsPrPage => 50;
 
-    // so far there does not seems to be any 404 error for any sets, so this can always be 0 in this implementation. 
-    public static int ExpectedElementClickDeviation => 0;
+    // so far there does not seems to be any 404 error for any sets, so this can  be 0 in this implementation for now. 
+    public static int ExpectedSetClickDeviation => 0;
 
-    public static int ExpectedSetScrapeAmount { get; set; }  = ExpectedSetsPrPage * PageLimit - ExpectedElementClickDeviation;
 
-    public static int ExpectedSetClickAmount { get; set; } = ExpectedSetScrapeAmount; 
+    public static int ExpectedSetClickAmount { get; set; } = ExpectedSetsPrPage * PageLimit - ExpectedSetClickDeviation;
+
+
     public static int SetClickCounter { get; set; } = 0;
 
     public static int FileDownloadCounter { get; set; } = 0;
 
 
     // Custom run Properties 
-    public static bool CustomRun => false;
+    public static bool CustomRun => true;
 
     // Not nessesary for this implementation. 
-    public static int StartFromPage => 0;
+    public static int? StartFromPage => null;
 
-    // We use SubPageElement in this implementation, so we dont need UrlPageVarien. 
+    // We use SubpageElementTuple in this implementation, so we dont need UrlPageVarient or StartFromPage . 
     public static string? UrlPageVarient { get; set; } = null;
 
 
     // Each subpage is just a IWebElement with an accompanying the ByMechanism to call FindElement during ConfigureCustomRun(). 
-    public static (string ElementString, string ByMechanism)? SubpageElementTuple { get; set; } = ("//li[@data-ts-id='3']", "xp");
+    public static (string ElementString, string ByMechanism)? SubpageElementTuple => ("//li[@data-ts-id='3']", "xp");
 
 
+    public static bool UseSubpage => true;
 
     public static void ConfigureCustomRun(Bot bot)
     {
-        //find and click the subpage link text to acess subpage. Additionally, we can use forgive operator, since we always manually set SubPageElementTuple. 
-        IWebElement? subPageElement = bot.FindPageElement(SubpageElementTuple!.Value.ElementString, SubpageElementTuple!.Value.ByMechanism!);
-        bot.ClickElement(subPageElement);
-        Thread.Sleep(1000);
-        // Get all elements which are downloadable on the subpage. 
-        IWebElement? ShowOnlyDownloadableSets = bot.FindPageElement("//option[contains(text(),'Downloadable')]", "xp");
-        bot.ClickElement(ShowOnlyDownloadableSets);
+        if (UseSubpage)
+        {
+            /*find and click the subpage link text to access the subpage. 
+            Additionally, we can use forgive operator, since we always manually set SubPageElementTuple.*/
+            IWebElement? subPageElement = bot.FindPageElement(SubpageElementTuple!.Value.ElementString, SubpageElementTuple!.Value.ByMechanism!);
+            bot.ClickElement(subPageElement);
+            Thread.Sleep(1000);
+            /*
+                a note for the next next commit. 
+                We can actually skip this and do a check for all downloadable within the attribute list, since there is a symbol indicateing 
+                if sets can be downloaded on their initial cards. This can help us skip the "check if there is a download button and make the scrapeing even faster
+                when that is implemented, we can actually remove the below line on subpages, since it works on all pages via the attribute list names. 
+            */
+            IWebElement? ShowOnlyDownloadableSets = bot.FindPageElement("//option[contains(text(),'Downloadable')]", "xp");
+            bot.ClickElement(ShowOnlyDownloadableSets);
+        }
     }
 
 
@@ -140,6 +152,7 @@ sealed class GetDataBrickLink : IGetData
                 }
 
                 // Attempt to find LEGO set LinkTest element, if its file is not already downloaded.
+                // Here we can add another check and only click if its not also downloadable by the card indicator
                 IWebElement? setNameElement = bot.FindPageElement(IdentifierAttribute, ByMechanism);
                 if (bot.WaitTillExists(setNameElement))
                 {
@@ -156,7 +169,7 @@ sealed class GetDataBrickLink : IGetData
                     IWebElement? downloadButtonElement = bot.FindPageElement("//button[contains(text(),'Download Studio file')]", "xp");
                     bot.ClickElement(downloadButtonElement);
                     // increment for each downloaded LEGO set. 
-                    FileDownloadCounter += 1;
+                    FileDownloadCounter++;
                     Thread.Sleep(500);
                     bot.GetAndRenameFile(fullFileName);
                     bot.CloseTab(0);
@@ -246,41 +259,34 @@ sealed class GetDataBrickLink : IGetData
         }
 
     }
+
+    /// <summary>
+    /// this also needs to be changed once we implement the feature of checking for if sets can be downloaded before clicking them. 
+    /// We will have to check 
+    /// </summary>
+    /// <returns></returns>
     public static bool AssertDownloadAmount()
     {
+        bool runStatus = ExpectedSetClickAmount == SetClickCounter;
         try
         {
-            if (!CustomRun)
+            if (!CustomRun && runStatus)
             {
-                if (ExpectedSetClickAmount == SetClickCounter)
-                {
-                    Console.WriteLine($"Run on main page Sucessfully finished!");
-                    Console.WriteLine($"Total amount of sets to be scraped in run: {MaxPage * ExpectedSetsPrPage - ExpectedElementClickDeviation}.");
-                    Console.WriteLine($"Amount of LEGO set pages checked for potential download: {SetClickCounter}");
-                    Console.WriteLine($"{FileDownloadCounter} could actually downloaded!\n");
-                    return true;
-                }
-                else
-                {
-                    throw new BotDownloadAmountException($"Expected {MaxPage * ExpectedSetsPrPage - ExpectedElementClickDeviation}, but clicked {SetClickCounter} set LEGO sets, downloaded: {FileDownloadCounter} LEGO sets");
-                }
+                Console.WriteLine($"Run on main page Sucessfully finished!");
+            }
+            else if (CustomRun && runStatus)
+            {
+
+                Console.WriteLine($"Custom run Sucessfully finished!");
             }
             else
             {
-                if (ExpectedSetClickAmount == FileDownloadCounter)
-                {
-                    Console.WriteLine($"Custom run Sucessfully finished!");
-                    Console.WriteLine($"Total amount of sets to be scraped in run: {MaxPage * ExpectedSetsPrPage - ExpectedElementClickDeviation}.");
-                    Console.WriteLine($"{MaxPage * ExpectedSetsPrPage - ExpectedElementClickDeviation - SetClickCounter} were already downloaded.");
-                    Console.WriteLine($"The amount of downloaded sets: {FileDownloadCounter}, matched the expected amount: {ExpectedSetClickAmount}\n ");
-                    return true;
-                }
-                else
-                {
-                    throw new BotDownloadAmountException($"Expected to click:{ExpectedSetClickAmount} sets. Actually clicked:{SetClickCounter}. Downloaded: {FileDownloadCounter} LEGO sets");
-                }
+                throw new BotDownloadAmountException($"Expected to click:{ExpectedSetClickAmount} sets. Actually clicked:{SetClickCounter}. Downloaded: {FileDownloadCounter} LEGO sets");
             }
-
+            Console.WriteLine($"Total amount of LEGO sets expected to be scaped in run: {ExpectedSetClickAmount}.");
+            Console.WriteLine($"Amount of LEGO set pages checked for potential download: {SetClickCounter}");
+            Console.WriteLine($"{FileDownloadCounter} amount of LEGO sets could actually be downloaded!\n");
+            return true;
         }
         catch (BotDownloadAmountException ex)
         {
@@ -291,7 +297,7 @@ sealed class GetDataBrickLink : IGetData
 
     // ---------------------------------------------------------------------------------------------------------------------------------------------//
 
-    //process the Ldraw website LEGO sets and download them. 
+    //process the BrickLink website LEGO sets and download them. 
     public static void ProcessData()
     {
         // clean up any existing preferences file from previous bot runs.

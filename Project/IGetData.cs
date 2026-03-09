@@ -3,9 +3,12 @@ using OpenQA.Selenium;
 namespace LEGO_Brickster_AI;
 
 /// <summary>
-/// Static abstract interface for... (TO DO). Note: If the target website requires login and/or authentication, 
-/// users should manually login once. The bot will then persist save credentials via cookies. This allows for simpler implementation 
-/// of interface methods such as AccessMainPage(). 
+/// Abstract interface for defining a data collector. Implementations should provide a way to scrape data from a target website.
+/// Note that if the target website requires login and/or authentication, users should manually login once on chrome.
+/// The bot will then save credentials via cookies. This allows for simpler implementation of interface methods such as AccessMainPage().
+/// A 'Set', in the context of this interface, is defined as an element which has either one or multiple downloadable files associated with it.
+/// Implementations should provide a way to configure custom runs of the data collector, access the main webpage, 
+/// set the list of attributes to scrape and find the download button to download sets.
 /// </summary>
 
 interface IGetData
@@ -31,47 +34,52 @@ interface IGetData
   // Global Properties
 
   /// <summary>
-  /// The maximum number of pages which can be reached on the webpage, relative to
-  /// the amount of pages of sets to download.
+  /// The absolute maximum number of pages of sets which can be reached on the from the first page of a run. 
+  /// if it is not possible to determine the maximum amount of pages, this value should be set to null
   /// </summary>
-  static abstract int MaxPage { get; }
+  static abstract int? MaxPage { get; }
 
 
   /// <summary>
-  /// The PageLimit defines the absolute amount of pages, where SetAttributeList() is called for each page, to add the 
-  /// IdentifierAttribute for all CommonElementStrings to the bot.AttributeList. PageLimit can be set to MaxPage to ensure a complete run
-  /// and avoid unexpected errors when trying to access more than the maximum amount of pages.
+  /// The amount of pages of sets to be scraped. If MaxPage is not null PageLimit can be set to its valie, to ensure a complete run
+  /// and avoid unexpected errors, when trying to access more than the absolute maximum amount of pages. If MaxPage is null, 
+  /// PageLimit can be set to scape any arbitrary amount of pages.
+  /// 
   /// </summary>
   static abstract int PageLimit { get; }
 
 
 
   /// <summary>
-  /// Int defining the number of expected sets of data pr page. A 'set' is defined as an element which has either one or 
-  /// multiple downloadable files associated with it.
+  /// Int defining the number of expected sets pr page. 
   /// </summary>
-  static abstract int ExpectedSetsPrPage {get;}
+  static abstract int ExpectedSetsPrPage { get; }
 
 
   /// <summary>
-  /// User defined deviation of the ExpectedElementClickAmount. Should be implemented after testing 
-  /// whether there some pages which have a different amount of downloadable ets.
+  /// The deviation from the ExpectedSetClickAmount. The default value should be set to 0, and can be increased if there are
+  /// some pages which have a different amount of clickable sets, than the ExpectedSetsPrPage.
+  /// </summary>
+  static abstract int ExpectedSetClickDeviation { get; }
+
+
+  /// <summary>
+  /// The total expected amount of sets to be clicked during a run. Should be subtracted by ExpectedSetClickDeviation
   /// </summary>
   static abstract int ExpectedSetClickAmount { get; set; }
 
 
 
-  static abstract int ExpectedSetScrapeAmount { get;}
-
-
 
   /// <summary>
-  /// A simple reference counter for asserting correct amount of elements have been clicked, 
-  /// inferred from <c>ExpectedElementClickAmount </c>
+  /// A simple counter for asserting correct amount of sets have been clicked, 
+  /// inferred from ExpectedSetClickAmount 
   ///  /// </summary>
   static abstract int SetClickCounter { get; set; }
 
-
+  /// <summary>
+  ///  The total amount of files downloaded during a run. 
+  /// </summary>
   static abstract int FileDownloadCounter { get; set; }
 
 
@@ -81,7 +89,7 @@ interface IGetData
   // Custom run Properties 
 
   /// <summary>
-  /// Bool defining whether a custom run should be performed.
+  /// Bool defining whether a custom run should be performed on subpages or the main page.
   /// </summary>
   static abstract bool CustomRun { get; }
 
@@ -89,9 +97,12 @@ interface IGetData
 
   /// <summary>
   /// Int defining the starting page to begin a run from. 
+  /// the value is used in combination with the <param name = "UrlPageVarient" to construct the full url to access a certain subpage,
+  /// if the website orders subpages with a page variable in the url, For example, 'www.website.com/page=1', 
+  /// then StartFromPage can be set to 1, and UrlPageVarient can be set to 'page=' to construct the full url for the starting page.
   /// </summary>
   /// 
-  static abstract int StartFromPage { get; }
+  static abstract int? StartFromPage { get; }
 
 
   /// <summary>
@@ -100,8 +111,24 @@ interface IGetData
   /// </summary>
   static abstract string? UrlPageVarient { get; set; }
 
+  /// <summary>
+  /// A tuple containing the ElementString and ByMechanism for an subpage element.
+  /// The element is clicked at the start of a custom run to access a certain subpage. 
+  /// This is a alternative to utilizing UrlPageVarient and StartFromPage, when the website does not order subpages with a page variable in the url,
+  ///  but rather with a clickable element on the main page.
+  /// </summary>
+  static abstract (string ElementString, string ByMechanism)? SubpageElementTuple { get; }
 
-  static abstract (string ElementString, string ByMechanism)? SubpageElementTuple { get; set; }
+
+  /// <summary>
+  /// Bool defining whether a custom run should be run on subpage or from the main page. 
+  /// </summary>
+  static abstract bool UseSubpage { get; }
+
+
+
+
+
   // --------------------------------------------------------------------------------------------------------------------------------------------//
 
   // Functions

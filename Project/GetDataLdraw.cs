@@ -12,18 +12,15 @@ sealed class GetDataLdraw : IGetData
 
 
     // Global run Properties
-    public static int MaxPage => 59;
+    public static int? MaxPage => 59;
 
     public static int PageLimit => 2;
 
     public static int ExpectedSetsPrPage => 25;
 
-    public static int ExpectedElementClickDeviation => 0;
+    public static int ExpectedSetClickDeviation => 0;
 
-    public static int ExpectedSetClickAmount { get; set; } = ExpectedSetsPrPage * PageLimit - ExpectedElementClickDeviation;
-
-    public static int ExpectedSetScrapeAmount =>  ExpectedSetClickAmount;
-
+    public static int ExpectedSetClickAmount { get; set; } = ExpectedSetsPrPage * PageLimit - ExpectedSetClickDeviation;
 
     public static int SetClickCounter { get; set; } = 0;
 
@@ -34,23 +31,27 @@ sealed class GetDataLdraw : IGetData
     // Custom run Properties 
     public static bool CustomRun => true;
 
-    public static int StartFromPage => 2;
+    public static int? StartFromPage => 2;
 
     public static string? UrlPageVarient { get; set; } = "?page=";
 
-    // We use UrlPageVarient in this implementation so we dont need SubpageElementTuple. 
-    public static (string ElementString, string ByMechanism)? SubpageElementTuple { get; set; } = null;
+    // We use UrlPageVarient and StartFromPage in this implementation, so we dont use SubpageElementTuple. 
+    public static (string ElementString, string ByMechanism)? SubpageElementTuple => null;
+
+    public static bool UseSubpage => false;
 
 
     // dont need a bot to configure custom runs for this implementation of IGetData
     public static void ConfigureCustomRun(Bot? bot = null)
-    {
-        Url = $"{Url}{UrlPageVarient}{StartFromPage}";
-        if (StartFromPage != MaxPage)
+    {   
+        if (UseSubpage)
         {
-            ExpectedSetClickAmount += ExpectedElementClickDeviation;
+            Url = $"{Url}{UrlPageVarient}{StartFromPage}";
+            if (StartFromPage != MaxPage)
+            {
+                ExpectedSetClickAmount += ExpectedSetClickDeviation;
+            }
         }
-
     }
 
 
