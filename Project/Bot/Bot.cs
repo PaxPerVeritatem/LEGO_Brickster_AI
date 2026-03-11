@@ -86,19 +86,36 @@ public class Bot
             }
         };
 
-        // construct driver with all arguments
-        _driver = UndetectedChromeDriver.Create(
-            options: _options,
-            userDataDir: _userProfileDir,
-            driverExecutablePath: _driverPath,
-            prefs: prefs
-            );
+        try
+        {
+            // construct driver with all arguments
+            _driver = UndetectedChromeDriver.Create(
+                options: _options,
+                userDataDir: _userProfileDir,
+                driverExecutablePath: _driverPath,
+                prefs: prefs
+                );
+            // create new WebDriverWait for driver with a timeout of 5 seconds
+            _wait = new(_driver, TimeSpan.FromSeconds(5));
 
-        // create new WebDriverWait for driver with a timeout of 5 seconds
-        _wait = new(_driver, TimeSpan.FromSeconds(5));
-
-        // List containing all tabs open. 
-        _windowHandles = [.. _driver.WindowHandles];
+            // List containing all tabs open. 
+            _windowHandles = [.. _driver.WindowHandles];
+        }
+        catch (InvalidOperationException e)
+        {
+            if (e.Message.Contains("This version of ChromeDriver only supports Chrome version"))
+            {
+                Console.WriteLine($"It seems your chromedriver.exe and chrome.exe versions are mismatched or not compatible.");
+                Console.WriteLine("Please go to: https://googlechromelabs.github.io/chrome-for-testing/ and download the correct compatible versions.");
+                Console.WriteLine("Alternatively you can update your chrome.exe by going to 'chrome://settings/help' in a chrome browser and then download your chromedriver.exe from https://googlechromelabs.github.io/chrome-for-testing/.");
+                Console.WriteLine("Regardless of which method you use, remember to place the chromedriver.exe in the default path C:\\Users\\<user>\\.cache\\selenium\\chromedriver\\win64\\<chromedriver version number>\\chromedriver.exe");
+            }
+            else if (e.Message.Contains("Chrome renderer failed to start."))
+            {
+                Console.WriteLine($"It seems your DriverProfile folder is corrupted. Please delete its content and try again.");
+            }
+            throw;
+        }
     }
 
     /// <summary>
@@ -317,19 +334,10 @@ public class Bot
 
                 // The new path is the download folder with the new file name 
                 string newFilePath = Path.Combine(AbsDownloadFolderPath, NewFileName);
-
+                NewFileName = Path.GetFileName(newFilePath);
                 // change the name of the file 
                 fileInfo.MoveTo(newFilePath);
-                Console.WriteLine($"Filename: {currentFileName} was changed to: {NewFileName}\n");
-
-                // Redefine the NewFileName in case the new name from MoveTo() contains "(1)" 
-                NewFileName = Path.GetFileName(newFilePath);
-                // delete the new file if it is a duplicate 
-                if (NewFileName.Contains("(1)"))
-                {
-                    Console.WriteLine($"Duplicate file found by name:{NewFileName}, deleting duplicate file.\n");
-                    File.Delete(currentFilePath);
-                }
+                Console.WriteLine($"Filename: {currentFileName} was changed to: {NewFileName}");
             }
             Console.WriteLine($"{NewFileName} downloaded successfully.\n");
         }
@@ -411,7 +419,7 @@ public class Bot
     {
 
         string[] filesArray = Directory.GetFiles(AbsDownloadFolderPath);
-        string? latestModifiedFile = filesArray.MaxBy(file => File.GetLastWriteTime(file));
+        string? latestModifiedFile = filesArray.MaxBy(file => File.GetCreationTime(file));
         if (latestModifiedFile != null)
         {
             return latestModifiedFile;
@@ -610,8 +618,6 @@ public class Bot
         _driver.Quit();
     }
 
-
-
     /// <summary>
     ///  Cleans up the preferences file used by the bot to store download preferences.
     ///  Should be called before bot creation and after bot closure to ensure no stale preferences interfere with future bot runs.
@@ -628,7 +634,6 @@ public class Bot
         }
         catch (Exception ex)
         {
-            // Silently fail - we're exiting anyway
             Console.WriteLine($"Cleanup warning: {ex.Message}");
         }
     }

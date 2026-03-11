@@ -14,13 +14,16 @@ sealed class GetDataLdraw : IGetData
     // Global run Properties
     public static int? MaxPage => 59;
 
-    public static int PageLimit => 2;
+    public static int PageLimit => 5;
 
     public static int ExpectedSetsPrPage => 25;
 
+    // should be set to 15, if page 59 is included in the run. 
     public static int ExpectedSetClickDeviation => 0;
 
-    public static int ExpectedSetClickAmount { get; set; } = ExpectedSetsPrPage * PageLimit - ExpectedSetClickDeviation;
+     public static int ExpectedSetsScraped => ExpectedSetsPrPage * PageLimit - ExpectedSetClickDeviation;
+
+    public static int ExpectedSetClickAmount {get; set;} = ExpectedSetsScraped;
 
     public static int SetClickCounter { get; set; } = 0;
 

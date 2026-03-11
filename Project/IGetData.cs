@@ -63,11 +63,18 @@ interface IGetData
   static abstract int ExpectedSetClickDeviation { get; }
 
 
+/// <summary>
+///  The total expected amount of sets to be scraped during a run.
+/// </summary>
+  static abstract int ExpectedSetsScraped {get;}
+
   /// <summary>
   /// The total expected amount of sets to be clicked during a run. Should be subtracted by ExpectedSetClickDeviation
   /// </summary>
   static abstract int ExpectedSetClickAmount { get; set; }
 
+  
+  
 
 
 
