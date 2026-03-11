@@ -2,6 +2,7 @@ namespace LEGO_Brickster_AI;
 
 using OpenQA.Selenium;
 using OpenQA.Selenium.Interactions;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 sealed class GetDataBrickLink : IGetData
 {
@@ -135,6 +136,7 @@ sealed class GetDataBrickLink : IGetData
 
         // Regex.Replace is faster then String.Replace since it uses bitmapping under the hood. 
         string fullFileName = Regex.Replace(FileName, invalidCharacterPattern, "").Trim() + ".io";
+
         return fullFileName;
     }
 
@@ -173,20 +175,25 @@ sealed class GetDataBrickLink : IGetData
                 // wait until ModelElement has rendered on page
                 if (bot.WaitTillExists(Modeldiv))
                 {
-                    // find The download button element on each set page
+                    // find The download button element on the current set page
                     IWebElement? downloadButtonElement = bot.FindPageElement("//button[contains(text(),'Download Studio file')]", "xp");
-                    bot.ClickElement(downloadButtonElement);
-                    // increment for each downloaded LEGO set. 
-                    FileDownloadCounter++;
-                    Thread.Sleep(500);
-                    bot.GetAndRenameFile(fullFileName);
+                    // try to download the file via the downloadButtonElement
+                    string? currentFilePath = bot.DownloadFile(downloadButtonElement);
+
+                    // if the file was downloaded successfully
+                    if (currentFilePath != null)
+                    {
+                        FileDownloadCounter++;
+                        // try and rename the downloaded file if nessary
+                        bot.GetAndRenameFile(currentFilePath, fullFileName);
+                    }
                     bot.CloseTab(0);
                 }
             }
             // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
             catch (BotFindElementException)
             {
-                Console.WriteLine($"No more download buttons on current set page");
+                Console.WriteLine($"No more download buttons on current set page\n");
                 bot.CloseTab(0);
             }
             // should be thrown in case of stale element or 404 page error.
@@ -275,6 +282,7 @@ sealed class GetDataBrickLink : IGetData
             if (!CustomRun && runStatus)
             {
                 Console.WriteLine($"Run on main page Sucessfully finished!");
+            
             }
             else if (CustomRun && runStatus)
             {
@@ -289,7 +297,7 @@ sealed class GetDataBrickLink : IGetData
             Console.WriteLine($"Total amount of sets expected to be scaped in run: {ExpectedSetsScraped}.");
             Console.WriteLine($"{SetClickCounter} set(s) were clicked to check for downloadability.");
             Console.WriteLine($"{FileDownloadCounter} set(s) could and were actually downloaded.");
-            
+
 
             return true;
         }
@@ -320,6 +328,7 @@ sealed class GetDataBrickLink : IGetData
                 ConfigureCustomRun(bot);
             }
 
+            Stopwatch sw = Stopwatch.StartNew();
             // the first page root which is the ancestor div of all set elements on the main page.
             IWebElement? pageRootElement = bot.FindPageElement("//div[@class='studio-gallery__card-container']", "xp");
             for (int i = 0; i < PageLimit; i++)
@@ -347,6 +356,9 @@ sealed class GetDataBrickLink : IGetData
                     Thread.Sleep(1000);
                 }
             }
+            sw.Stop();
+            Console.WriteLine($"Scraping of current run took: {sw.Elapsed}");
+            
         }
         catch (BotFindElementException ex)
         {

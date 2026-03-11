@@ -314,23 +314,16 @@ public class Bot
 
 
 
-    public void GetAndRenameFile(string NewFileName)
+    public void GetAndRenameFile(string CurrentFilePath, string NewFileName)
     {
         try
         {
-            // define a cancellation token with a timeout of 10 seconds
-            CancellationTokenSource cts = new(TimeSpan.FromSeconds(10));
-
-            //step 1) Get the path to the latest downloaded file in the designated Bot download folder and Wait until file download is confirmed 
-            string currentFilePath = ConfirmFileDownload(cts.Token);
-            string currentFileName = Path.GetFileName(currentFilePath);
-
-
+            string currentFileName = Path.GetFileName(CurrentFilePath);
             // step 2) Only rename the file if it is NOT already the desired name.
             if (currentFileName != NewFileName)
             {
                 // The old file info object 
-                FileInfo fileInfo = new(currentFilePath);
+                FileInfo fileInfo = new(CurrentFilePath);
 
                 // The new path is the download folder with the new file name 
                 string newFilePath = Path.Combine(AbsDownloadFolderPath, NewFileName);
@@ -339,7 +332,7 @@ public class Bot
                 fileInfo.MoveTo(newFilePath);
                 Console.WriteLine($"Filename: {currentFileName} was changed to: {NewFileName}");
             }
-            Console.WriteLine($"{NewFileName} downloaded successfully.\n");
+
         }
         catch (IOException ex)
         {
@@ -352,81 +345,110 @@ public class Bot
     }
 
 
-    private string ConfirmFileDownload(CancellationToken CancellationToken)
+
+        /// <summary>
+        /// Downloads a file from the webpage currently being accessed.
+        /// </summary>
+        /// <param name="DownloadButton">The download button element to click.</param>
+        /// <returns>The full path of the downloaded file. This is the path of the file that was just downloaded in the download folder.</returns>
+        /// <remarks>
+        /// This function first takes a snapshot of all the files currently in the download folder.
+        /// It then clicks the download button using the ClickElement() function, which will wait until the element is clickable.
+        /// The ConfirmFileDownload() function is then called, which will wait until a new file appears in the download folder and is not locked by chrome.
+        /// If the file is still being downloaded, the function will wait until the download is finished or a timeout of 10 seconds is reached.
+        /// If the file is finished downloading, but still locked by chrome, the function will wait until the file is unlocked or a timeout of 10 seconds is reached.
+        /// </remarks>
+    public string? DownloadFile(IWebElement? DownloadButton)
+    {
+        HashSet<string> ExstingFileSnapshot = [.. Directory.GetFiles(AbsDownloadFolderPath)];
+        ClickElement(DownloadButton);
+        // wait for sucessful download confirmation and then get the path to the downloaded file
+        Thread.Sleep(500);
+        try
+        {
+            string currentFilePath = ConfirmFileDownload(ExstingFileSnapshot);
+            Console.WriteLine($"{Path.GetFileName(currentFilePath)} downloaded successfully.\n");
+            return currentFilePath;
+        }
+        catch (BotFileDownloadException e)
+        {
+            Console.WriteLine($"{e.Message}");
+            return null; 
+        }
+        
+    }
+
+        /// <summary>
+        /// Confirms that a file has been downloaded by checking for the appearance of a new file in the download folder.
+        /// If the file is still being downloaded, the function will wait until the download is finished or a timeout of 10 seconds is reached.
+        /// If the file is finished downloading, but still locked by chrome, the function will wait until the file is unlocked or a timeout of 10 seconds is reached.
+        /// </summary>
+        /// <param name="ExistingFilesSnapshot">A snapshot of the files that existed in the download folder before the current download.</param>
+        /// <returns>The full path of the downloaded file.</returns>
+        /// <exception cref="BotFileDownloadException">Thrown if the file download confirmation times out.</exception>
+        /// <remarks>
+        /// This function returns the full path of the downloaded file, which can be used to further process the downloaded file.
+        /// The function will return the full path of the downloaded file as soon as it is confirmed that the file is downloaded and unlocked.
+        /// </remarks>
+    public string ConfirmFileDownload(HashSet<string> ExistingFilesSnapshot)
     {
 
-        while (!CancellationToken.IsCancellationRequested)
+        // define a cancellation token with a timeout of 10 seconds
+        using CancellationTokenSource cts = new(TimeSpan.FromSeconds(10));
+
+        while (!cts.IsCancellationRequested)
         {
-            try
+            List<string> newFiles = Directory.GetFiles(AbsDownloadFolderPath)
+                .Where(f => !ExistingFilesSnapshot.Contains(f))
+                .ToList();
+
+
+            // If the download folder was empty prior to current download
+            if (newFiles.Count == 0)
             {
+                Thread.Sleep(300);
+                continue;
+            }
+            string currentFilePath = newFiles.First();
 
-                string? currentFilePath = GetLastDownloadedFilePath();
-                // If the download folder was empty prior to current download
-                if (currentFilePath == null)
-                {
-                    Thread.Sleep(300);
-                    continue;
-                }
+            // if the tmp file exsist, then we are still downloading or we caught the file name in the middle of downloading.  
+            if (currentFilePath.EndsWith(".crdownload"))
+            {
+                Thread.Sleep(300);
+                continue;
+            }
 
-                // if the tmp file exsist, then we are still downloading or we caught the file name in the middle of downloading.  
-                if (currentFilePath.EndsWith(".crdownload"))
-                {
-                    Thread.Sleep(300);
-                    continue;
-                }
+            // if we have finished downloading but the tmp file is not deleted yet by chrome
+            if (File.Exists(currentFilePath + ".crdownload"))
+            {
+                Thread.Sleep(300);
+                continue;
+            }
 
-                string crdownloadFilePath = currentFilePath + ".crdownload";
-                // if we have finished downloading but the tmp file is not deleted yet by chrome
-                if (File.Exists(crdownloadFilePath))
+            // Final file is there but chrome might still have it locked
+            if (File.Exists(currentFilePath))
+            {
+                try
                 {
-                    Thread.Sleep(300);
-                    continue;
-                }
-
-                // Final file is there but chrome might still have it locked
-                if (File.Exists(currentFilePath))
-                {
-                    try
+                    // may throw IOException if chrome still has the file locked
+                    using FileStream stream = File.Open(currentFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
                     {
-                        // may throw IOException if chrome still has the file locked
-                        using FileStream stream = File.Open(currentFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
-                        {
-                            return currentFilePath;
-                        }
-                    }
-                    catch (IOException)
-                    {
-                        Console.WriteLine($"File {Path.GetFileName(currentFilePath)} was still locked after download has finished");
-                        Thread.Sleep(300);
-                        continue;
+                        return currentFilePath;
                     }
                 }
-                return currentFilePath;
-
+                catch (IOException)
+                {
+                    Console.WriteLine($"File {Path.GetFileName(currentFilePath)} was still locked after download has finished");
+                    Thread.Sleep(300);
+                    continue;
+                }
             }
-            catch (BotFileDownloadException ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+            return currentFilePath;
         }
         throw new BotFileDownloadException("File download confirmation timed out. File might have taken too long to download or chrome locked the file indenfinetly and could not be opened \n File may still work .");
     }
-
-
-
-
-    private string? GetLastDownloadedFilePath()
-    {
-
-        string[] filesArray = Directory.GetFiles(AbsDownloadFolderPath);
-        string? latestModifiedFile = filesArray.MaxBy(file => File.GetCreationTime(file));
-        if (latestModifiedFile != null)
-        {
-            return latestModifiedFile;
-        }
-        return null;
-    }
-
+        
+    
     /// <summary>
     /// Waits until the referenced IWebElement exists on the webpage.
     /// If the IWebElement referenced is null, the function will return false.
