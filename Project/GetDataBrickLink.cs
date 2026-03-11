@@ -28,7 +28,9 @@ sealed class GetDataBrickLink : IGetData
 
     public static int SetClickCounter { get; set; } = 0;
 
-    public static int FileDownloadCounter { get; set; } = 0;
+    public static int FilesDownloadedCounter { get; set; } = 0;
+
+    public static  int FilesAlreadyDownloadedCounter { get; set; } = 0; 
 
 
     // Custom run Properties 
@@ -56,14 +58,6 @@ sealed class GetDataBrickLink : IGetData
             IWebElement? subPageElement = bot.FindPageElement(SubpageElementTuple!.Value.ElementString, SubpageElementTuple!.Value.ByMechanism!);
             bot.ClickElement(subPageElement);
             Thread.Sleep(1000);
-            /*
-                a note for the next next commit. 
-                We can actually skip this and do a check for all downloadable within the attribute list, since there is a symbol indicateing 
-                if sets can be downloaded on their initial cards. This can help us skip the "check if there is a download button and make the scrapeing even faster
-                when that is implemented, we can actually remove the below line on subpages, since it works on all pages via the attribute list names. 
-            */
-            IWebElement? ShowOnlyDownloadableSets = bot.FindPageElement("//option[contains(text(),'Downloadable')]", "xp");
-            bot.ClickElement(ShowOnlyDownloadableSets);
         }
     }
 
@@ -106,7 +100,7 @@ sealed class GetDataBrickLink : IGetData
         }
         catch (BotFindElementException)
         {
-            Console.WriteLine($"Cookie button was not found or was not present. Continueing");
+            Console.WriteLine($"Cookie button was not found or was not present. Continueing\n----------------------------------------");
         }
     }
 
@@ -148,6 +142,7 @@ sealed class GetDataBrickLink : IGetData
             string fullFileName = GetFullFileName(IdentifierAttribute);
             if (bot.IsFileDownloaded(fullFileName))
             {
+                FilesAlreadyDownloadedCounter++;
                 ExpectedSetClickAmount--;
                 continue;
             }
@@ -156,44 +151,36 @@ sealed class GetDataBrickLink : IGetData
                 // Attempt to find LEGO set LinkTest element, if its file is not already downloaded.
                 // Here we can add another check and only click if its not also downloadable by the card indicator
                 IWebElement? setNameElement = bot.FindPageElement(IdentifierAttribute, ByMechanism);
-                if (bot.WaitTillExists(setNameElement))
+                IWebElement? DownloadableSymbolElement = bot.FindPageElement($"./ancestor::footer//i[contains(@class,'moc-card__download')]", "xp", setNameElement);
+                if (bot.WaitTillExists(setNameElement) && bot.WaitTillExists(DownloadableSymbolElement))
                 {
                     bot.OpenTabWithElement(setNameElement);
                     SetClickCounter++;
+                    Thread.Sleep(350); 
                 }
             }
             // if the current set element could not be found and clicked. 
             catch (BotFindElementException)
             {
-                Console.WriteLine($"Set name element was not found or was not present. Continueing");
+                Console.WriteLine($"The set named: {IdentifierAttribute} could not be found or did not have the downloadable symbol. Continueing\n");
+                ExpectedSetClickAmount--;
+                continue;
             }
 
             try
             {
-                // The main div containing set info on each set page
-                IWebElement? Modeldiv = bot.FindPageElement("//div[@class='studio-model__meta-block studio-model__meta-block--main']", "xp");
-                // wait until ModelElement has rendered on page
-                if (bot.WaitTillExists(Modeldiv))
-                {
-                    // find The download button element on the current set page
-                    IWebElement? downloadButtonElement = bot.FindPageElement("//button[contains(text(),'Download Studio file')]", "xp");
-                    // try to download the file via the downloadButtonElement
-                    string? currentFilePath = bot.DownloadFile(downloadButtonElement);
+                // find The download button element on the current set page
+                IWebElement? downloadButtonElement = bot.FindPageElement("//button[contains(text(),'Download Studio file')]", "xp");
+                // try to download the file via the downloadButtonElement
+                string? currentFilePath = bot.DownloadFile(downloadButtonElement);
 
-                    // if the file was downloaded successfully
-                    if (currentFilePath != null)
-                    {
-                        FileDownloadCounter++;
-                        // try and rename the downloaded file if nessary
-                        bot.GetAndRenameFile(currentFilePath, fullFileName);
-                    }
-                    bot.CloseTab(0);
+                // if the file was downloaded successfully
+                if (currentFilePath != null)
+                {
+                    FilesDownloadedCounter++;
+                    // try and rename the downloaded file if nessary
+                    bot.GetAndRenameFile(currentFilePath, fullFileName);
                 }
-            }
-            // if we cant find the downloadButtonElement there must either be 0 or we have clicked them all, or we have reached a 404 page. 
-            catch (BotFindElementException)
-            {
-                Console.WriteLine($"No more download buttons on current set page\n");
                 bot.CloseTab(0);
             }
             // should be thrown in case of stale element or 404 page error.
@@ -276,13 +263,13 @@ sealed class GetDataBrickLink : IGetData
     /// <returns></returns>
     public static bool AssertDownloadAmount()
     {
-        bool runStatus = ExpectedSetClickAmount == SetClickCounter;
+        bool runStatus = SetClickCounter == FilesDownloadedCounter;
         try
         {
             if (!CustomRun && runStatus)
             {
-                Console.WriteLine($"Run on main page Sucessfully finished!");
-            
+                Console.WriteLine($"Run Sucessfully finished!\n---------------------------------------------------");
+
             }
             else if (CustomRun && runStatus)
             {
@@ -291,19 +278,19 @@ sealed class GetDataBrickLink : IGetData
             }
             else
             {
-                throw new BotDownloadAmountException($"Expected to click: {ExpectedSetClickAmount} sets.\nActually clicked: {SetClickCounter} sets.\nDownloaded: {FileDownloadCounter} LEGO sets");
+                throw new BotDownloadAmountException($"Total amount of sets expected to be scaped in run: {ExpectedSetsScraped}.\nExpected to click: {ExpectedSetClickAmount} sets.\n{SetClickCounter} set(s) were expected to be clicked and downloaded.\nDownloaded: {FilesDownloadedCounter} LEGO sets.\n{FilesAlreadyDownloadedCounter} set(s) were already downloaded.");
             }
-            Console.WriteLine($"{ExpectedSetsScraped - FileDownloadCounter} set(s) were infered to already be downloaded and where not clicked.\n");
-            Console.WriteLine($"Total amount of sets expected to be scaped in run: {ExpectedSetsScraped}.");
-            Console.WriteLine($"{SetClickCounter} set(s) were clicked to check for downloadability.");
-            Console.WriteLine($"{FileDownloadCounter} set(s) could and were actually downloaded.");
+            Console.WriteLine($"Total amount of sets expected to be scaped in run: {ExpectedSetsScraped}.\n");
+            Console.WriteLine($"{FilesAlreadyDownloadedCounter} set(s) were infered to already be downloaded.");
+            Console.WriteLine($"{SetClickCounter} set(s) were expected to be clicked and downloaded.");
+            Console.WriteLine($"{FilesDownloadedCounter} set(s) were actually downloaded.");
 
 
             return true;
         }
         catch (BotDownloadAmountException ex)
         {
-            Console.WriteLine($"Assumed amount of clicked LEGO Sets was either not correct or something went wrong during clicking set elements\n{ex.Message}");
+            Console.WriteLine($"Run Failed!: The amount of clicked LEGO sets clicked did not match the actual amount of LEGO sets downloaded.\n---------------------------------------------------\n{ex.Message}");
             return false;
         }
     }
@@ -358,7 +345,7 @@ sealed class GetDataBrickLink : IGetData
             }
             sw.Stop();
             Console.WriteLine($"Scraping of current run took: {sw.Elapsed}");
-            
+
         }
         catch (BotFindElementException ex)
         {

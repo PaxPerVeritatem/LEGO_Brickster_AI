@@ -21,14 +21,16 @@ sealed class GetDataLdraw : IGetData
     // should be set to 15, if page 59 is included in the run. 
     public static int ExpectedSetClickDeviation => 0;
 
-     public static int ExpectedSetsScraped => ExpectedSetsPrPage * PageLimit - ExpectedSetClickDeviation;
+    public static int ExpectedSetsScraped => ExpectedSetsPrPage * PageLimit - ExpectedSetClickDeviation;
 
-    public static int ExpectedSetClickAmount {get; set;} = ExpectedSetsScraped;
+    public static int ExpectedSetClickAmount { get; set; } = ExpectedSetsScraped;
 
     public static int SetClickCounter { get; set; } = 0;
 
     // never did use this one for this implementation. 
-    public static int FileDownloadCounter { get; set; } = 0;
+    public static int FilesDownloadedCounter { get; set; } = 0;
+
+    public static int FilesAlreadyDownloadedCounter { get; set; } = 0;
 
 
     // Custom run Properties 
@@ -46,7 +48,7 @@ sealed class GetDataLdraw : IGetData
 
     // dont need a bot to configure custom runs for this implementation of IGetData
     public static void ConfigureCustomRun(Bot? bot = null)
-    {   
+    {
         if (UseSubpage)
         {
             Url = $"{Url}{UrlPageVarient}{StartFromPage}";

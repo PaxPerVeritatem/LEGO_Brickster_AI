@@ -63,18 +63,18 @@ interface IGetData
   static abstract int ExpectedSetClickDeviation { get; }
 
 
-/// <summary>
-///  The total expected amount of sets to be scraped during a run.
-/// </summary>
-  static abstract int ExpectedSetsScraped {get;}
+  /// <summary>
+  ///  The total expected amount of sets to be scraped during a run.
+  /// </summary>
+  static abstract int ExpectedSetsScraped { get; }
 
   /// <summary>
   /// The total expected amount of sets to be clicked during a run. Should be subtracted by ExpectedSetClickDeviation
   /// </summary>
   static abstract int ExpectedSetClickAmount { get; set; }
 
-  
-  
+
+
 
 
 
@@ -87,7 +87,13 @@ interface IGetData
   /// <summary>
   ///  The total amount of files downloaded during a run. 
   /// </summary>
-  static abstract int FileDownloadCounter { get; set; }
+  static abstract int FilesDownloadedCounter { get; set; }
+
+
+  /// <summary>
+  ///  The total amount of files infered to already be downloaded during a run. 
+  /// </summary>
+  static abstract int FilesAlreadyDownloadedCounter { get; set; }
 
 
   // --------------------------------------------------------------------------------------------------------------------------------------------//
