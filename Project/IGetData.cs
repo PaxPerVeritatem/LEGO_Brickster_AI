@@ -73,11 +73,6 @@ interface IGetData
   /// </summary>
   static abstract int ExpectedSetClickAmount { get; set; }
 
-
-
-
-
-
   /// <summary>
   /// A simple counter for asserting correct amount of sets have been clicked, 
   /// inferred from ExpectedSetClickAmount 
@@ -94,6 +89,11 @@ interface IGetData
   ///  The total amount of files infered to already be downloaded during a run. 
   /// </summary>
   static abstract int FilesAlreadyDownloadedCounter { get; set; }
+
+  /// <summary>
+  ///  Flag to indicate if a run as completed successfully
+  /// </summary>
+  static abstract bool RunCompleted {get;set;}
 
 
   // --------------------------------------------------------------------------------------------------------------------------------------------//
@@ -168,6 +168,7 @@ interface IGetData
   public static abstract void AccessMainPage(Bot bot, Dictionary<string, string> ElementCandidatesDict);
 
 
+
   /// <summary>
   /// Find all the element on the current page which fits the <paramref name="CommonElementString"/> with the 
   /// <paramref name="CommonByMechanism"/> and the optional <paramref name="IdentifierAttribute"/> and add them to the bot AttributeList. 
@@ -175,6 +176,8 @@ interface IGetData
   /// by default <paramref name="IdentifierAttribute"/> is set to 'Text' in bot.FindPageElements(). 
   /// </summary>
   public static abstract void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement AncestorElement);
+
+
 
 
   /// <summary>

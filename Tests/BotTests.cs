@@ -65,7 +65,7 @@ public sealed class BotTest(ITestOutputHelper output)
                 //press reject to cookies on google.com if TestUrl_2 is utilized
                 IWebElement? RejectButton = bot.FindPageElement("//button[@id='W0wltc']", "xp");
                 Assert.NotNull(RejectButton);
-                bot.ClickElement(RejectButton);
+                Bot.ClickElement(RejectButton);
                 break;
 
             case TestUrl_3:
@@ -74,7 +74,7 @@ public sealed class BotTest(ITestOutputHelper output)
                 // find and click the ageGateElement
                 IWebElement? ageGateElement = bot.FindPageElement("//input[@class='blp-age-gate__input-field']", "xp");
 
-                bot.ClickElement(ageGateElement);
+                Bot.ClickElement(ageGateElement);
                 actionsBuilder.SendKeys("1");
                 actionsBuilder.SendKeys("9");
                 actionsBuilder.SendKeys("9");
@@ -84,7 +84,7 @@ public sealed class BotTest(ITestOutputHelper output)
 
                 // find and press cookie button 
                 IWebElement? cookieButton = bot.FindPageElement("//div[@class='cookie-notice__content']//button[contains(text(), 'Just necessary')]", "xp");
-                bot.ClickElement(cookieButton);
+                Bot.ClickElement(cookieButton);
                 break;
 
             default:
@@ -318,35 +318,19 @@ public sealed class BotTest(ITestOutputHelper output)
                 {
                     clickableElement = bot.FindPageElement(ElementString, "xp");
                     Assert.NotNull(clickableElement);
-                    bot.ClickElement(clickableElement);
+                    Bot.ClickElement(clickableElement);
                     bot.GoBack();
                 }
             }
             else
             {
                 clickableElement = bot.FindPageElement(ElementString, "xp");
-                bot.ClickElement(clickableElement);
+                Bot.ClickElement(clickableElement);
             }
         }
     }
-    /// <summary>
-    /// Tests whether WaitTillExists correctly returns false when the provided element is null.
-    /// </summary>
-    [Fact]
-    public void WaitTillExistsFalseTest()
-    {
-        Bot bot = new(TestUrl_1, TestDownloadFolderPath);
-        bot.GoToWebPage(bot.Url);
-        try
-        {
-            IWebElement? element = null;
-            Assert.False(bot.WaitTillExists(element));
-        }
-        finally
-        {
-            bot.CloseBot();
-        }
-    }
+    
+    
     /// <summary>
     /// Tests whether the ClickElement() function throws a BotElementException when the referenced element is stale.
     /// </summary>
@@ -362,7 +346,7 @@ public sealed class BotTest(ITestOutputHelper output)
         try
         {
             bot.GoToWebPage(bot.Url);
-            Assert.Throws<BotStaleElementException>(() => bot.ClickElement(element));
+            Assert.Throws<BotStaleElementException>(() => Bot.ClickElement(element));
         }
         finally
         {

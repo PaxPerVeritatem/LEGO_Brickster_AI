@@ -95,8 +95,8 @@ public class Bot
                 driverExecutablePath: _driverPath,
                 prefs: prefs
                 );
-            // create new WebDriverWait for driver with a timeout of 5 seconds
-            _wait = new(_driver, TimeSpan.FromSeconds(5));
+            // create new WebDriverWait for driver with a timeout of 2 seconds
+            _wait = new(_driver, TimeSpan.FromSeconds(2));
 
             // List containing all tabs open. 
             _windowHandles = [.. _driver.WindowHandles];
@@ -346,18 +346,18 @@ public class Bot
 
 
 
-        /// <summary>
-        /// Downloads a file from the webpage currently being accessed.
-        /// </summary>
-        /// <param name="DownloadButton">The download button element to click.</param>
-        /// <returns>The full path of the downloaded file. This is the path of the file that was just downloaded in the download folder.</returns>
-        /// <remarks>
-        /// This function first takes a snapshot of all the files currently in the download folder.
-        /// It then clicks the download button using the ClickElement() function, which will wait until the element is clickable.
-        /// The ConfirmFileDownload() function is then called, which will wait until a new file appears in the download folder and is not locked by chrome.
-        /// If the file is still being downloaded, the function will wait until the download is finished or a timeout of 10 seconds is reached.
-        /// If the file is finished downloading, but still locked by chrome, the function will wait until the file is unlocked or a timeout of 10 seconds is reached.
-        /// </remarks>
+    /// <summary>
+    /// Downloads a file from the webpage currently being accessed.
+    /// </summary>
+    /// <param name="DownloadButton">The download button element to click.</param>
+    /// <returns>The full path of the downloaded file. This is the path of the file that was just downloaded in the download folder.</returns>
+    /// <remarks>
+    /// This function first takes a snapshot of all the files currently in the download folder.
+    /// It then clicks the download button using the ClickElement() function, which will wait until the element is clickable.
+    /// The ConfirmFileDownload() function is then called, which will wait until a new file appears in the download folder and is not locked by chrome.
+    /// If the file is still being downloaded, the function will wait until the download is finished or a timeout of 10 seconds is reached.
+    /// If the file is finished downloading, but still locked by chrome, the function will wait until the file is unlocked or a timeout of 10 seconds is reached.
+    /// </remarks>
     public string? DownloadFile(IWebElement? DownloadButton)
     {
         HashSet<string> ExstingFileSnapshot = [.. Directory.GetFiles(AbsDownloadFolderPath)];
@@ -373,23 +373,23 @@ public class Bot
         catch (BotFileDownloadException e)
         {
             Console.WriteLine($"{e.Message}");
-            return null; 
+            return null;
         }
-        
+
     }
 
-        /// <summary>
-        /// Confirms that a file has been downloaded by checking for the appearance of a new file in the download folder.
-        /// If the file is still being downloaded, the function will wait until the download is finished or a timeout of 10 seconds is reached.
-        /// If the file is finished downloading, but still locked by chrome, the function will wait until the file is unlocked or a timeout of 10 seconds is reached.
-        /// </summary>
-        /// <param name="ExistingFilesSnapshot">A snapshot of the files that existed in the download folder before the current download.</param>
-        /// <returns>The full path of the downloaded file.</returns>
-        /// <exception cref="BotFileDownloadException">Thrown if the file download confirmation times out.</exception>
-        /// <remarks>
-        /// This function returns the full path of the downloaded file, which can be used to further process the downloaded file.
-        /// The function will return the full path of the downloaded file as soon as it is confirmed that the file is downloaded and unlocked.
-        /// </remarks>
+    /// <summary>
+    /// Confirms that a file has been downloaded by checking for the appearance of a new file in the download folder.
+    /// If the file is still being downloaded, the function will wait until the download is finished or a timeout of 10 seconds is reached.
+    /// If the file is finished downloading, but still locked by chrome, the function will wait until the file is unlocked or a timeout of 10 seconds is reached.
+    /// </summary>
+    /// <param name="ExistingFilesSnapshot">A snapshot of the files that existed in the download folder before the current download.</param>
+    /// <returns>The full path of the downloaded file.</returns>
+    /// <exception cref="BotFileDownloadException">Thrown if the file download confirmation times out.</exception>
+    /// <remarks>
+    /// This function returns the full path of the downloaded file, which can be used to further process the downloaded file.
+    /// The function will return the full path of the downloaded file as soon as it is confirmed that the file is downloaded and unlocked.
+    /// </remarks>
     public string ConfirmFileDownload(HashSet<string> ExistingFilesSnapshot)
     {
 
@@ -447,36 +447,83 @@ public class Bot
         }
         throw new BotFileDownloadException("File download confirmation timed out. File might have taken too long to download or chrome locked the file indenfinetly and could not be opened \n File may still work .");
     }
-        
-    
-    /// <summary>
-    /// Waits until the referenced IWebElement exists on the webpage.
-    /// If the IWebElement referenced is null, the function will return false.
-    /// Note that if the driver is instanceiated without a generous PageLoadStrategy, 
-    /// some combinations of actions may lead to the blot clicking elements which are not yet loaded on the page 
-    /// or the bot go though its actions to fast and leads to attempting no longer valid actions.
-    /// </summary>
-    /// <param name="element">The IWebElement to wait for.</param>
-    /// <returns>true if the element is found, false if the element is null.</returns>
-    public bool WaitTillExists(IWebElement? element)
+
+
+  
+
+        /// <summary>
+        /// Waits until the element is found on the webpage using the provided ElementString and ByMechanism.
+        /// </summary>
+        /// <param name="ElementString">The string to use for finding the element.</param>
+        /// <param name="ByMechanism">The mechanism to use for finding the element, such as By.Name, By.Id, By.CssSelector, etc.</param>
+        /// <returns>The found element, or null if no element was found.</returns>
+        /// <exception cref="BotTimeOutException">Thrown when the element is not found within the timeout defined in Bot.InitializeBotPrefs().</exception>
+    public IWebElement WaitAndFind (string ElementString, string ByMechanism)
     {
+        IWebElement? element = null;
         try
         {
-            if (element != null && _wait.Until(_driver => element.Displayed))
-            {
-                return true;
-            }
-            return false;
+            _wait.Until(_driver =>
+         {
+             try
+             {
+                 element = FindPageElement(ElementString, ByMechanism);
+                 return element != null;
+             }
+             catch (BotFindElementException)
+             {
+                return false;
+             }
+         });
+        }
+        // should catch in case the element is not displayed due to website responsiveness
+        catch (WebDriverTimeoutException)
+        {
+            throw new BotTimeOutException($"Timed out waiting for element: '{ElementString}' with mechanism: '{ByMechanism}'");
+        }
+        return element!;
+    }
+        /// <summary>
+        /// Waits until all elements are found on the webpage using the provided CommonElementString and CommonByMechanism.
+        /// </summary>
+        /// <param name="CommonElementString">The string to use for finding the elements.</param>
+        /// <param name="CommonByMechanism">The mechanism to use for finding the elements, such as By.Name, By.Id, By.CssSelector, etc.</param>
+        /// <param name="IdentifierAttribute">The attribute of the element to use when adding to the Bot._nameList. If not provided, uses the text of the element.</param>
+        /// <param name="AncestorElement">The ancestor element to search for the elements within. If null, search the entire webpage.</param>
+        /// <returns>A list of strings representing the elements found.</returns>
+        /// <exception cref="BotTimeOutException">Thrown when the element is not found within the timeout defined in Bot.InitializeBotPrefs().</exception>
+    public List<string> WaitAndFindAll (string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement AncestorElement)
+    {
+        List<string>? elementList = null;
+        try
+        {
+            _wait.Until(_driver =>
+         {
+             try
+             {
+                 elementList = FindPageElements(CommonElementString, CommonByMechanism,IdentifierAttribute,AncestorElement);
+                 return elementList != null;
+             }
+             catch (BotFindElementException)
+             {
+                 return false;
+             }
+         });
         }
         // should catch in case the element is not displayed due to website responsiveness
         catch (WebDriverTimeoutException)
         {
             throw new BotTimeOutException();
         }
+        return elementList!;
     }
 
-    /// some combinations of actions may lead to the bot clicking elements which are not yet loaded on the page 
-    /// or the bot go though its actions too fast and leads to attempting no longer valid actions.
+    
+        /// <summary>
+        /// Waits for the webpage URL to change from the provided string.
+        /// If the URL does not change within the timeout period, a <see cref="BotTimeOutException"/> is thrown.
+        /// </summary>
+        /// <param name="oldurl">The URL to wait for the webpage to change from.</param>
     public void ExplicitWaitURL(string oldurl)
     {
         try
@@ -532,14 +579,11 @@ public class Bot
     /// </summary>
     /// <param name="element">The IWebElement to click.</param>
     /// <exception cref="BotElementException">Thrown if the referenced element data is stale.</exception>
-    public void ClickElement(IWebElement? element)
+    public static void ClickElement(IWebElement? element) 
     {
         try
         {
-            if (WaitTillExists(element))
-            {
-                element!.Click();
-            }
+            element!.Click();
         }
         catch (StaleElementReferenceException)
         {

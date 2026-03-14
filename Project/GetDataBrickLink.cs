@@ -13,9 +13,9 @@ sealed class GetDataBrickLink : IGetData
     // We cant infer the MaxPage for this implementation.
     public static int? MaxPage => null;
 
-    public static int PageLimit => 2;
+    public static int PageLimit => 1;
 
-
+    // Page always has 50 sets pr page, so this value is fixed and just used for calculateing ExpectedSetsScraped, and should not be changed. 
     public static int ExpectedSetsPrPage => 50;
 
     // so far there does not seems to be any 404 error for any sets, so this can  be 0 in this implementation for now. 
@@ -30,8 +30,9 @@ sealed class GetDataBrickLink : IGetData
 
     public static int FilesDownloadedCounter { get; set; } = 0;
 
-    public static  int FilesAlreadyDownloadedCounter { get; set; } = 0; 
-
+    public static int FilesAlreadyDownloadedCounter { get; set; } = 0;
+    
+    public static bool RunCompleted { get; set; } = false;
 
     // Custom run Properties 
     public static bool CustomRun => true;
@@ -55,9 +56,17 @@ sealed class GetDataBrickLink : IGetData
         {
             /*find and click the subpage link text to access the subpage. 
             Additionally, we can use forgive operator, since we always manually set SubPageElementTuple.*/
-            IWebElement? subPageElement = bot.FindPageElement(SubpageElementTuple!.Value.ElementString, SubpageElementTuple!.Value.ByMechanism!);
-            bot.ClickElement(subPageElement);
-            Thread.Sleep(1000);
+            try
+            {
+                IWebElement? subPageElement = bot.WaitAndFind(SubpageElementTuple!.Value.ElementString, SubpageElementTuple!.Value.ByMechanism!);
+                Bot.ClickElement(subPageElement);
+            }
+            catch (BotTimeOutException)
+            {
+                Console.WriteLine($"Subpage link text was not found or was not present");   
+            }
+            
+            
         }
     }
 
@@ -77,15 +86,15 @@ sealed class GetDataBrickLink : IGetData
         // find and click the ageGateElement. If its not there Throw exception and continue. 
         try
         {
-            IWebElement? ageGateElement = bot.FindPageElement("//input[@class='blp-age-gate__input-field']", "xp");
-            bot.ClickElement(ageGateElement);
+            IWebElement ageGateElement = bot.WaitAndFind("//input[@class='blp-age-gate__input-field']", "xp");
+            Bot.ClickElement(ageGateElement);
             actionBuilder.SendKeys("1");
             actionBuilder.SendKeys("9");
             actionBuilder.SendKeys("9");
             actionBuilder.SendKeys("4");
             actionBuilder.Perform();
         }
-        catch (BotFindElementException)
+        catch (BotTimeOutException)
         {
             Console.WriteLine($"Age gate input field was not found or was not present. Continueing");
         }
@@ -93,12 +102,12 @@ sealed class GetDataBrickLink : IGetData
         // find and press cookie button. If its not there, throw an exception and continue. 
         try
         {
-            IWebElement? cookieButton = bot.FindPageElement("//button[@class='blp-cookie-notice__btn blp-cookie-notice__btn--reject']", "xp");
-            bot.ClickElement(cookieButton);
+            IWebElement cookieButton = bot.WaitAndFind("//button[@class='blp-cookie-notice__btn blp-cookie-notice__btn--reject']", "xp");
+            Bot.ClickElement(cookieButton);
             actionBuilder.Click();
             actionBuilder.Perform();
         }
-        catch (BotFindElementException)
+        catch (BotTimeOutException)
         {
             Console.WriteLine($"Cookie button was not found or was not present. Continueing\n----------------------------------------");
         }
@@ -107,7 +116,7 @@ sealed class GetDataBrickLink : IGetData
     public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement AncestorElement)
     {
         // Attempt to get the list of LEGO set names for the current main page
-        bot.AttributeList = bot.FindPageElements(CommonElementString, CommonByMechanism, IdentifierAttribute, AncestorElement);
+        bot.AttributeList = bot.WaitAndFindAll(CommonElementString, CommonByMechanism, IdentifierAttribute, AncestorElement);
     }
 
 
@@ -147,30 +156,37 @@ sealed class GetDataBrickLink : IGetData
                 continue;
             }
             try
-            {
-                // Attempt to find LEGO set LinkTest element, if its file is not already downloaded.
-                // Here we can add another check and only click if its not also downloadable by the card indicator
-                IWebElement? setNameElement = bot.FindPageElement(IdentifierAttribute, ByMechanism);
+            {      
+                // try and find the current set element and only click it if it has a downloadable symbol
+                IWebElement setNameElement = bot.WaitAndFind(IdentifierAttribute, ByMechanism);
+                // We want to catch FindPageElement() BotFindElementException, if the download button is not there, since we then dont want to click the setNameElement 
                 IWebElement? DownloadableSymbolElement = bot.FindPageElement($"./ancestor::footer//i[contains(@class,'moc-card__download')]", "xp", setNameElement);
-                if (bot.WaitTillExists(setNameElement) && bot.WaitTillExists(DownloadableSymbolElement))
+                if (setNameElement != null && DownloadableSymbolElement !=null)
                 {
                     bot.OpenTabWithElement(setNameElement);
                     SetClickCounter++;
-                    Thread.Sleep(350); 
                 }
             }
             // if the current set element could not be found and clicked. 
+            catch (BotTimeOutException)
+            {
+                Console.WriteLine($"The set named: {IdentifierAttribute} could not be found. Continueing\n");
+                ExpectedSetClickAmount--;
+                continue;
+            }
+            // if the current set element did not have a downloadable symbol. 
             catch (BotFindElementException)
             {
-                Console.WriteLine($"The set named: {IdentifierAttribute} could not be found or did not have the downloadable symbol. Continueing\n");
+                Console.WriteLine($"The set named: {IdentifierAttribute}did not have a downloadable symbol. Continueing\n");
                 ExpectedSetClickAmount--;
                 continue;
             }
 
+
             try
             {
                 // find The download button element on the current set page
-                IWebElement? downloadButtonElement = bot.FindPageElement("//button[contains(text(),'Download Studio file')]", "xp");
+                IWebElement? downloadButtonElement = bot.WaitAndFind("//button[contains(text(),'Download Studio file')]", "xp");
                 // try to download the file via the downloadButtonElement
                 string? currentFilePath = bot.DownloadFile(downloadButtonElement);
 
@@ -180,8 +196,14 @@ sealed class GetDataBrickLink : IGetData
                     FilesDownloadedCounter++;
                     // try and rename the downloaded file if nessary
                     bot.GetAndRenameFile(currentFilePath, fullFileName);
+                    //Thread.Sleep(300);
                 }
                 bot.CloseTab(0);
+            }
+            // if the current set element could not be found and clicked. 
+            catch (BotTimeOutException)
+            {
+                Console.WriteLine($"The download button for the set '{IdentifierAttribute}' could not be found on its set page Continueing");
             }
             // should be thrown in case of stale element or 404 page error.
             catch (BotStaleElementException)
@@ -203,6 +225,9 @@ sealed class GetDataBrickLink : IGetData
         }
     }
 
+
+    // We ended up never using this function, so we might consider removing it from the interface.
+    // However GetDataLdraw.cs uses it, so we need to figure some alternative out. 
     public static IWebElement FindDisplayedElement(Bot bot, Dictionary<string, string> ElementCandidatesDict)
     {
         foreach (KeyValuePair<string, string> Candiate in ElementCandidatesDict)
@@ -234,16 +259,19 @@ sealed class GetDataBrickLink : IGetData
 
     public static void GoToNextPage(Bot bot, IWebElement NextButtonElement, int? ClickAmount)
     {
+        
         try
         {
+            
             // BrickLink page button can be clicked multiple times and load multiple sets with no new page load. 
             for (int i = 0; i < ClickAmount; i++)
             {
                 // click next button if it is loaded. 
-                bot.ClickElement(NextButtonElement);
+                Bot.ClickElement(NextButtonElement);
             }
             // reset the bot attribute list for next page of elements.
             bot.AttributeList.Clear();
+            Thread.Sleep(3000);
         }
         catch (BotStaleElementException ex)
         {
@@ -263,7 +291,7 @@ sealed class GetDataBrickLink : IGetData
     /// <returns></returns>
     public static bool AssertDownloadAmount()
     {
-        bool runStatus = SetClickCounter == FilesDownloadedCounter;
+        bool runStatus = RunCompleted && SetClickCounter == FilesDownloadedCounter && FilesDownloadedCounter !=0;
         try
         {
             if (!CustomRun && runStatus)
@@ -278,16 +306,16 @@ sealed class GetDataBrickLink : IGetData
             }
             else
             {
-                throw new BotDownloadAmountException($"Total amount of sets expected to be scaped in run: {ExpectedSetsScraped}.\nExpected to click: {ExpectedSetClickAmount} sets.\n{SetClickCounter} set(s) were expected to be clicked and downloaded.\nDownloaded: {FilesDownloadedCounter} LEGO sets.\n{FilesAlreadyDownloadedCounter} set(s) were already downloaded.");
+                throw new BotDownloadAmountException($"Total amount of sets expected to be scaped in run: {ExpectedSetsScraped}.\nExpected to click: {ExpectedSetClickAmount} sets.\n{SetClickCounter} set(s) were expected to be clicked and downloaded.\nDownloaded: {FilesDownloadedCounter} LEGO sets.\n{FilesAlreadyDownloadedCounter} set(s) were already downloaded.\n{ExpectedSetsScraped-FilesAlreadyDownloadedCounter-FilesDownloadedCounter} set(s) were not downloadable.");
             }
-            Console.WriteLine($"Total amount of sets expected to be scaped in run: {ExpectedSetsScraped}.\n");
-            Console.WriteLine($"{FilesAlreadyDownloadedCounter} set(s) were infered to already be downloaded.");
+            Console.WriteLine($"Total amount of sets expected to be scaped in run: {ExpectedSetsScraped} ");
             Console.WriteLine($"{SetClickCounter} set(s) were expected to be clicked and downloaded.");
-            Console.WriteLine($"{FilesDownloadedCounter} set(s) were actually downloaded.");
-
-
+            Console.WriteLine($"{FilesDownloadedCounter} set(s) were clicked and downloaded.");
+            Console.WriteLine($"{FilesAlreadyDownloadedCounter} set(s) were infered to already be downloaded.");
+            Console.WriteLine($"{ExpectedSetsScraped-FilesAlreadyDownloadedCounter-FilesDownloadedCounter} set(s) were not downloadable.\n");
             return true;
         }
+
         catch (BotDownloadAmountException ex)
         {
             Console.WriteLine($"Run Failed!: The amount of clicked LEGO sets clicked did not match the actual amount of LEGO sets downloaded.\n---------------------------------------------------\n{ex.Message}");
@@ -317,10 +345,10 @@ sealed class GetDataBrickLink : IGetData
 
             Stopwatch sw = Stopwatch.StartNew();
             // the first page root which is the ancestor div of all set elements on the main page.
-            IWebElement? pageRootElement = bot.FindPageElement("//div[@class='studio-gallery__card-container']", "xp");
+            IWebElement? pageRootElement = bot.WaitAndFind("//div[@class='studio-gallery__card-container']", "xp");
             for (int i = 0; i < PageLimit; i++)
             {
-                // we "Text" as identifier for simplicity 
+                // we use"Text" as identifier for simplicity 
                 if (pageRootElement != null)
                 {
                     SetAttributeList(bot, $".//following::a[@class='moc-card__name']", "xp", "Text", pageRootElement);
@@ -329,25 +357,31 @@ sealed class GetDataBrickLink : IGetData
 
                 /* Set the pageRootElement as the last element in the attribute list. Find it from the previous pageRootElement.
                 Escape double quotes which will allow for pageRootElement to have single or double quotes in its name, but not both*/
-                pageRootElement = bot.FindPageElement($"//a[contains(text(),\"{bot.AttributeList[^1]}\")]", "xp");
-                bot.WaitTillExists(pageRootElement);
+                string currentRoot = bot.AttributeList[^1].Replace("\"", "'");
+                pageRootElement = bot.WaitAndFind($"//a[contains(text(),\"{currentRoot}\")]", "xp");
+                
 
                 // Find the Next button elements which works, considering page responsiveness
-                IWebElement? nextButtonElement = bot.FindPageElement("//button[contains(text(),'Load more creations')]", "xp");
+                IWebElement nextButtonElement = bot.WaitAndFind("//button[contains(text(),'Load more creations')]", "xp");
+
                 // We need i< PageLimit-1 since we dont want to set a new root, even if there is one, for future pages if current page is last page 
-                if (nextButtonElement != null && i < PageLimit - 1)
+                if (i < PageLimit - 1)
                 {
                     Console.Write($"current root: {pageRootElement!.Text}\n");
                     GoToNextPage(bot, nextButtonElement, 1);
-                    // This long sleep is nessesary to load next ExpectedSetsPrPage 
-                    Thread.Sleep(1000);
                 }
             }
             sw.Stop();
             Console.WriteLine($"Scraping of current run took: {sw.Elapsed}");
+            RunCompleted = true; 
+            
 
         }
-        catch (BotFindElementException ex)
+        catch (BotTimeOutException ex)
+        {
+            Console.WriteLine($"{ex}");
+        }
+        catch (BotMechanismException ex)
         {
             Console.WriteLine($"{ex}");
         }
