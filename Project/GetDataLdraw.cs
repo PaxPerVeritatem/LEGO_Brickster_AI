@@ -32,6 +32,8 @@ sealed class GetDataLdraw : IGetData
 
     public static int FilesAlreadyDownloadedCounter { get; set; } = 0;
 
+    public static int FilesDownloadTimedOutCounter { get; set; } = 0;
+
     public static bool RunCompleted {get; set;} = false;
 
 

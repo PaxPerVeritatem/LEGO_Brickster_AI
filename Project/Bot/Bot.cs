@@ -375,7 +375,6 @@ public class Bot
             Console.WriteLine($"{e.Message}");
             return null;
         }
-
     }
 
     /// <summary>
@@ -445,7 +444,7 @@ public class Bot
             }
             return currentFilePath;
         }
-        throw new BotFileDownloadException("File download confirmation timed out. File might have taken too long to download or chrome locked the file indenfinetly and could not be opened \n File may still work .");
+        throw new BotFileDownloadException("File took too long to download. Chrome might not have pressed download button hence cancelation token timed out or File took too long to be downloaded.");
     }
 
 

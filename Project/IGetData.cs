@@ -90,6 +90,13 @@ interface IGetData
   /// </summary>
   static abstract int FilesAlreadyDownloadedCounter { get; set; }
 
+
+  /// <summary>
+  ///  The total amount of files infered to have failed to begin its download process. 
+  /// Should be incremented when DownloadFile() return null. 
+  /// </summary>
+  static abstract int FilesDownloadTimedOutCounter { get; set; }
+
   /// <summary>
   ///  Flag to indicate if a run as completed successfully
   /// </summary>
@@ -130,7 +137,7 @@ interface IGetData
   /// This is a alternative to utilizing UrlPageVarient and StartFromPage, when the website does not order subpages with a page variable in the url,
   ///  but rather with a clickable element on the main page.
   /// </summary>
-  static abstract (string ElementString, string ByMechanism)? SubpageElementTuple { get; }
+  static abstract (string ElementString, string ByMechanism)? SubpageElementTuple {get;}
 
 
   /// <summary>
