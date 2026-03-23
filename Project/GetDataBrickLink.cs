@@ -13,7 +13,7 @@ sealed class GetDataBrickLink : IGetData
     // For this implementation each page will always have 50 sets, so this can be null. 
     public static int? MaxPage => null;
 
-    public static int PageLimit => 6;
+    public static int PageLimit => 20;
 
     // Page always has 50 sets pr page, so this value only used for calculating ExpectedSetsScraped in this implementation. 
     public static int ExpectedSetsPrPage => 50;
@@ -47,7 +47,7 @@ sealed class GetDataBrickLink : IGetData
 
 
     // Each subpage is just a IWebElement with an accompanying the ByMechanism to call FindElement during ConfigureCustomRun(). 
-    public static (string ElementString, string ByMechanism)? SubpageElementTuple => ("//li[@data-ts-id='0']", "xp");
+    public static (string ElementString, string ByMechanism)? SubpageElementTuple => ("//li[@data-ts-id='9']", "xp");
 
 
     public static bool UseSubpage => true;
@@ -118,6 +118,8 @@ sealed class GetDataBrickLink : IGetData
 
     public static void SetAttributeList(Bot bot, string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement AncestorElement)
     {
+        // reset the bot attribute list for next page of elements.
+        bot.AttributeList.Clear();
         // Attempt to get the list of LEGO set names for the current main page
         bot.AttributeList = bot.WaitAndFindAll(CommonElementString, CommonByMechanism, IdentifierAttribute, AncestorElement);
     }
@@ -154,8 +156,10 @@ sealed class GetDataBrickLink : IGetData
             string fullFileName = GetFullFileName(IdentifierAttribute);
             if (bot.IsFileDownloaded(fullFileName))
             {
+
                 FilesAlreadyDownloadedCounter++;
                 ExpectedSetClickAmount--;
+
                 continue;
             }
             try
@@ -273,8 +277,6 @@ sealed class GetDataBrickLink : IGetData
                 // click next button if it is loaded. 
                 Bot.ClickElement(NextButtonElement);
             }
-            // reset the bot attribute list for next page of elements.
-            bot.AttributeList.Clear();
             Thread.Sleep(3000);
         }
         catch (BotStaleElementException ex)
@@ -375,13 +377,16 @@ sealed class GetDataBrickLink : IGetData
                 if (pageRootElement != null)
                 {
                     SetAttributeList(bot, $".//following::a[@class='moc-card__name']", "xp", "Text", pageRootElement);
+                    Console.WriteLine($"Page {i}: AttributeList has {bot.AttributeList.Count} items");
                     DownloadPageElements(bot, "lt");
                 }
 
                 /* Set the pageRootElement as the last element in the attribute list. Find it from the previous pageRootElement.
-                Escape double quotes which will allow for pageRootElement to have single or double quotes in its name, but not both*/
+                First escape any backslash with double quotes with double quotes and then escape double quotes with single quotes 
+                to ensure XPath can find the element*/
                 string currentRoot = bot.AttributeList[^1].Replace("\"", "'");
-                pageRootElement = bot.WaitAndFind($"//a[contains(text(),\"{currentRoot}\")]", "xp");
+                pageRootElement = bot.WaitAndFind($"(//a[contains(translate(normalize-space(),'\"',\"'\"),\"{currentRoot}\")])[last()]", "xp");
+
 
 
                 // Find the Next button elements which works, considering page responsiveness
@@ -403,6 +408,7 @@ sealed class GetDataBrickLink : IGetData
         catch (BotTimeOutException ex)
         {
             Console.WriteLine($"{ex}");
+
         }
         catch (BotMechanismException ex)
         {

@@ -448,32 +448,35 @@ public class Bot
     }
 
 
-  
 
-        /// <summary>
-        /// Waits until the element is found on the webpage using the provided ElementString and ByMechanism.
-        /// </summary>
-        /// <param name="ElementString">The string to use for finding the element.</param>
-        /// <param name="ByMechanism">The mechanism to use for finding the element, such as By.Name, By.Id, By.CssSelector, etc.</param>
-        /// <returns>The found element, or null if no element was found.</returns>
-        /// <exception cref="BotTimeOutException">Thrown when the element is not found within the timeout defined in Bot.InitializeBotPrefs().</exception>
-    public IWebElement WaitAndFind (string ElementString, string ByMechanism)
+
+
+    /// <summary>
+    /// Waits until an element is found on the webpage using the provided ElementString and ByMechanism.
+    /// </summary>
+    /// <param name="ElementString">The string to use for finding the element.</param>
+    /// <param name="ByMechanism">The mechanism to use for finding the element, such as By.Name, By.Id, By.CssSelector, etc.</param>
+    /// <param name="AncestorElement">The ancestor element to search for the elements within. If null, search the entire webpage.</param>
+    /// <returns>The found element.</returns>
+    /// <exception cref="BotTimeOutException">Thrown if the element is not displayed due to website responsiveness.</exception>
+    public IWebElement WaitAndFind(string ElementString, string ByMechanism, IWebElement? AncestorElement = null)
     {
         IWebElement? element = null;
         try
         {
             _wait.Until(_driver =>
-         {
-             try
              {
-                 element = FindPageElement(ElementString, ByMechanism);
-                 return element != null;
-             }
-             catch (BotFindElementException)
-             {
-                return false;
-             }
-         });
+                 try
+                 {
+                     element = FindPageElement(ElementString, ByMechanism, AncestorElement);
+                     return element != null;
+                 }
+                 catch (BotFindElementException ex)
+                 {
+                    Console.WriteLine(ex.Message);
+                    return false;
+                 }
+             });
         }
         // should catch in case the element is not displayed due to website responsiveness
         catch (WebDriverTimeoutException)
@@ -482,16 +485,16 @@ public class Bot
         }
         return element!;
     }
-        /// <summary>
-        /// Waits until all elements are found on the webpage using the provided CommonElementString and CommonByMechanism.
-        /// </summary>
-        /// <param name="CommonElementString">The string to use for finding the elements.</param>
-        /// <param name="CommonByMechanism">The mechanism to use for finding the elements, such as By.Name, By.Id, By.CssSelector, etc.</param>
-        /// <param name="IdentifierAttribute">The attribute of the element to use when adding to the Bot._nameList. If not provided, uses the text of the element.</param>
-        /// <param name="AncestorElement">The ancestor element to search for the elements within. If null, search the entire webpage.</param>
-        /// <returns>A list of strings representing the elements found.</returns>
-        /// <exception cref="BotTimeOutException">Thrown when the element is not found within the timeout defined in Bot.InitializeBotPrefs().</exception>
-    public List<string> WaitAndFindAll (string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement AncestorElement)
+    /// <summary>
+    /// Waits until all elements are found on the webpage using the provided CommonElementString and CommonByMechanism.
+    /// </summary>
+    /// <param name="CommonElementString">The string to use for finding the elements.</param>
+    /// <param name="CommonByMechanism">The mechanism to use for finding the elements, such as By.Name, By.Id, By.CssSelector, etc.</param>
+    /// <param name="IdentifierAttribute">The attribute of the element to use when adding to the Bot._nameList. If not provided, uses the text of the element.</param>
+    /// <param name="AncestorElement">The ancestor element to search for the elements within. If null, search the entire webpage.</param>
+    /// <returns>A list of strings representing the elements found.</returns>
+    /// <exception cref="BotTimeOutException">Thrown when the element is not found within the timeout defined in Bot.InitializeBotPrefs().</exception>
+    public List<string> WaitAndFindAll(string CommonElementString, string CommonByMechanism, string IdentifierAttribute, IWebElement AncestorElement)
     {
         List<string>? elementList = null;
         try
@@ -500,7 +503,7 @@ public class Bot
          {
              try
              {
-                 elementList = FindPageElements(CommonElementString, CommonByMechanism,IdentifierAttribute,AncestorElement);
+                 elementList = FindPageElements(CommonElementString, CommonByMechanism, IdentifierAttribute, AncestorElement);
                  return elementList != null;
              }
              catch (BotFindElementException)
@@ -517,12 +520,12 @@ public class Bot
         return elementList!;
     }
 
-    
-        /// <summary>
-        /// Waits for the webpage URL to change from the provided string.
-        /// If the URL does not change within the timeout period, a <see cref="BotTimeOutException"/> is thrown.
-        /// </summary>
-        /// <param name="oldurl">The URL to wait for the webpage to change from.</param>
+
+    /// <summary>
+    /// Waits for the webpage URL to change from the provided string.
+    /// If the URL does not change within the timeout period, a <see cref="BotTimeOutException"/> is thrown.
+    /// </summary>
+    /// <param name="oldurl">The URL to wait for the webpage to change from.</param>
     public void ExplicitWaitURL(string oldurl)
     {
         try
@@ -578,7 +581,7 @@ public class Bot
     /// </summary>
     /// <param name="element">The IWebElement to click.</param>
     /// <exception cref="BotElementException">Thrown if the referenced element data is stale.</exception>
-    public static void ClickElement(IWebElement? element) 
+    public static void ClickElement(IWebElement? element)
     {
         try
         {

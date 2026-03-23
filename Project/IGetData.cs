@@ -277,7 +277,7 @@ interface IGetData
   ///  Function to define and perform all the nessesary bot actions to download
   ///  all elements currently in the <c>Bot.AttributeList</c>
   /// </summary>
-  public static abstract void DownloadPageElements(Bot bot, string ByMechanism);
+  public static abstract void DownloadPageElements(Bot bot,string ByMechanism);
 
 
 
