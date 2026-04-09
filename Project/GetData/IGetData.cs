@@ -1,6 +1,6 @@
 using OpenQA.Selenium;
-
-namespace LEGO_Brickster_AI;
+using Project.SeleniumBot; 
+namespace Project.GetData;
 
 /// <summary>
 /// Abstract interface for defining a data collector. Implementations should provide a way to scrape data from a target website.

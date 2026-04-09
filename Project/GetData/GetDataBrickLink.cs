@@ -1,5 +1,5 @@
-namespace LEGO_Brickster_AI;
-
+namespace Project.GetData;
+using Project.SeleniumBot;  
 using OpenQA.Selenium;
 using OpenQA.Selenium.Interactions;
 using System.Diagnostics;
@@ -13,7 +13,7 @@ sealed class GetDataBrickLink : IGetData
     // For this implementation each page will always have 50 sets, so this can be null. 
     public static int? MaxPage => null;
 
-    public static int PageLimit => 20;
+    public static int PageLimit => 10;
 
     // Page always has 50 sets pr page, so this value only used for calculating ExpectedSetsScraped in this implementation. 
     public static int ExpectedSetsPrPage => 50;
@@ -50,7 +50,7 @@ sealed class GetDataBrickLink : IGetData
     public static (string ElementString, string ByMechanism)? SubpageElementTuple => ("//li[@data-ts-id='9']", "xp");
 
 
-    public static bool UseSubpage => true;
+    public static bool UseSubpage => false;
 
     public static void ConfigureCustomRun(Bot bot)
     {

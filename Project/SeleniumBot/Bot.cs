@@ -1,4 +1,4 @@
-namespace LEGO_Brickster_AI;
+namespace Project.SeleniumBot;
 
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;

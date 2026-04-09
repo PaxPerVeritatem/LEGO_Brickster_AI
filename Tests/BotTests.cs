@@ -1,4 +1,5 @@
 namespace Tests;
+using Project.SeleniumBot; 
 
 using LEGO_Brickster_AI;
 using Xunit;

@@ -1,4 +1,4 @@
-namespace LEGO_Brickster_AI;
+namespace Project.SeleniumBot;
 
 using System;
 public class BotException : Exception
