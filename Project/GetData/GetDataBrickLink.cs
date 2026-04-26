@@ -13,7 +13,7 @@ sealed class GetDataBrickLink : IGetData
     // For this implementation each page will always have 50 sets, so this can be null. 
     public static int? MaxPage => null;
 
-    public static int PageLimit => 10;
+    public static int PageLimit => 1;
 
     // Page always has 50 sets pr page, so this value only used for calculating ExpectedSetsScraped in this implementation. 
     public static int ExpectedSetsPrPage => 50;

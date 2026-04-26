@@ -17,7 +17,7 @@ static class Program
         //Application.Run(new Form1());
         
         //GetDataLdraw.ProcessData();
-        //GetDataBrickLink.ProcessData();
+        GetData.GetDataBrickLink.ProcessData();
         //Unzipper.ConvertFiles();        
     }
 
